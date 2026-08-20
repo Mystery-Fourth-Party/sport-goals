@@ -38,6 +38,16 @@ export default function App() {
     );
   }
 
+  // Partial<Goal> : GoalItem ne renvoie que les champs édités (title,
+  // targetValue, unit, deadline), currentValue et id restent inchangés.
+  function handleUpdate(goalId: string, updates: Partial<Goal>) {
+    setGoals((prev) => prev.map((g) => (g.id === goalId ? { ...g, ...updates } : g)));
+  }
+
+  function handleDelete(goalId: string) {
+    setGoals((prev) => prev.filter((g) => g.id !== goalId));
+  }
+
   return (
     <SafeAreaView style={styles.safeArea}>
       {/* FlatList = équivalent RN d'une liste virtualisée (type react-window
@@ -48,7 +58,14 @@ export default function App() {
         contentContainerStyle={styles.listContent}
         data={goals}
         keyExtractor={(g) => g.id}
-        renderItem={({ item }) => <GoalItem goal={item} onAddProgress={handleAddProgress} />}
+        renderItem={({ item }) => (
+          <GoalItem
+            goal={item}
+            onAddProgress={handleAddProgress}
+            onUpdate={handleUpdate}
+            onDelete={handleDelete}
+          />
+        )}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         ListHeaderComponent={
           // Le formulaire est injecté en header de la liste (plutôt qu'au-dessus,
