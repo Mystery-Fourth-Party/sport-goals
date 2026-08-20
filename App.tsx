@@ -8,8 +8,11 @@ import { Goal } from './src/types';
 
 export default function App() {
   const [goals, setGoals] = useState<Goal[]>([]);
+  // Distingue "pas encore chargé" de "chargé mais vide", pour ne pas
+  // écraser le storage avec un tableau vide au tout premier rendu.
   const [loaded, setLoaded] = useState(false);
 
+  // Chargement initial depuis AsyncStorage (équivalent d'un fetch au mount).
   useEffect(() => {
     loadGoals().then((g) => {
       setGoals(g);
@@ -17,6 +20,8 @@ export default function App() {
     });
   }, []);
 
+  // Sauvegarde automatique à chaque changement de goals, une fois le
+  // chargement initial terminé (sinon on écraserait avec [] avant loadGoals).
   useEffect(() => {
     if (loaded) saveGoals(goals);
   }, [goals, loaded]);
@@ -25,16 +30,29 @@ export default function App() {
     setGoals((prev) => [goal, ...prev]);
   }
 
+  // Incrémente currentValue du goal ciblé. Pas de clamp ici : on autorise
+  // à dépasser targetValue, c'est GoalItem qui clampe l'affichage de la barre.
+  function handleAddProgress(goalId: string, amount: number) {
+    setGoals((prev) =>
+      prev.map((g) => (g.id === goalId ? { ...g, currentValue: g.currentValue + amount } : g))
+    );
+  }
+
   return (
     <SafeAreaView style={styles.safeArea}>
+      {/* FlatList = équivalent RN d'une liste virtualisée (type react-window
+          côté web) : ne monte que les items visibles à l'écran, plus
+          performant qu'un .map() pour de longues listes. */}
       <FlatList
         style={styles.list}
         contentContainerStyle={styles.listContent}
         data={goals}
         keyExtractor={(g) => g.id}
-        renderItem={({ item }) => <GoalItem goal={item} />}
+        renderItem={({ item }) => <GoalItem goal={item} onAddProgress={handleAddProgress} />}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         ListHeaderComponent={
+          // Le formulaire est injecté en header de la liste (plutôt qu'au-dessus,
+          // en dur) pour qu'il scrolle avec le contenu au lieu de rester figé.
           <>
             <Text style={styles.heading}>Mes objectifs sportifs</Text>
             <GoalForm onCreate={handleCreate} />

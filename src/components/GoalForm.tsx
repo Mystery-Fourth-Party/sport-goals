@@ -9,6 +9,7 @@ interface Props {
 }
 
 export default function GoalForm({ onCreate }: Props) {
+  // Formulaire contrôlé classique (comme en React web) : un useState par champ.
   const [title, setTitle] = useState('');
   const [targetValue, setTargetValue] = useState('');
   const [unit, setUnit] = useState<Unit>('reps');
@@ -24,9 +25,12 @@ export default function GoalForm({ onCreate }: Props) {
     deadline.setDate(deadline.getDate() + Number(durationDays));
 
     onCreate({
+      // Date.now() suffit ici (pas de créations concurrentes possibles côté
+      // UI) ; un crypto.randomUUID() serait plus robuste si ça change.
       id: String(Date.now()),
       title: title.trim(),
       targetValue: Number(targetValue),
+      currentValue: 0,
       unit,
       createdAt: now.toISOString(),
       deadline: deadline.toISOString(),
@@ -41,6 +45,8 @@ export default function GoalForm({ onCreate }: Props) {
   return (
     <View style={styles.container}>
       <Text style={styles.label}>Objectif</Text>
+      {/* TextInput = équivalent RN de <input>. keyboardType="numeric" fait
+          apparaître le clavier numérique du téléphone sur les champs chiffrés. */}
       <TextInput
         style={styles.input}
         placeholder="ex: Pompes"
@@ -72,6 +78,8 @@ export default function GoalForm({ onCreate }: Props) {
       </View>
 
       <Text style={styles.label}>Unité</Text>
+      {/* Chips plutôt qu'un <select> : les selects natifs sont peu
+          ergonomiques sur mobile, on préfère des boutons à sélection unique. */}
       <View style={styles.unitRow}>
         {UNITS.map((u) => (
           <Pressable
@@ -86,6 +94,7 @@ export default function GoalForm({ onCreate }: Props) {
         ))}
       </View>
 
+      {/* Pressable = équivalent RN de <button onClick>. */}
       <Pressable
         style={[styles.button, !canSubmit && styles.buttonDisabled]}
         onPress={handleSubmit}
