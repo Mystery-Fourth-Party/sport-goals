@@ -3,6 +3,7 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { GoalsProvider } from '../src/goals-context';
+import { SettingsProvider } from '../src/settings-context';
 import { colors, useAppFonts } from '../src/theme';
 
 // Empêche le splash natif de se cacher tout seul le temps que les polices
@@ -22,17 +23,19 @@ export default function RootLayout() {
   if (!fontsLoaded && !fontError) return null;
 
   return (
-    <GoalsProvider>
-      {/* headerShown: false — chaque écran dessine son propre en-tête
-          (BackButton + titre Barlow Condensed), comme dans le prototype. */}
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          contentStyle: { backgroundColor: colors.appBg },
-          animation: 'slide_from_right',
-        }}
-      />
-      <StatusBar style="light" />
-    </GoalsProvider>
+    <SettingsProvider>
+      <GoalsProvider>
+        {/* headerShown: false — chaque écran dessine son propre en-tête
+            (BackButton + titre Barlow Condensed), comme dans le prototype. */}
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: colors.appBg },
+            animation: 'slide_from_right',
+          }}
+        />
+        <StatusBar style="light" />
+      </GoalsProvider>
+    </SettingsProvider>
   );
 }

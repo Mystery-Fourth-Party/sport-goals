@@ -15,19 +15,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BackButton, BarChart, ProgressBar, StatusBadge } from '../../src/components/ui';
 import { longDateLabel, weekdayShort } from '../../src/dateLabels';
 import { useGoals } from '../../src/goals-context';
+import { useSettings } from '../../src/settings-context';
 import { fmt, getGoalStats, parseDate, todayStr } from '../../src/stats';
 import { colors, fontFamily, radius, spacing, statusColors, white } from '../../src/theme';
 import { UNIT_ICONS, UNIT_LABELS } from '../../src/types';
 
-// Contrôle la bannière "Presque là !" (90-100%). Correspond au toggle
-// "Objectif bientôt atteint" du prototype (SettingsScreen) — pas encore
-// branché tant que l'écran Réglages n'existe pas (étape suivante) ; activé
-// par défaut pour l'instant, comme dans le prototype.
-const ALMOST_THERE_ENABLED = true;
-
 export default function GoalDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { goals, addProgress, deleteGoal } = useGoals();
+  const { settings } = useSettings();
   const goal = goals.find((g) => g.id === id);
 
   const [showModal, setShowModal] = useState(false);
@@ -49,7 +45,7 @@ export default function GoalDetailScreen() {
   const today = todayStr();
   const s = getGoalStats(goal, today);
   const remaining = goal.targetValue - s.actual;
-  const showAlmostThere = ALMOST_THERE_ENABLED && s.progress >= 0.9 && s.progress < 1;
+  const showAlmostThere = settings.almostThereNotifs && s.progress >= 0.9 && s.progress < 1;
 
   const recentEntries = goal.entries.filter((e) => e.value > 0).slice(-7);
   const historyEntries = [...goal.entries].reverse().slice(0, 12);
