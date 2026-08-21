@@ -2,6 +2,8 @@ import { useState } from 'react';
 import * as Crypto from 'expo-crypto';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Goal, Unit } from '../types';
+import { fmt } from '../stats';
+import { colors, fontFamily, radius, spacing } from '../theme';
 import GoalFields from './GoalFields';
 
 interface Props {
@@ -26,6 +28,12 @@ export default function GoalForm({ onCreate }: Props) {
     Number(durationDays) > 0 ? undefined : 'La durée doit être un nombre de jours positif.';
   const canSubmit = !titleError && !targetValueError && !durationError;
 
+  // Rythme quotidien requis affiché en direct dès que les 3 champs sont
+  // valides (voir design-tokens.md § Création : "calcule les dates").
+  const targetNum = Number(targetValue) || 0;
+  const daysNum = Number(durationDays) || 0;
+  const dailyAvg = canSubmit ? targetNum / daysNum : 0;
+
   function handleSubmit() {
     if (!canSubmit) {
       setSubmitAttempted(true);
@@ -34,18 +42,18 @@ export default function GoalForm({ onCreate }: Props) {
 
     const now = new Date();
     const deadline = new Date(now);
-    deadline.setDate(deadline.getDate() + Number(durationDays));
+    deadline.setDate(deadline.getDate() + daysNum);
 
     onCreate({
       // Le global crypto.randomUUID() n'est pas garanti sur Hermes (natif) ;
       // expo-crypto fournit une implémentation fiable sur toutes les plateformes.
       id: Crypto.randomUUID(),
       title: title.trim(),
-      targetValue: Number(targetValue),
-      currentValue: 0,
+      targetValue: targetNum,
       unit,
       createdAt: now.toISOString(),
       deadline: deadline.toISOString(),
+      entries: [],
     });
 
     setTitle('');
@@ -72,11 +80,19 @@ export default function GoalForm({ onCreate }: Props) {
         durationError={submitAttempted ? durationError : undefined}
       />
 
+      {dailyAvg > 0 && (
+        <View style={styles.dailyAvgCard}>
+          <Text style={styles.dailyAvgLabel}>Rythme quotidien requis</Text>
+          <Text style={styles.dailyAvgValue}>≈ {fmt(dailyAvg, unit)}</Text>
+          <Text style={styles.dailyAvgUnit}>{unit} par jour</Text>
+        </View>
+      )}
+
       {/* Pressable = équivalent RN de <button onClick>. Reste toujours
           actif : une tentative de soumission invalide affiche les erreurs
           inline plutôt que de simplement ignorer le press. */}
       <Pressable style={styles.button} onPress={handleSubmit}>
-        <Text style={styles.buttonText}>Créer l’objectif</Text>
+        <Text style={styles.buttonText}>Créer l&apos;objectif</Text>
       </Pressable>
     </View>
   );
@@ -84,18 +100,47 @@ export default function GoalForm({ onCreate }: Props) {
 
 const styles = StyleSheet.create({
   container: {
-    gap: 10,
+    gap: spacing.gap,
+  },
+  dailyAvgCard: {
+    backgroundColor: colors.brandGlow,
+    borderWidth: 1,
+    borderColor: 'rgba(255,107,0,0.2)',
+    borderRadius: radius.card,
+    padding: spacing.cardPadding,
+  },
+  dailyAvgLabel: {
+    fontFamily: fontFamily.bodyRegular,
+    fontSize: 10,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+    color: colors.brand,
+    marginBottom: 4,
+  },
+  dailyAvgValue: {
+    fontFamily: fontFamily.displayBlack,
+    fontSize: 40,
+    color: colors.fg,
+    lineHeight: 44,
+  },
+  dailyAvgUnit: {
+    fontFamily: fontFamily.bodyRegular,
+    fontSize: 14,
+    color: 'rgba(255,183,140,0.7)',
+    marginTop: 2,
   },
   button: {
-    backgroundColor: '#2563eb',
-    borderRadius: 8,
-    paddingVertical: 12,
+    backgroundColor: colors.brand,
+    borderRadius: radius.button,
+    paddingVertical: 16,
     alignItems: 'center',
     marginTop: 4,
   },
   buttonText: {
     color: '#fff',
-    fontWeight: '700',
+    fontFamily: fontFamily.displayExtraBold,
     fontSize: 15,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
   },
 });
