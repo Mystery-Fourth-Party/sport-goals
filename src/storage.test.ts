@@ -12,6 +12,7 @@ const goal: Goal = {
   unit: 'reps',
   createdAt: '2026-01-01T00:00:00.000Z',
   deadline: '2026-02-01T00:00:00.000Z',
+  entries: [{ date: '2026-01-01', value: 20 }],
 };
 
 beforeEach(async () => {
@@ -49,6 +50,15 @@ describe('loadGoals', () => {
     const loaded = await loadGoals();
 
     expect(loaded).toEqual([{ ...legacyGoal, currentValue: 0 }]);
+  });
+
+  it('defaults entries to [] for legacy goals saved without that field', async () => {
+    const { entries, ...legacyGoal } = goal;
+    await AsyncStorage.setItem(GOALS_KEY, JSON.stringify([legacyGoal]));
+
+    const loaded = await loadGoals();
+
+    expect(loaded).toEqual([{ ...legacyGoal, entries: [] }]);
   });
 });
 

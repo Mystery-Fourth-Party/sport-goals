@@ -1,0 +1,120 @@
+import { Goal } from './types';
+import { calcStreak, dateStr, fmt, getGoalStats, getWeeklyStats, parseDate } from './stats';
+
+// Objectif "1000 Pompes" du prototype Figma Make (design-reference/figma-make-source.tsx,
+// SAMPLE_GOALS[0]), avec startDate/endDate portés sur createdAt/deadline (ISO complet).
+// Les résultats attendus ci-dessous ont été relevés en explorant le prototype publié
+// le 21/08/2026 (écran Détail : 770/1000, 77%, attendu 63%, streak 20, rythme actuel
+// 41/j, requis 21/j) — ce test protège contre une régression du portage.
+const pompes: Goal = {
+  id: '1',
+  title: '1000 Pompes',
+  targetValue: 1000,
+  currentValue: 0,
+  unit: 'reps',
+  createdAt: '2026-08-01T00:00:00.000Z',
+  deadline: '2026-08-31T00:00:00.000Z',
+  entries: [
+    { date: '2026-08-01', value: 40 },
+    { date: '2026-08-02', value: 35 },
+    { date: '2026-08-03', value: 42 },
+    { date: '2026-08-04', value: 38 },
+    { date: '2026-08-05', value: 45 },
+    { date: '2026-08-06', value: 30 },
+    { date: '2026-08-07', value: 40 },
+    { date: '2026-08-08', value: 38 },
+    { date: '2026-08-09', value: 42 },
+    { date: '2026-08-10', value: 35 },
+    { date: '2026-08-11', value: 45 },
+    { date: '2026-08-12', value: 28 },
+    { date: '2026-08-13', value: 40 },
+    { date: '2026-08-14', value: 38 },
+    { date: '2026-08-15', value: 42 },
+    { date: '2026-08-16', value: 35 },
+    { date: '2026-08-17', value: 40 },
+    { date: '2026-08-18', value: 38 },
+    { date: '2026-08-19', value: 42 },
+    { date: '2026-08-20', value: 37 },
+  ],
+};
+
+const TODAY = '2026-08-20';
+
+describe('getGoalStats', () => {
+  it('matches the values observed in the Figma Make prototype', () => {
+    const s = getGoalStats(pompes, TODAY);
+
+    expect(s.actual).toBe(770);
+    expect(Math.round(s.progress * 100)).toBe(77);
+    expect(Math.round(s.expectedProgress * 100)).toBe(63);
+    expect(s.streak).toBe(20);
+    expect(s.elapsedDays).toBe(19);
+    expect(s.totalDays).toBe(30);
+    expect(s.remainingDays).toBe(11);
+    expect(fmt(s.actual / s.elapsedDays, pompes.unit)).toBe('41');
+    expect(fmt(s.dailyRequired, pompes.unit)).toBe('21');
+    expect(s.status).toBe('ahead');
+  });
+
+  it('treats a goal with no entries yet as not-started', () => {
+    const fresh: Goal = { ...pompes, entries: [] };
+    const s = getGoalStats(fresh, '2026-08-01');
+    expect(s.status).toBe('not-started');
+    expect(s.actual).toBe(0);
+  });
+
+  it('marks a goal completed once actual reaches the target, even past the deadline', () => {
+    const done: Goal = { ...pompes, entries: [{ date: '2026-08-31', value: 1000 }] };
+    const s = getGoalStats(done, '2026-09-05');
+    expect(s.status).toBe('completed');
+    expect(s.progress).toBe(1);
+  });
+
+  it('is missing entries safe (defaults to an empty history)', () => {
+    const legacy = { ...pompes } as Goal;
+    delete (legacy as { entries?: unknown }).entries;
+    const s = getGoalStats(legacy, TODAY);
+    expect(s.actual).toBe(0);
+  });
+});
+
+describe('calcStreak', () => {
+  it('stops counting at the first missing or zero-value day walking backwards from today', () => {
+    const entries = [
+      { date: '2026-08-18', value: 10 },
+      { date: '2026-08-19', value: 0 },
+      { date: '2026-08-20', value: 5 },
+    ];
+    expect(calcStreak(entries, '2026-08-20')).toBe(1);
+  });
+});
+
+describe('getWeeklyStats', () => {
+  it('builds a 7-day window ending on today and ranks goals by progress', () => {
+    const behind: Goal = {
+      ...pompes,
+      id: '2',
+      title: 'Behind goal',
+      entries: [{ date: TODAY, value: 1 }],
+    };
+    const w = getWeeklyStats([pompes, behind], TODAY);
+
+    expect(w.weekDates).toEqual([
+      '2026-08-14',
+      '2026-08-15',
+      '2026-08-16',
+      '2026-08-17',
+      '2026-08-18',
+      '2026-08-19',
+      '2026-08-20',
+    ]);
+    expect(w.mostAdvanced?.goal.id).toBe('1');
+    expect(w.mostBehind?.goal.id).toBe('2');
+  });
+});
+
+describe('date helpers', () => {
+  it('round-trip a date through parseDate/dateStr', () => {
+    expect(dateStr(parseDate('2026-08-20'))).toBe('2026-08-20');
+  });
+});
