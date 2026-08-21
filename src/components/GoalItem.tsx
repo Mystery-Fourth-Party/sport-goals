@@ -35,6 +35,9 @@ export default function GoalItem({ goal, onAddProgress, onUpdate, onDelete }: Pr
   const [editTarget, setEditTarget] = useState(String(goal.targetValue));
   const [editUnit, setEditUnit] = useState<Unit>(goal.unit);
   const [editDays, setEditDays] = useState(String(Math.max(remaining, 0)));
+  // Comme dans GoalForm : les erreurs ne s'affichent qu'après une première
+  // tentative de sauvegarde invalide, pas dès l'ouverture du formulaire.
+  const [saveAttempted, setSaveAttempted] = useState(false);
 
   function handleAdd() {
     const value = Number(amount);
@@ -48,13 +51,25 @@ export default function GoalItem({ goal, onAddProgress, onUpdate, onDelete }: Pr
     setEditTarget(String(goal.targetValue));
     setEditUnit(goal.unit);
     setEditDays(String(Math.max(remaining, 0)));
+    setSaveAttempted(false);
     setIsEditing(true);
   }
 
-  const canSaveEdit = editTitle.trim() !== '' && Number(editTarget) > 0 && Number(editDays) > 0;
+  const editTitleError = editTitle.trim() === '' ? "Le titre de l'objectif est requis." : undefined;
+  const editTargetError =
+    Number(editTarget) > 0 ? undefined : 'La valeur cible doit être un nombre positif.';
+  // editDays retombe à 0 quand le délai est déjà dépassé ou tombe le jour
+  // même (voir startEdit) : ce message explique pourquoi il faut le corriger
+  // plutôt que de laisser le bouton "Enregistrer" silencieusement grisé.
+  const editDaysError =
+    Number(editDays) > 0 ? undefined : 'Les jours restants doivent être un nombre positif.';
+  const canSaveEdit = !editTitleError && !editTargetError && !editDaysError;
 
   function handleSaveEdit() {
-    if (!canSaveEdit) return;
+    if (!canSaveEdit) {
+      setSaveAttempted(true);
+      return;
+    }
     // On édite en "jours restants" plutôt qu'en date, pour rester cohérent
     // avec le formulaire de création (pas de date picker natif installé).
     const deadline = new Date();
@@ -94,6 +109,9 @@ export default function GoalItem({ goal, onAddProgress, onUpdate, onDelete }: Pr
           durationLabel="Jours restants"
           duration={editDays}
           onDurationChange={setEditDays}
+          titleError={saveAttempted ? editTitleError : undefined}
+          targetValueError={saveAttempted ? editTargetError : undefined}
+          durationError={saveAttempted ? editDaysError : undefined}
         />
         <View style={styles.editActions}>
           <Pressable
@@ -102,11 +120,10 @@ export default function GoalItem({ goal, onAddProgress, onUpdate, onDelete }: Pr
           >
             <Text style={styles.cancelButtonText}>Annuler</Text>
           </Pressable>
-          <Pressable
-            style={[styles.smallButton, !canSaveEdit && styles.buttonDisabled]}
-            onPress={handleSaveEdit}
-            disabled={!canSaveEdit}
-          >
+          {/* Reste toujours actif, comme dans GoalForm : une tentative de
+              sauvegarde invalide affiche les erreurs inline plutôt que de
+              simplement ignorer le press. */}
+          <Pressable style={styles.smallButton} onPress={handleSaveEdit}>
             <Text style={styles.smallButtonText}>Enregistrer</Text>
           </Pressable>
         </View>
@@ -266,8 +283,5 @@ const styles = StyleSheet.create({
     color: '#444',
     fontWeight: '600',
     fontSize: 14,
-  },
-  buttonDisabled: {
-    backgroundColor: '#a9b8d6',
   },
 });
