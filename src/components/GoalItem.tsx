@@ -96,7 +96,10 @@ export default function GoalItem({ goal, onAddProgress, onUpdate, onDelete }: Pr
           onDurationChange={setEditDays}
         />
         <View style={styles.editActions}>
-          <Pressable style={[styles.smallButton, styles.cancelButton]} onPress={() => setIsEditing(false)}>
+          <Pressable
+            style={[styles.smallButton, styles.cancelButton]}
+            onPress={() => setIsEditing(false)}
+          >
             <Text style={styles.cancelButtonText}>Annuler</Text>
           </Pressable>
           <Pressable

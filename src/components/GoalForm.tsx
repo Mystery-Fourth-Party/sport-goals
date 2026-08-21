@@ -76,7 +76,7 @@ export default function GoalForm({ onCreate }: Props) {
           actif : une tentative de soumission invalide affiche les erreurs
           inline plutôt que de simplement ignorer le press. */}
       <Pressable style={styles.button} onPress={handleSubmit}>
-        <Text style={styles.buttonText}>Créer l'objectif</Text>
+        <Text style={styles.buttonText}>Créer l’objectif</Text>
       </Pressable>
     </View>
   );

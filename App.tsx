@@ -43,7 +43,7 @@ export default function App() {
   // à dépasser targetValue, c'est GoalItem qui clampe l'affichage de la barre.
   function handleAddProgress(goalId: string, amount: number) {
     setGoals((prev) =>
-      prev.map((g) => (g.id === goalId ? { ...g, currentValue: g.currentValue + amount } : g))
+      prev.map((g) => (g.id === goalId ? { ...g, currentValue: g.currentValue + amount } : g)),
     );
   }
 
