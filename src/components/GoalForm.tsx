@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import * as Crypto from 'expo-crypto';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Goal, Unit } from '../types';
 import GoalFields from './GoalFields';
@@ -24,9 +25,9 @@ export default function GoalForm({ onCreate }: Props) {
     deadline.setDate(deadline.getDate() + Number(durationDays));
 
     onCreate({
-      // Date.now() suffit ici (pas de créations concurrentes possibles côté
-      // UI) ; un crypto.randomUUID() serait plus robuste si ça change.
-      id: String(Date.now()),
+      // Le global crypto.randomUUID() n'est pas garanti sur Hermes (natif) ;
+      // expo-crypto fournit une implémentation fiable sur toutes les plateformes.
+      id: Crypto.randomUUID(),
       title: title.trim(),
       targetValue: Number(targetValue),
       currentValue: 0,
