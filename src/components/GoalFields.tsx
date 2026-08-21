@@ -16,16 +16,16 @@ interface Props {
   durationLabel: string;
   duration: string;
   onDurationChange: (v: string) => void;
-  // Messages d'erreur optionnels affichés sous chaque champ concerné.
-  // Laissés à undefined par les appelants qui ne veulent pas de validation
-  // inline (ex: GoalItem en édition, qui garde le bouton désactivé).
+  // Messages d'erreur optionnels affichés sous chaque champ concerné,
+  // laissés à undefined tant que l'appelant ne veut pas encore les montrer
+  // (ex: avant une première tentative de soumission ratée).
   titleError?: string;
   targetValueError?: string;
   durationError?: string;
 }
 
-// Champs de saisie communs à la création (GoalForm) et à l'édition
-// (GoalItem en mode édition). Purement contrôlé, sans bouton de
+// Champs de saisie communs à l'écran Création (app/create.tsx) et à l'écran
+// Édition (app/goal/[id]/edit.tsx). Purement contrôlé, sans bouton de
 // validation : chaque appelant garde ses propres boutons/actions.
 export default function GoalFields({
   title,
