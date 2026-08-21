@@ -15,15 +15,10 @@ export async function loadGoals(): Promise<Goal[]> {
     const raw = await AsyncStorage.getItem(GOALS_KEY);
     if (!raw) return [];
     const goals: Goal[] = JSON.parse(raw);
-    // Les objectifs enregistrés avant l'ajout de currentValue/entries n'ont
-    // pas ces champs ; sans ce fallback currentValue vaudrait undefined
-    // (NaN dans la barre de progression) et entries vaudrait undefined
-    // (plantage sur le premier .reduce()/.find() dans stats.ts).
-    return goals.map((g) => ({
-      ...g,
-      currentValue: g.currentValue ?? 0,
-      entries: g.entries ?? [],
-    }));
+    // Les objectifs enregistrés avant l'ajout d'entries n'ont pas ce champ ;
+    // sans ce fallback il vaudrait undefined, faisant planter le premier
+    // .reduce()/.find() dans stats.ts.
+    return goals.map((g) => ({ ...g, entries: g.entries ?? [] }));
   } catch (error) {
     console.error('loadGoals: échec du chargement, retour à une liste vide.', error);
     return [];

@@ -8,7 +8,6 @@ const goal: Goal = {
   id: '1',
   title: 'Pompes',
   targetValue: 100,
-  currentValue: 20,
   unit: 'reps',
   createdAt: '2026-01-01T00:00:00.000Z',
   deadline: '2026-02-01T00:00:00.000Z',
@@ -41,15 +40,6 @@ describe('loadGoals', () => {
     jest.spyOn(AsyncStorage, 'getItem').mockRejectedValueOnce(new Error('read failed'));
 
     await expect(loadGoals()).resolves.toEqual([]);
-  });
-
-  it('defaults currentValue to 0 for legacy goals saved without that field', async () => {
-    const { currentValue, ...legacyGoal } = goal;
-    await AsyncStorage.setItem(GOALS_KEY, JSON.stringify([legacyGoal]));
-
-    const loaded = await loadGoals();
-
-    expect(loaded).toEqual([{ ...legacyGoal, currentValue: 0 }]);
   });
 
   it('defaults entries to [] for legacy goals saved without that field', async () => {

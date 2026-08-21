@@ -10,7 +10,6 @@ const pompes: Goal = {
   id: '1',
   title: '1000 Pompes',
   targetValue: 1000,
-  currentValue: 0,
   unit: 'reps',
   createdAt: '2026-08-01T00:00:00.000Z',
   deadline: '2026-08-31T00:00:00.000Z',

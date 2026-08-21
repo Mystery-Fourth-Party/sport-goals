@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { Unit, UNIT_LABELS } from '../types';
+import { Unit } from '../types';
+import { colors, fontFamily, radius, spacing, white } from '../theme';
 
 const UNITS: Unit[] = ['reps', 'km', 'min', 'h'];
 
@@ -42,10 +43,11 @@ export default function GoalFields({
 }: Props) {
   return (
     <>
-      <Text style={styles.label}>Objectif</Text>
+      <Text style={styles.label}>Nom de l&apos;objectif</Text>
       <TextInput
         style={styles.input}
-        placeholder="ex: Pompes"
+        placeholder="ex : 1000 pompes en 30 jours"
+        placeholderTextColor={white(0.2)}
         value={title}
         onChangeText={onTitleChange}
       />
@@ -53,10 +55,11 @@ export default function GoalFields({
 
       <View style={styles.row}>
         <View style={styles.flex1}>
-          <Text style={styles.label}>Cible</Text>
+          <Text style={styles.label}>Valeur cible</Text>
           <TextInput
-            style={styles.input}
-            placeholder="ex: 1000"
+            style={[styles.input, styles.inputDisplay]}
+            placeholder="1000"
+            placeholderTextColor={white(0.2)}
             keyboardType="numeric"
             value={targetValue}
             onChangeText={onTargetValueChange}
@@ -66,8 +69,9 @@ export default function GoalFields({
         <View style={styles.flex1}>
           <Text style={styles.label}>{durationLabel}</Text>
           <TextInput
-            style={styles.input}
-            placeholder="ex: 30"
+            style={[styles.input, styles.inputDisplay]}
+            placeholder="30"
+            placeholderTextColor={white(0.2)}
             keyboardType="numeric"
             value={duration}
             onChangeText={onDurationChange}
@@ -85,7 +89,7 @@ export default function GoalFields({
             style={[styles.chip, unit === u && styles.chipSelected]}
           >
             <Text style={[styles.chipText, unit === u && styles.chipTextSelected]}>
-              {UNIT_LABELS[u]}
+              {u.toUpperCase()}
             </Text>
           </Pressable>
         ))}
@@ -96,22 +100,33 @@ export default function GoalFields({
 
 const styles = StyleSheet.create({
   label: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#444',
+    fontFamily: fontFamily.bodyRegular,
+    fontSize: 10,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+    color: white(0.35),
+    marginBottom: spacing.gap / 2,
   },
   errorText: {
+    fontFamily: fontFamily.bodyRegular,
     fontSize: 12,
-    color: '#dc2626',
-    marginTop: 2,
+    color: colors.late,
+    marginTop: 4,
   },
   input: {
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    borderColor: white(0.08),
+    borderRadius: radius.button,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontFamily: fontFamily.bodyRegular,
     fontSize: 15,
+    color: colors.fg,
+  },
+  inputDisplay: {
+    fontFamily: fontFamily.displayBold,
+    fontSize: 22,
   },
   row: {
     flexDirection: 'row',
@@ -127,22 +142,25 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   chip: {
+    height: 40,
     paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
+    justifyContent: 'center',
+    borderRadius: radius.button,
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: white(0.08),
   },
   chipSelected: {
-    backgroundColor: '#2563eb',
-    borderColor: '#2563eb',
+    backgroundColor: colors.brand,
+    borderColor: colors.brand,
   },
   chipText: {
+    fontFamily: fontFamily.displayBold,
     fontSize: 13,
-    color: '#333',
+    textTransform: 'uppercase',
+    color: white(0.4),
   },
   chipTextSelected: {
     color: '#fff',
-    fontWeight: '600',
   },
 });
