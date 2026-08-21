@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { FlatList, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 import GoalForm from './src/components/GoalForm';
@@ -11,6 +11,10 @@ export default function App() {
   // Distingue "pas encore chargé" de "chargé mais vide", pour ne pas
   // écraser le storage avec un tableau vide au tout premier rendu.
   const [loaded, setLoaded] = useState(false);
+  // true tant qu'on n'a pas encore ignoré le premier passage de l'effet de
+  // sauvegarde suivant le chargement (ce passage sauvegarderait des données
+  // identiques à ce qui vient d'être lu, donc redondant).
+  const skipNextSave = useRef(true);
 
   // Chargement initial depuis AsyncStorage (équivalent d'un fetch au mount).
   useEffect(() => {
@@ -23,7 +27,12 @@ export default function App() {
   // Sauvegarde automatique à chaque changement de goals, une fois le
   // chargement initial terminé (sinon on écraserait avec [] avant loadGoals).
   useEffect(() => {
-    if (loaded) saveGoals(goals);
+    if (!loaded) return;
+    if (skipNextSave.current) {
+      skipNextSave.current = false;
+      return;
+    }
+    saveGoals(goals);
   }, [goals, loaded]);
 
   function handleCreate(goal: Goal) {
@@ -34,7 +43,7 @@ export default function App() {
   // à dépasser targetValue, c'est GoalItem qui clampe l'affichage de la barre.
   function handleAddProgress(goalId: string, amount: number) {
     setGoals((prev) =>
-      prev.map((g) => (g.id === goalId ? { ...g, currentValue: g.currentValue + amount } : g))
+      prev.map((g) => (g.id === goalId ? { ...g, currentValue: g.currentValue + amount } : g)),
     );
   }
 
