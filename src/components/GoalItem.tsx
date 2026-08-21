@@ -29,7 +29,7 @@ export default function GoalItem({ goal, onAddProgress, onUpdate, onDelete }: Pr
   const [editTitle, setEditTitle] = useState(goal.title);
   const [editTarget, setEditTarget] = useState(String(goal.targetValue));
   const [editUnit, setEditUnit] = useState<Unit>(goal.unit);
-  const [editDays, setEditDays] = useState(String(Math.max(s.remainingDays, 0)));
+  const [editDays, setEditDays] = useState(String(Math.max(1, s.remainingDays)));
   // Comme dans GoalForm : les erreurs ne s'affichent qu'après une première
   // tentative de sauvegarde invalide, pas dès l'ouverture du formulaire.
   const [saveAttempted, setSaveAttempted] = useState(false);
@@ -45,7 +45,7 @@ export default function GoalItem({ goal, onAddProgress, onUpdate, onDelete }: Pr
     setEditTitle(goal.title);
     setEditTarget(String(goal.targetValue));
     setEditUnit(goal.unit);
-    setEditDays(String(Math.max(s.remainingDays, 0)));
+    setEditDays(String(Math.max(1, s.remainingDays)));
     setSaveAttempted(false);
     setIsEditing(true);
   }
