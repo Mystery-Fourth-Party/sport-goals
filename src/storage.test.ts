@@ -41,6 +41,15 @@ describe('loadGoals', () => {
 
     await expect(loadGoals()).resolves.toEqual([]);
   });
+
+  it('defaults currentValue to 0 for legacy goals saved without that field', async () => {
+    const { currentValue, ...legacyGoal } = goal;
+    await AsyncStorage.setItem(GOALS_KEY, JSON.stringify([legacyGoal]));
+
+    const loaded = await loadGoals();
+
+    expect(loaded).toEqual([{ ...legacyGoal, currentValue: 0 }]);
+  });
 });
 
 describe('saveGoals', () => {
