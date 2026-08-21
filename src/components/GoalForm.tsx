@@ -14,11 +14,23 @@ export default function GoalForm({ onCreate }: Props) {
   const [targetValue, setTargetValue] = useState('');
   const [unit, setUnit] = useState<Unit>('reps');
   const [durationDays, setDurationDays] = useState('');
+  // Les erreurs ne s'affichent qu'après une première tentative de soumission
+  // invalide, pour ne pas asperger l'utilisateur de messages rouges dès
+  // qu'il commence à remplir le formulaire.
+  const [submitAttempted, setSubmitAttempted] = useState(false);
 
-  const canSubmit = title.trim() !== '' && Number(targetValue) > 0 && Number(durationDays) > 0;
+  const titleError = title.trim() === '' ? "Le titre de l'objectif est requis." : undefined;
+  const targetValueError =
+    Number(targetValue) > 0 ? undefined : 'La valeur cible doit être un nombre positif.';
+  const durationError =
+    Number(durationDays) > 0 ? undefined : 'La durée doit être un nombre de jours positif.';
+  const canSubmit = !titleError && !targetValueError && !durationError;
 
   function handleSubmit() {
-    if (!canSubmit) return;
+    if (!canSubmit) {
+      setSubmitAttempted(true);
+      return;
+    }
 
     const now = new Date();
     const deadline = new Date(now);
@@ -40,6 +52,7 @@ export default function GoalForm({ onCreate }: Props) {
     setTargetValue('');
     setDurationDays('');
     setUnit('reps');
+    setSubmitAttempted(false);
   }
 
   return (
@@ -54,14 +67,15 @@ export default function GoalForm({ onCreate }: Props) {
         durationLabel="Durée (jours)"
         duration={durationDays}
         onDurationChange={setDurationDays}
+        titleError={submitAttempted ? titleError : undefined}
+        targetValueError={submitAttempted ? targetValueError : undefined}
+        durationError={submitAttempted ? durationError : undefined}
       />
 
-      {/* Pressable = équivalent RN de <button onClick>. */}
-      <Pressable
-        style={[styles.button, !canSubmit && styles.buttonDisabled]}
-        onPress={handleSubmit}
-        disabled={!canSubmit}
-      >
+      {/* Pressable = équivalent RN de <button onClick>. Reste toujours
+          actif : une tentative de soumission invalide affiche les erreurs
+          inline plutôt que de simplement ignorer le press. */}
+      <Pressable style={styles.button} onPress={handleSubmit}>
         <Text style={styles.buttonText}>Créer l'objectif</Text>
       </Pressable>
     </View>
@@ -78,9 +92,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     alignItems: 'center',
     marginTop: 4,
-  },
-  buttonDisabled: {
-    backgroundColor: '#a9b8d6',
   },
   buttonText: {
     color: '#fff',

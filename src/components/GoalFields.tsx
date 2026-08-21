@@ -15,6 +15,12 @@ interface Props {
   durationLabel: string;
   duration: string;
   onDurationChange: (v: string) => void;
+  // Messages d'erreur optionnels affichés sous chaque champ concerné.
+  // Laissés à undefined par les appelants qui ne veulent pas de validation
+  // inline (ex: GoalItem en édition, qui garde le bouton désactivé).
+  titleError?: string;
+  targetValueError?: string;
+  durationError?: string;
 }
 
 // Champs de saisie communs à la création (GoalForm) et à l'édition
@@ -30,6 +36,9 @@ export default function GoalFields({
   durationLabel,
   duration,
   onDurationChange,
+  titleError,
+  targetValueError,
+  durationError,
 }: Props) {
   return (
     <>
@@ -40,6 +49,7 @@ export default function GoalFields({
         value={title}
         onChangeText={onTitleChange}
       />
+      {titleError && <Text style={styles.errorText}>{titleError}</Text>}
 
       <View style={styles.row}>
         <View style={styles.flex1}>
@@ -51,6 +61,7 @@ export default function GoalFields({
             value={targetValue}
             onChangeText={onTargetValueChange}
           />
+          {targetValueError && <Text style={styles.errorText}>{targetValueError}</Text>}
         </View>
         <View style={styles.flex1}>
           <Text style={styles.label}>{durationLabel}</Text>
@@ -61,6 +72,7 @@ export default function GoalFields({
             value={duration}
             onChangeText={onDurationChange}
           />
+          {durationError && <Text style={styles.errorText}>{durationError}</Text>}
         </View>
       </View>
 
@@ -87,6 +99,11 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: '#444',
+  },
+  errorText: {
+    fontSize: 12,
+    color: '#dc2626',
+    marginTop: 2,
   },
   input: {
     borderWidth: 1,
