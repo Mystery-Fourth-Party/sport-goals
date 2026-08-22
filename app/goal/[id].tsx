@@ -18,17 +18,22 @@ import { useGoals } from '../../src/goals-context';
 import { useSettings } from '../../src/settings-context';
 import { fmt, getGoalStats, parseDate, todayStr } from '../../src/stats';
 import { colors, fontFamily, radius, spacing, statusColors, white } from '../../src/theme';
-import { UNIT_ICONS, UNIT_LABELS } from '../../src/types';
+import { Entry, UNIT_ICONS, UNIT_LABELS } from '../../src/types';
 
 export default function GoalDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { goals, addProgress, deleteGoal } = useGoals();
+  const { goals, addProgress, updateEntry, deleteEntry, deleteGoal } = useGoals();
   const { settings } = useSettings();
   const goal = goals.find((g) => g.id === id);
 
-  const [showModal, setShowModal] = useState(false);
-  const [addValue, setAddValue] = useState('');
-  const [addError, setAddError] = useState(false);
+  // Un seul modal pour ajouter la progression du jour et pour corriger une
+  // entrée passée depuis l'historique — même forme (valeur + unité +
+  // bouton), seule la cible (addProgress vs updateEntry) et quelques
+  // libellés diffèrent. `null` = fermé ; `date` vaut `today` en mode "add".
+  const [modalMode, setModalMode] = useState<'add' | 'edit' | null>(null);
+  const [modalDate, setModalDate] = useState('');
+  const [modalValue, setModalValue] = useState('');
+  const [modalError, setModalError] = useState(false);
 
   if (!goal) {
     // Objectif supprimé entre-temps (ou id invalide) : on ne peut pas
@@ -52,16 +57,55 @@ export default function GoalDetailScreen() {
   const historyEntries = [...goal.entries].reverse().slice(0, 12);
   const todayEntry = goal.entries.find((e) => e.date === today);
 
-  function handleAdd() {
-    const value = Number(addValue);
+  function openAddModal() {
+    setModalMode('add');
+    setModalDate(today);
+    setModalValue('');
+    setModalError(false);
+  }
+
+  function openEditModal(entry: Entry) {
+    setModalMode('edit');
+    setModalDate(entry.date);
+    setModalValue(String(entry.value));
+    setModalError(false);
+  }
+
+  function closeModal() {
+    setModalMode(null);
+    setModalValue('');
+    setModalError(false);
+  }
+
+  function handleSave() {
+    const value = Number(modalValue);
     if (!value || value <= 0) {
-      setAddError(true);
+      setModalError(true);
       return;
     }
-    addProgress(goal!.id, value);
-    setShowModal(false);
-    setAddValue('');
-    setAddError(false);
+    if (modalMode === 'add') {
+      addProgress(goal!.id, value);
+    } else if (modalMode === 'edit') {
+      updateEntry(goal!.id, modalDate, value);
+    }
+    closeModal();
+  }
+
+  function handleDeleteEntry() {
+    const date = modalDate;
+    const label = longDateLabel(parseDate(date));
+    const confirmed = () => {
+      deleteEntry(goal!.id, date);
+      closeModal();
+    };
+    if (Platform.OS === 'web') {
+      if (window.confirm(`Supprimer l'entrée du ${label} ?`)) confirmed();
+      return;
+    }
+    Alert.alert('Supprimer cette entrée ?', label, [
+      { text: 'Annuler', style: 'cancel' },
+      { text: 'Supprimer', style: 'destructive', onPress: confirmed },
+    ]);
   }
 
   function handleDelete() {
@@ -221,8 +265,9 @@ export default function GoalDetailScreen() {
             const d = parseDate(entry.date);
             const isToday = entry.date === today;
             return (
-              <View
+              <Pressable
                 key={entry.date}
+                onPress={() => openEditModal(entry)}
                 style={[
                   styles.historyRow,
                   i < historyEntries.length - 1 && styles.historyRowBorder,
@@ -241,7 +286,7 @@ export default function GoalDetailScreen() {
                     ? `${fmt(entry.value, goal.unit)} ${UNIT_LABELS[goal.unit]}`
                     : '—'}
                 </Text>
-              </View>
+              </Pressable>
             );
           })}
         </View>
@@ -252,29 +297,26 @@ export default function GoalDetailScreen() {
       </ScrollView>
 
       <View style={styles.ctaWrap}>
-        <Pressable style={styles.ctaButton} onPress={() => setShowModal(true)}>
+        <Pressable style={styles.ctaButton} onPress={openAddModal}>
           <Text style={styles.ctaButtonText}>+ Ajouter la progression du jour</Text>
         </Pressable>
       </View>
 
-      <Modal visible={showModal} transparent animationType="slide">
-        <Pressable
-          style={styles.modalBackdrop}
-          onPress={() => {
-            setShowModal(false);
-            setAddValue('');
-            setAddError(false);
-          }}
-        >
+      <Modal visible={modalMode !== null} transparent animationType="slide">
+        <Pressable style={styles.modalBackdrop} onPress={closeModal}>
           {/* Empêche le tap sur la feuille elle-même de remonter au backdrop
               et de fermer le modal par erreur. */}
           <Pressable style={styles.modalSheet} onPress={(e) => e.stopPropagation()}>
             <View style={styles.modalHandle} />
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Aujourd&apos;hui</Text>
-              <Text style={styles.modalDate}>{longDateLabel(parseDate(today))}</Text>
+              <Text style={styles.modalTitle}>
+                {modalMode === 'add' ? "Aujourd'hui" : 'Modifier'}
+              </Text>
+              <Text style={styles.modalDate}>
+                {modalDate && longDateLabel(parseDate(modalDate))}
+              </Text>
             </View>
-            {todayEntry && todayEntry.value > 0 && (
+            {modalMode === 'add' && todayEntry && todayEntry.value > 0 && (
               <Text style={styles.modalAlready}>
                 Déjà enregistré :{' '}
                 <Text style={styles.modalAlreadyValue}>
@@ -289,27 +331,23 @@ export default function GoalDetailScreen() {
                 placeholderTextColor={white(0.2)}
                 keyboardType="numeric"
                 autoFocus
-                value={addValue}
+                value={modalValue}
                 onChangeText={(v) => {
-                  setAddValue(v);
-                  setAddError(false);
+                  setModalValue(v);
+                  setModalError(false);
                 }}
               />
               <View style={styles.modalUnitBox}>
                 <Text style={styles.modalUnitText}>{UNIT_LABELS[goal.unit]}</Text>
               </View>
             </View>
-            {addError && (
+            {modalError && (
               <Text style={styles.modalErrorText}>Entre une valeur supérieure à 0.</Text>
             )}
             <View style={styles.modalActions}>
               <Pressable
                 style={[styles.modalButton, styles.modalCancelButton]}
-                onPress={() => {
-                  setShowModal(false);
-                  setAddValue('');
-                  setAddError(false);
-                }}
+                onPress={closeModal}
               >
                 <Text style={styles.modalCancelText}>Annuler</Text>
               </Pressable>
@@ -317,13 +355,18 @@ export default function GoalDetailScreen() {
                 style={[
                   styles.modalButton,
                   styles.modalConfirmButton,
-                  !(Number(addValue) > 0) && styles.modalConfirmButtonDisabled,
+                  !(Number(modalValue) > 0) && styles.modalConfirmButtonDisabled,
                 ]}
-                onPress={handleAdd}
+                onPress={handleSave}
               >
                 <Text style={styles.modalConfirmText}>Enregistrer</Text>
               </Pressable>
             </View>
+            {modalMode === 'edit' && (
+              <Pressable style={styles.deleteLink} onPress={handleDeleteEntry}>
+                <Text style={styles.deleteLinkText}>🗑 Supprimer cette entrée</Text>
+              </Pressable>
+            )}
           </Pressable>
         </Pressable>
       </Modal>
