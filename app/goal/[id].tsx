@@ -28,6 +28,7 @@ export default function GoalDetailScreen() {
 
   const [showModal, setShowModal] = useState(false);
   const [addValue, setAddValue] = useState('');
+  const [addError, setAddError] = useState(false);
 
   if (!goal) {
     // Objectif supprimé entre-temps (ou id invalide) : on ne peut pas
@@ -53,10 +54,14 @@ export default function GoalDetailScreen() {
 
   function handleAdd() {
     const value = Number(addValue);
-    if (!value || value <= 0) return;
+    if (!value || value <= 0) {
+      setAddError(true);
+      return;
+    }
     addProgress(goal!.id, value);
     setShowModal(false);
     setAddValue('');
+    setAddError(false);
   }
 
   function handleDelete() {
@@ -258,6 +263,7 @@ export default function GoalDetailScreen() {
           onPress={() => {
             setShowModal(false);
             setAddValue('');
+            setAddError(false);
           }}
         >
           {/* Empêche le tap sur la feuille elle-même de remonter au backdrop
@@ -284,24 +290,35 @@ export default function GoalDetailScreen() {
                 keyboardType="numeric"
                 autoFocus
                 value={addValue}
-                onChangeText={setAddValue}
+                onChangeText={(v) => {
+                  setAddValue(v);
+                  setAddError(false);
+                }}
               />
               <View style={styles.modalUnitBox}>
                 <Text style={styles.modalUnitText}>{UNIT_LABELS[goal.unit]}</Text>
               </View>
             </View>
+            {addError && (
+              <Text style={styles.modalErrorText}>Entre une valeur supérieure à 0.</Text>
+            )}
             <View style={styles.modalActions}>
               <Pressable
                 style={[styles.modalButton, styles.modalCancelButton]}
                 onPress={() => {
                   setShowModal(false);
                   setAddValue('');
+                  setAddError(false);
                 }}
               >
                 <Text style={styles.modalCancelText}>Annuler</Text>
               </Pressable>
               <Pressable
-                style={[styles.modalButton, styles.modalConfirmButton]}
+                style={[
+                  styles.modalButton,
+                  styles.modalConfirmButton,
+                  !(Number(addValue) > 0) && styles.modalConfirmButtonDisabled,
+                ]}
                 onPress={handleAdd}
               >
                 <Text style={styles.modalConfirmText}>Enregistrer</Text>
@@ -649,6 +666,13 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: white(0.5),
   },
+  modalErrorText: {
+    fontFamily: fontFamily.bodyRegular,
+    fontSize: 12,
+    color: colors.late,
+    marginTop: 8,
+    textAlign: 'center',
+  },
   modalActions: {
     flexDirection: 'row',
     gap: 12,
@@ -671,6 +695,9 @@ const styles = StyleSheet.create({
   },
   modalConfirmButton: {
     backgroundColor: colors.brand,
+  },
+  modalConfirmButtonDisabled: {
+    opacity: 0.4,
   },
   modalConfirmText: {
     fontFamily: fontFamily.displayExtraBold,
