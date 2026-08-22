@@ -4,6 +4,7 @@ import { act, renderHook, waitFor } from '@testing-library/react-native';
 import { GoalsProvider, useGoals } from './goals-context';
 import { sendGoalReachedNotification } from './notifications';
 import { SettingsProvider, useSettings } from './settings-context';
+import { todayStr } from './stats';
 import { Goal } from './types';
 
 // sendGoalReachedNotification touches expo-notifications' native module, which
@@ -207,5 +208,42 @@ describe('addProgress', () => {
     act(() => result.current.goals.addProgress('g2', 30)); // complète l'objectif
 
     expect(mockedSendGoalReachedNotification).not.toHaveBeenCalled();
+  });
+
+  it('loses nothing and notifies exactly once on a double-tap (two calls before any re-render)', async () => {
+    const { result } = await renderHarness();
+    act(() => result.current.settings.updateSettings({ goalReachedNotifs: true }));
+
+    const almostThere: Goal = {
+      id: 'g3',
+      title: 'Double-tap goal',
+      targetValue: 30,
+      unit: 'reps',
+      createdAt: '2026-08-01T00:00:00.000Z',
+      deadline: '2026-08-31T00:00:00.000Z',
+      entries: [{ date: '2026-08-10', value: 20 }],
+    };
+    act(() => result.current.goals.createGoal(almostThere));
+
+    // Les deux appels sont regroupés dans le même act(), sans rendu entre
+    // eux — simule un double-tap sur "Enregistrer" (pas de garde
+    // anti-rebond aujourd'hui). Le premier (+5, 25/30 au total) ne franchit
+    // pas encore le seuil ; le second (+10, 35/30), empilé sur le résultat
+    // du premier plutôt que sur l'état d'avant les deux, le franchit.
+    act(() => {
+      result.current.goals.addProgress('g3', 5);
+      result.current.goals.addProgress('g3', 10);
+    });
+
+    const entries = result.current.goals.goals.find((g) => g.id === 'g3')?.entries;
+    // L'entrée du 10 août (hors double-tap) reste intacte ; les deux appels
+    // fusionnent dans l'entrée du jour (todayStr()), qui doit valoir 5 + 10
+    // = 15 — pas 5 d'un côté et 10 perdu ou écrasé de l'autre.
+    expect(entries).toHaveLength(2);
+    expect(entries?.find((e) => e.date === '2026-08-10')?.value).toBe(20);
+    expect(entries?.find((e) => e.date === todayStr())?.value).toBe(15);
+
+    expect(mockedSendGoalReachedNotification).toHaveBeenCalledTimes(1);
+    expect(mockedSendGoalReachedNotification).toHaveBeenCalledWith('Double-tap goal');
   });
 });
