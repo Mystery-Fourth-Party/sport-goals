@@ -28,7 +28,8 @@
       "expo-router",
       "expo-splash-screen",
       "@react-native-community/datetimepicker",
-      "expo-notifications"
+      "expo-notifications",
+      "expo-sharing"
     ],
     "experiments": {
       "typedRoutes": true
