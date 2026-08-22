@@ -33,6 +33,14 @@ interface GoalsContextValue {
   deleteEntry: (goalId: string, date: string) => void;
   updateGoal: (goalId: string, updates: Partial<Goal>) => void;
   deleteGoal: (goalId: string) => void;
+  // Remplace tout le tableau d'un coup (pas de fusion avec l'existant) —
+  // utilisé par la restauration d'une sauvegarde (voir app/settings.tsx),
+  // pas par une opération portant sur un objectif précis. Une restauration
+  // n'est pas un événement de complétion : aucune notification n'est
+  // déclenchée ici. Le rappel quotidien se reprogramme tout seul ensuite,
+  // ReminderScheduler réagissant déjà à tout changement de référence de
+  // `goals`.
+  replaceAllGoals: (goals: Goal[]) => void;
 }
 
 const GoalsContext = createContext<GoalsContextValue | null>(null);
@@ -177,6 +185,10 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
     setGoals((prev) => prev.filter((g) => g.id !== goalId));
   }
 
+  function replaceAllGoals(newGoals: Goal[]) {
+    setGoals(newGoals);
+  }
+
   return (
     <GoalsContext.Provider
       value={{
@@ -188,6 +200,7 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
         deleteEntry,
         updateGoal,
         deleteGoal,
+        replaceAllGoals,
       }}
     >
       {children}

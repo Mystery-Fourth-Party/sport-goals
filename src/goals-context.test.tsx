@@ -248,6 +248,36 @@ describe('addProgress', () => {
   });
 });
 
+describe('replaceAllGoals', () => {
+  it('replaces the whole array rather than merging with the existing one', async () => {
+    const { result } = await renderHarness();
+    act(() => result.current.goals.createGoal(baseGoal));
+
+    const restored: Goal[] = [
+      { ...baseGoal, id: 'restored-1' },
+      { ...baseGoal, id: 'restored-2' },
+    ];
+    act(() => result.current.goals.replaceAllGoals(restored));
+
+    expect(result.current.goals.goals.map((g) => g.id)).toEqual(['restored-1', 'restored-2']);
+  });
+
+  it('never sends a notification, even when a restored goal is already completed', async () => {
+    const { result } = await renderHarness();
+    act(() => result.current.settings.updateSettings({ goalReachedNotifs: true }));
+
+    const completedGoal: Goal = {
+      ...baseGoal,
+      id: 'restored-completed',
+      targetValue: 10,
+      entries: [{ date: '2026-08-10', value: 10 }],
+    };
+    act(() => result.current.goals.replaceAllGoals([completedGoal]));
+
+    expect(mockedSendGoalReachedNotification).not.toHaveBeenCalled();
+  });
+});
+
 describe('recordedAt', () => {
   // Timers réels le temps du rendu initial (chargement async depuis le mock
   // AsyncStorage) : on ne bascule en fake timers qu'une fois le harness prêt,
