@@ -3,6 +3,7 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { GoalsProvider } from '../src/goals-context';
+import ReminderScheduler from '../src/ReminderScheduler';
 import { SettingsProvider } from '../src/settings-context';
 import { colors, useAppFonts } from '../src/theme';
 
@@ -25,6 +26,7 @@ export default function RootLayout() {
   return (
     <SettingsProvider>
       <GoalsProvider>
+        <ReminderScheduler />
         {/* headerShown: false — chaque écran dessine son propre en-tête
             (BackButton + titre Barlow Condensed), comme dans le prototype. */}
         <Stack

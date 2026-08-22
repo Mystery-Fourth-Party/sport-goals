@@ -6,6 +6,11 @@ import DateTimePicker, {
 } from '@react-native-community/datetimepicker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BackButton, Toggle } from '../src/components/ui';
+import {
+  ensureNotificationPermission,
+  notificationsSupported,
+  parseReminderTime,
+} from '../src/notifications';
 import { useSettings } from '../src/settings-context';
 import { colors, fontFamily, radius, spacing, white } from '../src/theme';
 
@@ -28,11 +33,49 @@ export default function SettingsScreen() {
   // Android n'a pas d'équivalent "compact" inline : le picker ne s'affiche
   // que sur demande (voir handleTimeChange, qui le referme après le choix).
   const [showAndroidPicker, setShowAndroidPicker] = useState(false);
+  // Message affiché si la demande de permission échoue (plateforme non
+  // supportée ou refus de l'utilisateur) — voir requestPermissionOrExplain.
+  const [notifError, setNotifError] = useState<string | undefined>();
+
+  // Le picker natif (iOS/Android) ne peut pas produire de valeur invalide ;
+  // seul le repli texte libre du web (voir plus bas) en a besoin.
+  const reminderTimeError =
+    Platform.OS === 'web' && settings.dailyReminder && !parseReminderTime(settings.reminderTime)
+      ? 'Format invalide — utilise HH:mm (ex : 20:00).'
+      : undefined;
 
   function handleTimeChange(event: DateTimePickerEvent, selected?: Date) {
     if (Platform.OS === 'android') setShowAndroidPicker(false);
     if (event.type === 'dismissed' || !selected) return;
     updateSettings({ reminderTime: dateToTimeStr(selected) });
+  }
+
+  // La permission est demandée ici, au moment où l'utilisateur active un
+  // toggle qui en a besoin — pas au lancement de l'app, ni pour les toggles
+  // qui ne déclenchent rien de réel (almostThereNotifs ne pilote qu'une
+  // bannière in-app, voir app/goal/[id].tsx).
+  async function requestPermissionOrExplain(): Promise<boolean> {
+    if (!notificationsSupported()) {
+      setNotifError('Notifications indisponibles sur cette plateforme (web).');
+      return false;
+    }
+    const granted = await ensureNotificationPermission();
+    if (!granted) {
+      setNotifError("Notifications refusées — active-les dans les réglages de l'appareil.");
+      return false;
+    }
+    setNotifError(undefined);
+    return true;
+  }
+
+  async function handleDailyReminderToggle(v: boolean) {
+    if (v && !(await requestPermissionOrExplain())) return;
+    updateSettings({ dailyReminder: v });
+  }
+
+  async function handleGoalReachedToggle(v: boolean) {
+    if (v && !(await requestPermissionOrExplain())) return;
+    updateSettings({ goalReachedNotifs: v });
   }
 
   return (
@@ -44,60 +87,61 @@ export default function SettingsScreen() {
 
       <View style={styles.content}>
         <Text style={styles.sectionLabel}>Notifications</Text>
+        {notifError && <Text style={styles.errorText}>{notifError}</Text>}
         <View style={styles.card}>
           <View style={[styles.row, styles.rowBorder]}>
             <View style={styles.rowTexts}>
               <Text style={styles.rowTitle}>Rappel quotidien</Text>
               <Text style={styles.rowSubtitle}>Pour entrer ta progression chaque jour</Text>
             </View>
-            <Toggle
-              value={settings.dailyReminder}
-              onChange={(v) => updateSettings({ dailyReminder: v })}
-            />
+            <Toggle value={settings.dailyReminder} onChange={handleDailyReminderToggle} />
           </View>
 
           {settings.dailyReminder && (
-            <View style={[styles.row, styles.rowBorder]}>
-              <Text style={styles.rowTitle}>Heure du rappel</Text>
-              {Platform.OS === 'web' && (
-                // @react-native-community/datetimepicker n'a pas d'implémentation
-                // web (voir son fallback qui log un warning et rend null) : on
-                // garde la saisie texte libre uniquement sur cette plateforme.
-                <TextInput
-                  style={styles.timeInput}
-                  value={settings.reminderTime}
-                  onChangeText={(v) => updateSettings({ reminderTime: v })}
-                  placeholder="20:00"
-                  placeholderTextColor={white(0.2)}
-                />
-              )}
-              {Platform.OS === 'ios' && (
-                <DateTimePicker
-                  value={timeStrToDate(settings.reminderTime)}
-                  mode="time"
-                  display="compact"
-                  onChange={handleTimeChange}
-                />
-              )}
-              {Platform.OS === 'android' && (
-                <>
-                  <Pressable
-                    style={styles.timeValueButton}
-                    onPress={() => setShowAndroidPicker(true)}
-                  >
-                    <Text style={styles.timeValueText}>{settings.reminderTime}</Text>
-                  </Pressable>
-                  {showAndroidPicker && (
-                    <DateTimePicker
-                      value={timeStrToDate(settings.reminderTime)}
-                      mode="time"
-                      is24Hour
-                      display="default"
-                      onChange={handleTimeChange}
-                    />
-                  )}
-                </>
-              )}
+            <View style={[styles.row, styles.rowBorder, styles.rowWrap]}>
+              <View style={styles.timeRow}>
+                <Text style={styles.rowTitle}>Heure du rappel</Text>
+                {Platform.OS === 'web' && (
+                  // @react-native-community/datetimepicker n'a pas d'implémentation
+                  // web (voir son fallback qui log un warning et rend null) : on
+                  // garde la saisie texte libre uniquement sur cette plateforme.
+                  <TextInput
+                    style={styles.timeInput}
+                    value={settings.reminderTime}
+                    onChangeText={(v) => updateSettings({ reminderTime: v })}
+                    placeholder="20:00"
+                    placeholderTextColor={white(0.2)}
+                  />
+                )}
+                {Platform.OS === 'ios' && (
+                  <DateTimePicker
+                    value={timeStrToDate(settings.reminderTime)}
+                    mode="time"
+                    display="compact"
+                    onChange={handleTimeChange}
+                  />
+                )}
+                {Platform.OS === 'android' && (
+                  <>
+                    <Pressable
+                      style={styles.timeValueButton}
+                      onPress={() => setShowAndroidPicker(true)}
+                    >
+                      <Text style={styles.timeValueText}>{settings.reminderTime}</Text>
+                    </Pressable>
+                    {showAndroidPicker && (
+                      <DateTimePicker
+                        value={timeStrToDate(settings.reminderTime)}
+                        mode="time"
+                        is24Hour
+                        display="default"
+                        onChange={handleTimeChange}
+                      />
+                    )}
+                  </>
+                )}
+              </View>
+              {reminderTimeError && <Text style={styles.errorText}>{reminderTimeError}</Text>}
             </View>
           )}
 
@@ -106,10 +150,7 @@ export default function SettingsScreen() {
               <Text style={styles.rowTitle}>Objectif atteint 🏆</Text>
               <Text style={styles.rowSubtitle}>Célébration quand un objectif est complété</Text>
             </View>
-            <Toggle
-              value={settings.goalReachedNotifs}
-              onChange={(v) => updateSettings({ goalReachedNotifs: v })}
-            />
+            <Toggle value={settings.goalReachedNotifs} onChange={handleGoalReachedToggle} />
           </View>
 
           <View style={[styles.row, styles.rowBorder]}>
@@ -185,6 +226,22 @@ const styles = StyleSheet.create({
     color: white(0.3),
     marginBottom: 10,
     paddingHorizontal: 4,
+  },
+  errorText: {
+    fontFamily: fontFamily.bodyRegular,
+    fontSize: 12,
+    color: colors.late,
+    marginBottom: 10,
+    paddingHorizontal: 4,
+  },
+  rowWrap: {
+    flexDirection: 'column',
+    alignItems: 'stretch',
+  },
+  timeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   sectionLabelSpaced: {
     marginTop: 24,

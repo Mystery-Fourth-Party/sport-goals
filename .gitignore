@@ -18,6 +18,9 @@ expo-env.d.ts
 *.key
 *.mobileprovision
 
+# EAS (si jamais des credentials locaux sont générés au lieu du stockage géré par EAS)
+credentials.json
+
 # Metro
 .metro-health-check*
 

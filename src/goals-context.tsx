@@ -2,8 +2,10 @@
 // être accessible depuis tous les écrans (expo-router) plutôt que d'un seul
 // composant racine avec tout en props.
 import { createContext, ReactNode, useContext, useEffect, useRef, useState } from 'react';
+import { sendGoalReachedNotification } from './notifications';
+import { useSettings } from './settings-context';
 import { loadGoals, saveGoals } from './storage';
-import { todayStr } from './stats';
+import { getGoalStats, todayStr } from './stats';
 import { Goal } from './types';
 
 interface GoalsContextValue {
@@ -25,6 +27,9 @@ interface GoalsContextValue {
 const GoalsContext = createContext<GoalsContextValue | null>(null);
 
 export function GoalsProvider({ children }: { children: ReactNode }) {
+  // Rendu à l'intérieur de SettingsProvider (voir app/_layout.tsx) : lit le
+  // toggle "objectif atteint" pour savoir si addProgress doit notifier.
+  const { settings } = useSettings();
   const [goals, setGoals] = useState<Goal[]>([]);
   const [loaded, setLoaded] = useState(false);
   // true tant qu'on n'a pas encore ignoré le premier passage de l'effet de
@@ -57,18 +62,44 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
 
   function addProgress(goalId: string, amount: number) {
     const today = todayStr();
+    // Capturée en dehors du updater de setGoals plutôt qu'en y appelant
+    // directement sendGoalReachedNotification : un updater peut être
+    // ré-invoqué (StrictMode) et doit rester pur, alors que l'envoi de la
+    // notification est un effet de bord qui ne doit se produire qu'une fois.
+    let justCompletedTitle: string | null = null;
+
     setGoals((prev) =>
       prev.map((g) => {
         if (g.id !== goalId) return g;
+
+        let updated: Goal;
         const idx = g.entries.findIndex((e) => e.date === today);
         if (idx >= 0) {
           const entries = [...g.entries];
           entries[idx] = { date: today, value: entries[idx].value + amount };
-          return { ...g, entries };
+          updated = { ...g, entries };
+        } else {
+          updated = { ...g, entries: [...g.entries, { date: today, value: amount }] };
         }
-        return { ...g, entries: [...g.entries, { date: today, value: amount }] };
+
+        // Ne notifie qu'au moment précis où le statut *passe* à "completed",
+        // pas à chaque ajout une fois déjà atteint (sinon spam à chaque
+        // progression ajoutée après coup).
+        if (settings.goalReachedNotifs) {
+          const wasCompleted = getGoalStats(g, today).status === 'completed';
+          const isCompleted = getGoalStats(updated, today).status === 'completed';
+          if (!wasCompleted && isCompleted) {
+            justCompletedTitle = g.title;
+          }
+        }
+
+        return updated;
       }),
     );
+
+    if (justCompletedTitle) {
+      sendGoalReachedNotification(justCompletedTitle);
+    }
   }
 
   // Partial<Goal> : les écrans n'envoient que les champs édités (title,
