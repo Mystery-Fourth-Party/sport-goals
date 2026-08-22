@@ -22,7 +22,12 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": ["expo-font", "expo-router", "expo-splash-screen"],
+    "plugins": [
+      "expo-font",
+      "expo-router",
+      "expo-splash-screen",
+      "@react-native-community/datetimepicker"
+    ],
     "experiments": {
       "typedRoutes": true
     }

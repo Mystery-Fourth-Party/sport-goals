@@ -1,12 +1,39 @@
+import { useState } from 'react';
 import { router } from 'expo-router';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import DateTimePicker, {
+  DateTimePickerEvent,
+} from '@react-native-community/datetimepicker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BackButton, Toggle } from '../src/components/ui';
 import { useSettings } from '../src/settings-context';
 import { colors, fontFamily, radius, spacing, white } from '../src/theme';
 
+// "HH:mm" (format de stockage, voir settingsStorage.ts) <-> Date attendu par
+// DateTimePicker. Seules heures/minutes sont utilisées, le reste de la date
+// n'a pas de sens ici et est ignoré.
+function timeStrToDate(time: string): Date {
+  const [h, m] = time.split(':').map(Number);
+  const d = new Date();
+  d.setHours(h || 0, m || 0, 0, 0);
+  return d;
+}
+
+function dateToTimeStr(d: Date): string {
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
 export default function SettingsScreen() {
   const { settings, updateSettings } = useSettings();
+  // Android n'a pas d'équivalent "compact" inline : le picker ne s'affiche
+  // que sur demande (voir handleTimeChange, qui le referme après le choix).
+  const [showAndroidPicker, setShowAndroidPicker] = useState(false);
+
+  function handleTimeChange(event: DateTimePickerEvent, selected?: Date) {
+    if (Platform.OS === 'android') setShowAndroidPicker(false);
+    if (event.type === 'dismissed' || !selected) return;
+    updateSettings({ reminderTime: dateToTimeStr(selected) });
+  }
 
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
@@ -32,13 +59,45 @@ export default function SettingsScreen() {
           {settings.dailyReminder && (
             <View style={[styles.row, styles.rowBorder]}>
               <Text style={styles.rowTitle}>Heure du rappel</Text>
-              <TextInput
-                style={styles.timeInput}
-                value={settings.reminderTime}
-                onChangeText={(v) => updateSettings({ reminderTime: v })}
-                placeholder="20:00"
-                placeholderTextColor={white(0.2)}
-              />
+              {Platform.OS === 'web' && (
+                // @react-native-community/datetimepicker n'a pas d'implémentation
+                // web (voir son fallback qui log un warning et rend null) : on
+                // garde la saisie texte libre uniquement sur cette plateforme.
+                <TextInput
+                  style={styles.timeInput}
+                  value={settings.reminderTime}
+                  onChangeText={(v) => updateSettings({ reminderTime: v })}
+                  placeholder="20:00"
+                  placeholderTextColor={white(0.2)}
+                />
+              )}
+              {Platform.OS === 'ios' && (
+                <DateTimePicker
+                  value={timeStrToDate(settings.reminderTime)}
+                  mode="time"
+                  display="compact"
+                  onChange={handleTimeChange}
+                />
+              )}
+              {Platform.OS === 'android' && (
+                <>
+                  <Pressable
+                    style={styles.timeValueButton}
+                    onPress={() => setShowAndroidPicker(true)}
+                  >
+                    <Text style={styles.timeValueText}>{settings.reminderTime}</Text>
+                  </Pressable>
+                  {showAndroidPicker && (
+                    <DateTimePicker
+                      value={timeStrToDate(settings.reminderTime)}
+                      mode="time"
+                      is24Hour
+                      display="default"
+                      onChange={handleTimeChange}
+                    />
+                  )}
+                </>
+              )}
             </View>
           )}
 
@@ -180,6 +239,21 @@ const styles = StyleSheet.create({
     color: colors.fg,
     minWidth: 72,
     textAlign: 'center',
+  },
+  timeValueButton: {
+    backgroundColor: colors.cardElevated,
+    borderWidth: 1,
+    borderColor: white(0.08),
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    minWidth: 72,
+    alignItems: 'center',
+  },
+  timeValueText: {
+    fontFamily: fontFamily.bodyRegular,
+    fontSize: 14,
+    color: colors.fg,
   },
   versionValue: {
     fontFamily: fontFamily.bodyRegular,

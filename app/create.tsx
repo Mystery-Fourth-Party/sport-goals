@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import GoalForm from '../src/components/GoalForm';
 import { BackButton } from '../src/components/ui';
@@ -21,9 +21,14 @@ export default function CreateGoalScreen() {
         <BackButton onPress={() => router.back()} />
         <Text style={styles.title}>Nouvel Objectif</Text>
       </View>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <GoalForm onCreate={handleCreate} />
-      </ScrollView>
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoider}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+          <GoalForm onCreate={handleCreate} />
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -46,6 +51,9 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     color: colors.fg,
+  },
+  keyboardAvoider: {
+    flex: 1,
   },
   content: {
     paddingHorizontal: spacing.screenPadding,

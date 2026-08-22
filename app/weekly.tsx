@@ -93,7 +93,11 @@ export default function WeeklyScreen() {
 
         {mostBehind && (
           <View style={[styles.card, styles.listCard]}>
-            <Text style={[styles.label, styles.listCardHeader]}>Objectif le plus en retard ⚠️</Text>
+            <Text style={[styles.label, styles.listCardHeader]}>
+              {mostBehind.stats.status === 'late'
+                ? 'Objectif le plus en retard ⚠️'
+                : 'Objectif le moins avancé'}
+            </Text>
             <View style={styles.goalRow}>
               <View style={styles.goalRowTop}>
                 <View style={styles.goalRowLeft}>
@@ -111,7 +115,7 @@ export default function WeeklyScreen() {
                 <StatusBadge status={mostBehind.stats.status} />
               </View>
               <ProgressBar value={mostBehind.stats.progress} status={mostBehind.stats.status} />
-              {mostBehind.stats.dailyRequired > 0 && (
+              {mostBehind.stats.status === 'late' && mostBehind.stats.dailyRequired > 0 && (
                 <Text style={styles.behindHint}>
                   ↑ {fmt(mostBehind.stats.dailyRequired, mostBehind.goal.unit)}/jour pour rattraper
                 </Text>
