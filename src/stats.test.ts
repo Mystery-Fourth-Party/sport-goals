@@ -1,5 +1,13 @@
 import { Goal } from './types';
-import { calcStreak, dateStr, fmt, getGoalStats, getWeeklyStats, parseDate } from './stats';
+import {
+  calcStreak,
+  dateStr,
+  fmt,
+  getGoalStats,
+  getWeeklyStats,
+  parseDate,
+  splitGoalsByStatus,
+} from './stats';
 
 // Objectif "1000 Pompes" du prototype Figma Make (design-reference/figma-make-source.tsx,
 // SAMPLE_GOALS[0]), avec startDate/endDate portés sur createdAt/deadline (ISO complet).
@@ -127,6 +135,38 @@ describe('getWeeklyStats', () => {
     ]);
     expect(w.mostAdvanced?.goal.id).toBe('1');
     expect(w.mostBehind?.goal.id).toBe('2');
+  });
+});
+
+describe('splitGoalsByStatus', () => {
+  // Cible atteinte quel que soit le statut d'avancement attendu ce jour-là.
+  const completed: Goal = { ...pompes, id: 'done', entries: [{ date: '2026-08-31', value: 1000 }] };
+  // Aucune entrée : pas "completed" (voir getGoalStats — not-started).
+  const active: Goal = { ...pompes, id: 'active', entries: [] };
+
+  it('splits a mix of active and completed goals, keeping original order in each list', () => {
+    const goals = [active, completed, pompes];
+    const result = splitGoalsByStatus(goals, TODAY);
+
+    expect(result.active.map((g) => g.id)).toEqual(['active', '1']);
+    expect(result.completed.map((g) => g.id)).toEqual(['done']);
+  });
+
+  it('puts everything in active when nothing is completed', () => {
+    const result = splitGoalsByStatus([active, pompes], TODAY);
+    expect(result.active).toHaveLength(2);
+    expect(result.completed).toEqual([]);
+  });
+
+  it('puts everything in completed when all goals are done', () => {
+    const otherCompleted: Goal = { ...completed, id: 'done-2' };
+    const result = splitGoalsByStatus([completed, otherCompleted], TODAY);
+    expect(result.completed.map((g) => g.id)).toEqual(['done', 'done-2']);
+    expect(result.active).toEqual([]);
+  });
+
+  it('returns two empty lists for an empty input', () => {
+    expect(splitGoalsByStatus([], TODAY)).toEqual({ active: [], completed: [] });
   });
 });
 

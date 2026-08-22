@@ -4,21 +4,20 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import GoalCard from '../src/components/GoalCard';
 import { fullDateLabel } from '../src/dateLabels';
 import { useGoals } from '../src/goals-context';
-import { getGoalStats, todayStr } from '../src/stats';
+import { splitGoalsByStatus, todayStr } from '../src/stats';
 import { colors, fontFamily, radius, size, spacing, white } from '../src/theme';
 
 export default function GoalListScreen() {
   const { goals, loaded } = useGoals();
   const today = todayStr();
-  const active = goals.filter((g) => getGoalStats(g, today).status !== 'completed').length;
-  const done = goals.length - active;
+  const { active, completed } = splitGoalsByStatus(goals, today);
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
       <FlatList
         style={styles.list}
         contentContainerStyle={styles.listContent}
-        data={goals}
+        data={active}
         keyExtractor={(g) => g.id}
         renderItem={({ item }) => (
           <GoalCard goal={item} onPress={() => router.push(`/goal/${item.id}`)} />
@@ -45,12 +44,18 @@ export default function GoalListScreen() {
               <View style={styles.statsRow}>
                 <View style={[styles.statCard, styles.statCardActive]}>
                   <Text style={[styles.statLabel, { color: colors.brand }]}>En cours</Text>
-                  <Text style={styles.statValue}>{active}</Text>
+                  <Text style={styles.statValue}>{active.length}</Text>
                 </View>
-                <View style={[styles.statCard, styles.statCardDone]}>
-                  <Text style={[styles.statLabel, { color: colors.ahead }]}>Terminés</Text>
-                  <Text style={styles.statValue}>{done}</Text>
-                </View>
+                <Pressable
+                  style={[styles.statCard, styles.statCardDone]}
+                  onPress={() => router.push('/archive')}
+                >
+                  <View style={styles.statLabelRow}>
+                    <Text style={[styles.statLabel, { color: colors.ahead }]}>Terminés</Text>
+                    <Text style={styles.statChevron}>›</Text>
+                  </View>
+                  <Text style={styles.statValue}>{completed.length}</Text>
+                </Pressable>
                 <View style={styles.statCard}>
                   <Text style={styles.statLabelMuted}>Total</Text>
                   <Text style={styles.statValue}>{goals.length}</Text>
@@ -60,7 +65,7 @@ export default function GoalListScreen() {
           </>
         }
         ListEmptyComponent={
-          loaded ? (
+          !loaded ? null : goals.length === 0 ? (
             <View style={styles.empty}>
               <Text style={styles.emptyEmoji}>🎯</Text>
               <Text style={styles.emptyTitle}>Aucun objectif</Text>
@@ -71,7 +76,22 @@ export default function GoalListScreen() {
                 <Text style={styles.emptyButtonText}>Créer un objectif</Text>
               </Pressable>
             </View>
-          ) : null
+          ) : (
+            // Tous les objectifs existants sont terminés — pas la même
+            // situation que "aucun objectif du tout" : message dédié plutôt
+            // que de tomber dans le même état vide.
+            <View style={styles.empty}>
+              <Text style={styles.emptyEmoji}>🏆</Text>
+              <Text style={styles.emptyTitle}>Tout est accompli</Text>
+              <Text style={styles.emptyText}>
+                Tous tes objectifs sont terminés — retrouve-les dans l&apos;archive, ou fixe-toi un
+                nouveau défi.
+              </Text>
+              <Pressable style={styles.emptyButton} onPress={() => router.push('/archive')}>
+                <Text style={styles.emptyButtonText}>Voir l&apos;archive</Text>
+              </Pressable>
+            </View>
+          )
         }
       />
 
@@ -157,11 +177,24 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(34,197,94,0.1)',
     borderColor: 'rgba(34,197,94,0.15)',
   },
+  statLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   statLabel: {
     fontFamily: fontFamily.bodyRegular,
     fontSize: 10,
     textTransform: 'uppercase',
     letterSpacing: 1,
+  },
+  // Légère affordance visuelle : la carte "Terminés" est pressable
+  // (navigue vers /archive), contrairement aux deux autres.
+  statChevron: {
+    fontFamily: fontFamily.bodyRegular,
+    fontSize: 13,
+    color: colors.ahead,
+    opacity: 0.6,
   },
   statLabelMuted: {
     fontFamily: fontFamily.bodyRegular,
