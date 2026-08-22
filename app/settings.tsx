@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { router } from 'expo-router';
-import { Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import * as DocumentPicker from 'expo-document-picker';
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { buildBackupPayload } from '../src/backup';
+import { buildBackupPayload, parseBackupPayload } from '../src/backup';
 import { BackButton, Toggle } from '../src/components/ui';
 import { useGoals } from '../src/goals-context';
 import {
@@ -40,7 +41,7 @@ function dateToTimeStr(d: Date): string {
 
 export default function SettingsScreen() {
   const { settings, updateSettings } = useSettings();
-  const { goals } = useGoals();
+  const { goals, replaceAllGoals } = useGoals();
   // Android n'a pas d'équivalent "compact" inline : le picker ne s'affiche
   // que sur demande (voir handleTimeChange, qui le referme après le choix).
   const [showAndroidPicker, setShowAndroidPicker] = useState(false);
@@ -123,6 +124,67 @@ export default function SettingsScreen() {
     } catch (error) {
       console.error('handleExport: échec.', error);
       setDataError("Échec de l'export — réessaie.");
+    }
+  }
+
+  // Commun aux deux plateformes une fois le contenu du fichier lu (voir
+  // handleImport ci-dessous) : parse, valide, et ne remplace qu'après
+  // confirmation explicite — même pattern Alert.alert / window.confirm que
+  // handleDelete des écrans objectif (voir app/goal/[id].tsx).
+  function confirmAndImport(text: string) {
+    const result = parseBackupPayload(text);
+    if (!result.ok) {
+      setDataError(result.error);
+      return;
+    }
+    setDataError(undefined);
+
+    const importedCount = result.goals.length;
+    const currentCount = goals.length;
+    const message = `Ça va REMPLACER tes ${currentCount} objectif(s) actuel(s) par les ${importedCount} objectif(s) de ce fichier.`;
+    const confirmed = () => {
+      replaceAllGoals(result.goals);
+      if (result.settings) updateSettings(result.settings);
+    };
+
+    if (Platform.OS === 'web') {
+      if (window.confirm(`Importer ces données ?\n\n${message}`)) confirmed();
+      return;
+    }
+    Alert.alert('Importer ces données ?', message, [
+      { text: 'Annuler', style: 'cancel' },
+      { text: 'Importer', style: 'destructive', onPress: confirmed },
+    ]);
+  }
+
+  async function handleImport() {
+    setDataError(undefined);
+    try {
+      if (Platform.OS === 'web') {
+        // Input caché, créé et déclenché par script — jamais monté dans le
+        // JSX, même esprit que le <a download> de handleExport.
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'application/json';
+        input.onchange = () => {
+          const picked = input.files?.[0];
+          if (!picked) return; // annulation : rien ne se passe.
+          const reader = new FileReader();
+          reader.onload = () => confirmAndImport(String(reader.result ?? ''));
+          reader.onerror = () => setDataError('Échec de la lecture du fichier.');
+          reader.readAsText(picked);
+        };
+        input.click();
+        return;
+      }
+
+      const picked = await DocumentPicker.getDocumentAsync({ type: 'application/json' });
+      if (picked.canceled) return; // rien ne se passe.
+      const text = await new File(picked.assets[0].uri).text();
+      confirmAndImport(text);
+    } catch (error) {
+      console.error('handleImport: échec.', error);
+      setDataError("Échec de l'import — réessaie.");
     }
   }
 
@@ -234,6 +296,15 @@ export default function SettingsScreen() {
               <Text style={styles.rowTitle}>Exporter mes données</Text>
               <Text style={styles.rowSubtitle}>
                 Sauvegarde tes objectifs et réglages dans un fichier JSON
+              </Text>
+            </View>
+            <Text style={styles.rowChevron}>›</Text>
+          </Pressable>
+          <Pressable style={styles.row} onPress={handleImport}>
+            <View style={styles.rowTexts}>
+              <Text style={styles.rowTitle}>Importer des données</Text>
+              <Text style={styles.rowSubtitle}>
+                Remplace tes objectifs actuels par un fichier exporté
               </Text>
             </View>
             <Text style={styles.rowChevron}>›</Text>
