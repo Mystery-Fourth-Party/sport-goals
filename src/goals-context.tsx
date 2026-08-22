@@ -73,43 +73,37 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
 
   function addProgress(goalId: string, amount: number) {
     const today = todayStr();
-    // Capturée en dehors du updater de setGoals plutôt qu'en y appelant
-    // directement sendGoalReachedNotification : un updater peut être
-    // ré-invoqué (StrictMode) et doit rester pur, alors que l'envoi de la
-    // notification est un effet de bord qui ne doit se produire qu'une fois.
-    let justCompletedTitle: string | null = null;
+    const current = goals.find((g) => g.id === goalId);
+    if (!current) return;
 
-    setGoals((prev) =>
-      prev.map((g) => {
-        if (g.id !== goalId) return g;
+    const idx = current.entries.findIndex((e) => e.date === today);
+    const entries =
+      idx >= 0
+        ? current.entries.map((e, i) => (i === idx ? { date: today, value: e.value + amount } : e))
+        : [...current.entries, { date: today, value: amount }];
+    const updated: Goal = { ...current, entries };
 
-        let updated: Goal;
-        const idx = g.entries.findIndex((e) => e.date === today);
-        if (idx >= 0) {
-          const entries = [...g.entries];
-          entries[idx] = { date: today, value: entries[idx].value + amount };
-          updated = { ...g, entries };
-        } else {
-          updated = { ...g, entries: [...g.entries, { date: today, value: amount }] };
-        }
+    // updated est calculé une seule fois ci-dessus, à partir de l'état déjà
+    // rendu (`goals`, capturé par cette fermeture) — pas recalculé dans le
+    // updater de setGoals ci-dessous, dont on ne peut pas dépendre pour lire
+    // une valeur juste après l'appel (son exécution n'est pas synchrone avec
+    // la suite de cette fonction, voir le commentaire de wasCompleted/
+    // isCompleted plus bas).
+    setGoals((prev) => prev.map((g) => (g.id === goalId ? updated : g)));
 
-        // Ne notifie qu'au moment précis où le statut *passe* à "completed",
-        // pas à chaque ajout une fois déjà atteint (sinon spam à chaque
-        // progression ajoutée après coup).
-        if (settings.goalReachedNotifs) {
-          const wasCompleted = getGoalStats(g, today).status === 'completed';
-          const isCompleted = getGoalStats(updated, today).status === 'completed';
-          if (!wasCompleted && isCompleted) {
-            justCompletedTitle = g.title;
-          }
-        }
-
-        return updated;
-      }),
-    );
-
-    if (justCompletedTitle) {
-      sendGoalReachedNotification(justCompletedTitle);
+    // Ne notifie qu'au moment précis où le statut *passe* à "completed", pas
+    // à chaque ajout une fois déjà atteint (sinon spam à chaque progression
+    // ajoutée après coup). Comparé à partir de `current`/`updated` (calculés
+    // ci-dessus, synchrones) plutôt que d'un side-channel rempli à
+    // l'intérieur du updater de setGoals : ce dernier ne s'exécute pas
+    // forcément avant la ligne suivante, donc le lire ici serait souvent
+    // encore `null` au moment du check.
+    if (settings.goalReachedNotifs) {
+      const wasCompleted = getGoalStats(current, today).status === 'completed';
+      const isCompleted = getGoalStats(updated, today).status === 'completed';
+      if (!wasCompleted && isCompleted) {
+        sendGoalReachedNotification(current.title);
+      }
     }
   }
 
