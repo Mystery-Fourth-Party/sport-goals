@@ -20,6 +20,17 @@ interface GoalsContextValue {
   // de vérité. Pas de clamp ici : dépasser targetValue est possible,
   // ProgressBar se contente de clamper l'affichage.
   addProgress: (goalId: string, amount: number) => void;
+  // Remplace la valeur de l'entrée existante à `date` (ne s'additionne pas,
+  // contrairement à addProgress) — corrige une saisie, ne "progresse" pas.
+  // newValue <= 0 est ignoré ici (pas seulement côté UI) : mettre une entrée
+  // à 0 par cette voie serait équivoque avec deleteEntry, voir son commentaire.
+  updateEntry: (goalId: string, date: string, newValue: number) => void;
+  // Retire l'entrée du jour du tableau plutôt que de la mettre à 0 :
+  // `value: 0` reste une valeur valide et signifiante ailleurs (voir
+  // ongoingGoalsWithoutTodayEntry dans notifications.ts), donc "il n'y a
+  // pas d'entrée ce jour-là" doit rester distinct de "il y a une entrée à
+  // 0 ce jour-là".
+  deleteEntry: (goalId: string, date: string) => void;
   updateGoal: (goalId: string, updates: Partial<Goal>) => void;
   deleteGoal: (goalId: string) => void;
 }
@@ -36,6 +47,24 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
   // sauvegarde suivant le chargement (ce passage sauvegarderait des données
   // identiques à ce qui vient d'être lu, donc redondant).
   const skipNextSave = useRef(true);
+  // Titre de l'objectif à notifier, posé depuis l'intérieur du updater de
+  // setGoals dans addProgress (voir ce commentaire pour le pourquoi) et
+  // consommé par l'effet juste en dessous.
+  const pendingGoalReachedTitle = useRef<string | null>(null);
+
+  // Envoie la notification "objectif atteint" décidée par le plus récent
+  // addProgress, une fois l'état effectivement commité — jamais lue depuis
+  // l'intérieur du updater lui-même (voir addProgress) ni juste après
+  // l'appel à setGoals (l'updater n'est pas garanti de s'être exécuté à ce
+  // moment-là). Sans dépendances : tourne après chaque rendu, mais ne fait
+  // quelque chose que si le ref a été armé, qu'il vide aussitôt.
+  useEffect(() => {
+    if (pendingGoalReachedTitle.current) {
+      const title = pendingGoalReachedTitle.current;
+      pendingGoalReachedTitle.current = null;
+      sendGoalReachedNotification(title);
+    }
+  });
 
   // Chargement initial depuis AsyncStorage (équivalent d'un fetch au mount).
   useEffect(() => {
@@ -62,44 +91,66 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
 
   function addProgress(goalId: string, amount: number) {
     const today = todayStr();
-    // Capturée en dehors du updater de setGoals plutôt qu'en y appelant
-    // directement sendGoalReachedNotification : un updater peut être
-    // ré-invoqué (StrictMode) et doit rester pur, alors que l'envoi de la
-    // notification est un effet de bord qui ne doit se produire qu'une fois.
-    let justCompletedTitle: string | null = null;
 
+    // Tout calculé à partir de `prev` (l'état passé au updater), jamais de
+    // `goals` lu depuis la fermeture du composant : si addProgress est
+    // appelé deux fois avant qu'un rendu ne s'intercale (double-tap sans
+    // garde anti-rebond), React applique les deux updaters l'un après
+    // l'autre, chacun recevant le résultat du précédent comme `prev` — donc
+    // rien n'est perdu et "était-ce déjà complété avant ce call précis" se
+    // décide sur le bon état. Même principe que updateEntry/deleteEntry.
     setGoals((prev) =>
       prev.map((g) => {
         if (g.id !== goalId) return g;
 
-        let updated: Goal;
         const idx = g.entries.findIndex((e) => e.date === today);
-        if (idx >= 0) {
-          const entries = [...g.entries];
-          entries[idx] = { date: today, value: entries[idx].value + amount };
-          updated = { ...g, entries };
-        } else {
-          updated = { ...g, entries: [...g.entries, { date: today, value: amount }] };
-        }
+        const entries =
+          idx >= 0
+            ? g.entries.map((e, i) => (i === idx ? { date: today, value: e.value + amount } : e))
+            : [...g.entries, { date: today, value: amount }];
+        const updated: Goal = { ...g, entries };
 
         // Ne notifie qu'au moment précis où le statut *passe* à "completed",
         // pas à chaque ajout une fois déjà atteint (sinon spam à chaque
-        // progression ajoutée après coup).
+        // progression ajoutée après coup). Le titre est posé dans un ref
+        // plutôt qu'envoyé ici directement : cet updater doit rester pur
+        // (StrictMode peut le réinvoquer avec le même `prev`, auquel cas il
+        // réécrit juste la même valeur — sans risque), l'envoi réel de la
+        // notification est un effet de bord réservé à l'effect au-dessus,
+        // qui tourne une fois l'état effectivement commité.
         if (settings.goalReachedNotifs) {
           const wasCompleted = getGoalStats(g, today).status === 'completed';
           const isCompleted = getGoalStats(updated, today).status === 'completed';
           if (!wasCompleted && isCompleted) {
-            justCompletedTitle = g.title;
+            pendingGoalReachedTitle.current = g.title;
           }
         }
 
         return updated;
       }),
     );
+  }
 
-    if (justCompletedTitle) {
-      sendGoalReachedNotification(justCompletedTitle);
-    }
+  function updateEntry(goalId: string, date: string, newValue: number) {
+    if (newValue <= 0) return;
+    setGoals((prev) =>
+      prev.map((g) => {
+        if (g.id !== goalId) return g;
+        const idx = g.entries.findIndex((e) => e.date === date);
+        if (idx < 0) return g;
+        const entries = [...g.entries];
+        entries[idx] = { date, value: newValue };
+        return { ...g, entries };
+      }),
+    );
+  }
+
+  function deleteEntry(goalId: string, date: string) {
+    setGoals((prev) =>
+      prev.map((g) =>
+        g.id === goalId ? { ...g, entries: g.entries.filter((e) => e.date !== date) } : g,
+      ),
+    );
   }
 
   // Partial<Goal> : les écrans n'envoient que les champs édités (title,
@@ -114,7 +165,16 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
 
   return (
     <GoalsContext.Provider
-      value={{ goals, loaded, createGoal, addProgress, updateGoal, deleteGoal }}
+      value={{
+        goals,
+        loaded,
+        createGoal,
+        addProgress,
+        updateEntry,
+        deleteEntry,
+        updateGoal,
+        deleteGoal,
+      }}
     >
       {children}
     </GoalsContext.Provider>
