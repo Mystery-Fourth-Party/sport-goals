@@ -80,6 +80,13 @@ describe('getGoalStats', () => {
     expect(s.progress).toBe(1);
   });
 
+  it('lets progress exceed 100% when the goal is overshot, and still marks it completed', () => {
+    const overshot: Goal = { ...pompes, entries: [{ date: '2026-08-31', value: 1500 }] };
+    const s = getGoalStats(overshot, '2026-09-05');
+    expect(s.status).toBe('completed');
+    expect(s.progress).toBe(1.5);
+  });
+
   it('is missing entries safe (defaults to an empty history)', () => {
     const legacy = { ...pompes } as Goal;
     delete (legacy as { entries?: unknown }).entries;

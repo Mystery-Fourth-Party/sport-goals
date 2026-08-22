@@ -82,7 +82,10 @@ export function getGoalStats(goal: Goal, today: string): GoalStats {
   const remainingDays = Math.max(0, diffDays(todayDate, end));
 
   const actual = entries.reduce((sum, e) => sum + e.value, 0);
-  const progress = goal.targetValue > 0 ? Math.min(actual / goal.targetValue, 1) : 0;
+  // Pas de plafond ici : un objectif dépassé doit pouvoir afficher >100%.
+  // Le plafonnement visuel de la barre de progression vit dans ProgressBar
+  // (largeur à l'écran), pas dans ce calcul.
+  const progress = goal.targetValue > 0 ? actual / goal.targetValue : 0;
   const expectedProgress = totalDays > 0 ? elapsedDays / totalDays : 0;
   const dailyRequired = remainingDays > 0 ? (goal.targetValue - actual) / remainingDays : 0;
   const dailyAvg = totalDays > 0 ? goal.targetValue / totalDays : 0;
