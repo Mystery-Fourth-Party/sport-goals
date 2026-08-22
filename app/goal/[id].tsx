@@ -566,7 +566,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     paddingHorizontal: spacing.screenPadding,
-    paddingBottom: 24,
+    paddingBottom: 32,
     paddingTop: 16,
   },
   ctaButton: {
