@@ -134,6 +134,28 @@ export function calcStreak(entries: Entry[], today: string): number {
   return streak;
 }
 
+// ─── Actifs / terminés ──────────────────────────────────────────────────
+// Dérivé de getGoalStats à chaque appel, jamais stocké sur Goal : depuis
+// l'édition/suppression d'entrée, un objectif "completed" peut redevenir
+// non-complété si on corrige/supprime l'entrée qui l'avait fait basculer —
+// un flag persisté se désynchroniserait de ce cas.
+
+export function splitGoalsByStatus(
+  goals: Goal[],
+  today: string,
+): { active: Goal[]; completed: Goal[] } {
+  const active: Goal[] = [];
+  const completed: Goal[] = [];
+  for (const g of goals) {
+    if (getGoalStats(g, today).status === 'completed') {
+      completed.push(g);
+    } else {
+      active.push(g);
+    }
+  }
+  return { active, completed };
+}
+
 // ─── Résumé hebdomadaire ────────────────────────────────────────────────
 
 export function getWeeklyStats(goals: Goal[], today: string): WeeklyStats {
