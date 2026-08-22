@@ -20,6 +20,17 @@ interface GoalsContextValue {
   // de vérité. Pas de clamp ici : dépasser targetValue est possible,
   // ProgressBar se contente de clamper l'affichage.
   addProgress: (goalId: string, amount: number) => void;
+  // Remplace la valeur de l'entrée existante à `date` (ne s'additionne pas,
+  // contrairement à addProgress) — corrige une saisie, ne "progresse" pas.
+  // newValue <= 0 est ignoré ici (pas seulement côté UI) : mettre une entrée
+  // à 0 par cette voie serait équivoque avec deleteEntry, voir son commentaire.
+  updateEntry: (goalId: string, date: string, newValue: number) => void;
+  // Retire l'entrée du jour du tableau plutôt que de la mettre à 0 :
+  // `value: 0` reste une valeur valide et signifiante ailleurs (voir
+  // ongoingGoalsWithoutTodayEntry dans notifications.ts), donc "il n'y a
+  // pas d'entrée ce jour-là" doit rester distinct de "il y a une entrée à
+  // 0 ce jour-là".
+  deleteEntry: (goalId: string, date: string) => void;
   updateGoal: (goalId: string, updates: Partial<Goal>) => void;
   deleteGoal: (goalId: string) => void;
 }
@@ -102,6 +113,28 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  function updateEntry(goalId: string, date: string, newValue: number) {
+    if (newValue <= 0) return;
+    setGoals((prev) =>
+      prev.map((g) => {
+        if (g.id !== goalId) return g;
+        const idx = g.entries.findIndex((e) => e.date === date);
+        if (idx < 0) return g;
+        const entries = [...g.entries];
+        entries[idx] = { date, value: newValue };
+        return { ...g, entries };
+      }),
+    );
+  }
+
+  function deleteEntry(goalId: string, date: string) {
+    setGoals((prev) =>
+      prev.map((g) =>
+        g.id === goalId ? { ...g, entries: g.entries.filter((e) => e.date !== date) } : g,
+      ),
+    );
+  }
+
   // Partial<Goal> : les écrans n'envoient que les champs édités (title,
   // targetValue, unit, deadline), entries et id restent inchangés.
   function updateGoal(goalId: string, updates: Partial<Goal>) {
@@ -114,7 +147,16 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
 
   return (
     <GoalsContext.Provider
-      value={{ goals, loaded, createGoal, addProgress, updateGoal, deleteGoal }}
+      value={{
+        goals,
+        loaded,
+        createGoal,
+        addProgress,
+        updateEntry,
+        deleteEntry,
+        updateGoal,
+        deleteGoal,
+      }}
     >
       {children}
     </GoalsContext.Provider>
