@@ -1,9 +1,7 @@
 import { useState } from 'react';
 import { router } from 'expo-router';
 import { Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import DateTimePicker, {
-  DateTimePickerEvent,
-} from '@react-native-community/datetimepicker';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BackButton, Toggle } from '../src/components/ui';
 import {
