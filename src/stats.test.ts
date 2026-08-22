@@ -62,6 +62,17 @@ describe('getGoalStats', () => {
     expect(s.actual).toBe(0);
   });
 
+  it('is not not-started when created today but an entry already exists for today', () => {
+    const createdToday: Goal = {
+      ...pompes,
+      createdAt: '2026-08-01T00:00:00.000Z',
+      entries: [{ date: '2026-08-01', value: 10 }],
+    };
+    const s = getGoalStats(createdToday, '2026-08-01');
+    expect(s.status).not.toBe('not-started');
+    expect(s.actual).toBe(10);
+  });
+
   it('marks a goal completed once actual reaches the target, even past the deadline', () => {
     const done: Goal = { ...pompes, entries: [{ date: '2026-08-31', value: 1000 }] };
     const s = getGoalStats(done, '2026-09-05');

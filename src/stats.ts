@@ -90,7 +90,7 @@ export function getGoalStats(goal: Goal, today: string): GoalStats {
   let status: Status;
   if (progress >= 1) {
     status = 'completed';
-  } else if (elapsedDays === 0) {
+  } else if (elapsedDays === 0 && actual === 0) {
     status = 'not-started';
   } else {
     const diff = progress - expectedProgress;
