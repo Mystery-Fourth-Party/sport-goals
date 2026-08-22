@@ -91,6 +91,11 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
 
   function addProgress(goalId: string, amount: number) {
     const today = todayStr();
+    // Capturé une seule fois ici plutôt qu'appelé à l'intérieur de
+    // l'updater ci-dessous : cet updater peut être réinvoqué avec le même
+    // `prev` par StrictMode et doit rester déterministe pour ce `prev` —
+    // même raison que `today`, qui suit déjà ce principe.
+    const now = new Date().toISOString();
 
     // Tout calculé à partir de `prev` (l'état passé au updater), jamais de
     // `goals` lu depuis la fermeture du composant : si addProgress est
@@ -104,10 +109,15 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
         if (g.id !== goalId) return g;
 
         const idx = g.entries.findIndex((e) => e.date === today);
+        // recordedAt représente le dernier enregistrement sur cette entrée
+        // (pas sa création) : posé aussi bien sur une nouvelle entrée que
+        // sur une fusion.
         const entries =
           idx >= 0
-            ? g.entries.map((e, i) => (i === idx ? { date: today, value: e.value + amount } : e))
-            : [...g.entries, { date: today, value: amount }];
+            ? g.entries.map((e, i) =>
+                i === idx ? { date: today, value: e.value + amount, recordedAt: now } : e,
+              )
+            : [...g.entries, { date: today, value: amount, recordedAt: now }];
         const updated: Goal = { ...g, entries };
 
         // Ne notifie qu'au moment précis où le statut *passe* à "completed",
@@ -133,13 +143,17 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
 
   function updateEntry(goalId: string, date: string, newValue: number) {
     if (newValue <= 0) return;
+    // Même raison que dans addProgress : capturé une seule fois ici, pas
+    // appelé à l'intérieur de l'updater.
+    const now = new Date().toISOString();
     setGoals((prev) =>
       prev.map((g) => {
         if (g.id !== goalId) return g;
         const idx = g.entries.findIndex((e) => e.date === date);
         if (idx < 0) return g;
         const entries = [...g.entries];
-        entries[idx] = { date, value: newValue };
+        // Une correction est aussi un enregistrement.
+        entries[idx] = { date, value: newValue, recordedAt: now };
         return { ...g, entries };
       }),
     );

@@ -247,3 +247,58 @@ describe('addProgress', () => {
     expect(mockedSendGoalReachedNotification).toHaveBeenCalledWith('Double-tap goal');
   });
 });
+
+describe('recordedAt', () => {
+  // Timers réels le temps du rendu initial (chargement async depuis le mock
+  // AsyncStorage) : on ne bascule en fake timers qu'une fois le harness prêt,
+  // pour ne pas perturber cette résolution avec `now()` figé.
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('is stamped on a newly created entry and updated on a same-day merge', async () => {
+    const { result } = await renderHarness();
+
+    const fresh: Goal = {
+      id: 'g4',
+      title: 'Timestamped goal',
+      targetValue: 100,
+      unit: 'reps',
+      createdAt: '2026-08-01T00:00:00.000Z',
+      deadline: '2026-08-31T00:00:00.000Z',
+      entries: [],
+    };
+    act(() => result.current.goals.createGoal(fresh));
+
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date('2026-08-22T10:00:00.000Z'));
+    act(() => result.current.goals.addProgress('g4', 5));
+
+    let entry = result.current.goals.goals[0].entries[0];
+    expect(entry.value).toBe(5);
+    expect(entry.recordedAt).toBe('2026-08-22T10:00:00.000Z');
+
+    // Fusion sur la même entrée du jour, plus tard dans la journée :
+    // recordedAt suit le dernier enregistrement, pas la création.
+    jest.setSystemTime(new Date('2026-08-22T18:30:00.000Z'));
+    act(() => result.current.goals.addProgress('g4', 3));
+
+    entry = result.current.goals.goals[0].entries[0];
+    expect(result.current.goals.goals[0].entries).toHaveLength(1);
+    expect(entry.value).toBe(8);
+    expect(entry.recordedAt).toBe('2026-08-22T18:30:00.000Z');
+  });
+
+  it('is stamped on the entry when corrected via updateEntry', async () => {
+    const { result } = await renderHarness();
+    act(() => result.current.goals.createGoal(baseGoal));
+
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date('2026-08-23T09:15:00.000Z'));
+    act(() => result.current.goals.updateEntry('g1', '2026-08-10', 55));
+
+    const entry = result.current.goals.goals[0].entries.find((e) => e.date === '2026-08-10');
+    expect(entry?.value).toBe(55);
+    expect(entry?.recordedAt).toBe('2026-08-23T09:15:00.000Z');
+  });
+});
