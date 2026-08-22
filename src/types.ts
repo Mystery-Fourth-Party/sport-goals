@@ -8,6 +8,12 @@ export type Unit = 'reps' | 'km' | 'min' | 'h';
 export interface Entry {
   date: string;
   value: number;
+  // Horodatage ISO du dernier enregistrement sur cette entrée (création ou
+  // correction) — pas sa date "métier" (`date` ci-dessus, qui reste la clé
+  // utilisée partout : fusion du jour, streak, ongoingGoalsWithoutTodayEntry...).
+  // Optionnel : les entrées créées avant l'introduction de ce champ n'en ont
+  // pas, sans valeur inventée ni migration au chargement (voir storage.ts).
+  recordedAt?: string;
 }
 
 export interface Goal {
