@@ -2,15 +2,27 @@ import { useState } from 'react';
 import { router } from 'expo-router';
 import { Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import { File, Paths } from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { buildBackupPayload } from '../src/backup';
 import { BackButton, Toggle } from '../src/components/ui';
+import { useGoals } from '../src/goals-context';
 import {
   ensureNotificationPermission,
   notificationsSupported,
   parseReminderTime,
 } from '../src/notifications';
 import { useSettings } from '../src/settings-context';
+import { todayStr } from '../src/stats';
 import { colors, fontFamily, radius, spacing, white } from '../src/theme';
+
+// "objectif-sport-2026-08-22.json" — un fichier par jour d'export, écrasé si
+// on exporte plusieurs fois le même jour plutôt que d'empiler des fichiers
+// identiques en fond (hors web, voir handleExport).
+function backupFilename(): string {
+  return `objectif-sport-${todayStr()}.json`;
+}
 
 // "HH:mm" (format de stockage, voir settingsStorage.ts) <-> Date attendu par
 // DateTimePicker. Seules heures/minutes sont utilisées, le reste de la date
@@ -28,12 +40,15 @@ function dateToTimeStr(d: Date): string {
 
 export default function SettingsScreen() {
   const { settings, updateSettings } = useSettings();
+  const { goals } = useGoals();
   // Android n'a pas d'équivalent "compact" inline : le picker ne s'affiche
   // que sur demande (voir handleTimeChange, qui le referme après le choix).
   const [showAndroidPicker, setShowAndroidPicker] = useState(false);
   // Message affiché si la demande de permission échoue (plateforme non
   // supportée ou refus de l'utilisateur) — voir requestPermissionOrExplain.
   const [notifError, setNotifError] = useState<string | undefined>();
+  // Même pattern que notifError, pour l'export/import de données ci-dessous.
+  const [dataError, setDataError] = useState<string | undefined>();
 
   // Le picker natif (iOS/Android) ne peut pas produire de valeur invalide ;
   // seul le repli texte libre du web (voir plus bas) en a besoin.
@@ -74,6 +89,41 @@ export default function SettingsScreen() {
   async function handleGoalReachedToggle(v: boolean) {
     if (v && !(await requestPermissionOrExplain())) return;
     updateSettings({ goalReachedNotifs: v });
+  }
+
+  async function handleExport() {
+    setDataError(undefined);
+    const json = JSON.stringify(buildBackupPayload(goals, settings, todayStr()), null, 2);
+    const filename = backupFilename();
+
+    try {
+      if (Platform.OS === 'web') {
+        // expo-sharing n'a pas d'équivalent web (comme expo-notifications) :
+        // déclenche un téléchargement via un <a download> créé et cliqué par
+        // script, jamais monté dans le JSX.
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        link.click();
+        URL.revokeObjectURL(url);
+        return;
+      }
+
+      const file = new File(Paths.cache, filename);
+      file.create({ overwrite: true });
+      file.write(json);
+
+      if (!(await Sharing.isAvailableAsync())) {
+        setDataError("Le partage de fichiers n'est pas disponible sur cet appareil.");
+        return;
+      }
+      await Sharing.shareAsync(file.uri, { mimeType: 'application/json', UTI: 'public.json' });
+    } catch (error) {
+      console.error('handleExport: échec.', error);
+      setDataError("Échec de l'export — réessaie.");
+    }
   }
 
   return (
@@ -174,6 +224,20 @@ export default function SettingsScreen() {
               onChange={(v) => updateSettings({ streakAlert: v })}
             />
           </View>
+        </View>
+
+        <Text style={[styles.sectionLabel, styles.sectionLabelSpaced]}>Données</Text>
+        {dataError && <Text style={styles.errorText}>{dataError}</Text>}
+        <View style={styles.card}>
+          <Pressable style={[styles.row, styles.rowBorder]} onPress={handleExport}>
+            <View style={styles.rowTexts}>
+              <Text style={styles.rowTitle}>Exporter mes données</Text>
+              <Text style={styles.rowSubtitle}>
+                Sauvegarde tes objectifs et réglages dans un fichier JSON
+              </Text>
+            </View>
+            <Text style={styles.rowChevron}>›</Text>
+          </Pressable>
         </View>
 
         <Text style={[styles.sectionLabel, styles.sectionLabelSpaced]}>Application</Text>
@@ -281,6 +345,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: white(0.35),
     marginTop: 2,
+  },
+  rowChevron: {
+    fontFamily: fontFamily.bodyRegular,
+    fontSize: 20,
+    color: white(0.25),
   },
   timeInput: {
     backgroundColor: colors.cardElevated,
