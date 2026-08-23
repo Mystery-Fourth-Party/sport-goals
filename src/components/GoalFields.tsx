@@ -114,7 +114,11 @@ export default function GoalFields({
 
       <View style={styles.toggleRow}>
         <Text style={styles.toggleLabel}>Rappels activés</Text>
-        <Toggle value={reminderEnabled} onChange={onReminderEnabledChange} />
+        <Toggle
+          value={reminderEnabled}
+          onChange={onReminderEnabledChange}
+          accessibilityLabel="Rappels activés"
+        />
       </View>
 
       {reminderEnabled && (
@@ -123,6 +127,7 @@ export default function GoalFields({
           <Toggle
             value={reminderTime !== undefined}
             onChange={(v) => onReminderTimeChange(v ? '20:00' : undefined)}
+            accessibilityLabel="Horaire personnalisé"
           />
         </View>
       )}

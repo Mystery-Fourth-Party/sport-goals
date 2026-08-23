@@ -71,7 +71,11 @@ export default function NotificationsSection() {
             <Text style={s.rowTitle}>Rappel quotidien</Text>
             <Text style={s.rowSubtitle}>Pour entrer ta progression chaque jour</Text>
           </View>
-          <Toggle value={settings.dailyReminder} onChange={handleDailyReminderToggle} />
+          <Toggle
+            value={settings.dailyReminder}
+            onChange={handleDailyReminderToggle}
+            accessibilityLabel="Rappel quotidien"
+          />
         </View>
 
         {settings.dailyReminder && (
@@ -97,7 +101,11 @@ export default function NotificationsSection() {
             <Text style={s.rowTitle}>Objectif atteint 🏆</Text>
             <Text style={s.rowSubtitle}>Célébration quand un objectif est complété</Text>
           </View>
-          <Toggle value={settings.goalReachedNotifs} onChange={handleGoalReachedToggle} />
+          <Toggle
+            value={settings.goalReachedNotifs}
+            onChange={handleGoalReachedToggle}
+            accessibilityLabel="Objectif atteint 🏆"
+          />
         </View>
 
         <View style={[s.row, s.rowBorder]}>
@@ -108,6 +116,7 @@ export default function NotificationsSection() {
           <Toggle
             value={settings.almostThereNotifs}
             onChange={(v) => updateSettings({ almostThereNotifs: v })}
+            accessibilityLabel="Objectif bientôt atteint 🎯"
           />
         </View>
 
@@ -119,6 +128,7 @@ export default function NotificationsSection() {
           <Toggle
             value={settings.streakAlert}
             onChange={(v) => updateSettings({ streakAlert: v })}
+            accessibilityLabel="Streak en danger 🔥"
           />
         </View>
       </View>

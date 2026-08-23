@@ -5,6 +5,10 @@ import { colors, white } from '../../theme';
 interface Props {
   value: boolean;
   onChange: (v: boolean) => void;
+  // Requis (pas de valeur par défaut sensée) : ce composant n'affiche
+  // lui-même aucun texte — le libellé vit dans le Text voisin posé par
+  // l'appelant, invisible pour un lecteur d'écran sans ce prop.
+  accessibilityLabel: string;
 }
 
 const TRACK_WIDTH = 48;
@@ -14,7 +18,7 @@ const THUMB_MARGIN = 4;
 
 // Switch on/off custom (orange de marque quand actif), voir GoalCard/
 // SettingsScreen dans le prototype pour l'usage.
-export default function Toggle({ value, onChange }: Props) {
+export default function Toggle({ value, onChange, accessibilityLabel }: Props) {
   // useState (initialiseur paresseux) plutôt que useRef : on veut une
   // Animated.Value stable entre les rendus, sans jamais appeler de setter —
   // useRef déclenche la règle eslint react-hooks/refs sur .interpolate().
@@ -40,7 +44,13 @@ export default function Toggle({ value, onChange }: Props) {
   });
 
   return (
-    <Pressable onPress={() => onChange(!value)} hitSlop={8}>
+    <Pressable
+      onPress={() => onChange(!value)}
+      hitSlop={8}
+      accessibilityRole="switch"
+      accessibilityState={{ checked: value }}
+      accessibilityLabel={accessibilityLabel}
+    >
       <Animated.View style={[styles.track, { backgroundColor: trackColor }]}>
         <Animated.View style={[styles.thumb, { left: thumbLeft }]} />
       </Animated.View>
