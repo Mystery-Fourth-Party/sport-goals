@@ -266,6 +266,10 @@ export default function GoalDetailScreen() {
           {historyEntries.map((entry, i) => {
             const d = parseDate(entry.date);
             const isToday = entry.date === today;
+            const entryAccessibilityLabel =
+              entry.value > 0
+                ? `${longDateLabel(d)}, ${fmt(entry.value, goal.unit)} ${UNIT_LABELS[goal.unit]}`
+                : `${longDateLabel(d)}, aucune entrée`;
             return (
               <Pressable
                 key={entry.date}
@@ -275,6 +279,8 @@ export default function GoalDetailScreen() {
                   i < historyEntries.length - 1 && styles.historyRowBorder,
                   isToday && styles.historyRowToday,
                 ]}
+                accessibilityRole="button"
+                accessibilityLabel={entryAccessibilityLabel}
               >
                 <View style={styles.historyLeft}>
                   <View style={[styles.historyDot, entry.value > 0 && styles.historyDotActive]} />
