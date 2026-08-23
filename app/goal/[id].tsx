@@ -310,8 +310,25 @@ export default function GoalDetailScreen() {
         </Pressable>
       </View>
 
-      <Modal visible={modalMode !== null} transparent animationType="slide">
-        <Pressable style={styles.modalBackdrop} onPress={closeModal}>
+      <Modal
+        visible={modalMode !== null}
+        transparent
+        animationType="slide"
+        // Cantonne le lecteur d'écran au contenu du modal tant qu'il est ouvert.
+        accessibilityViewIsModal
+      >
+        {/* accessible={false} plutôt que accessibilityRole="button" : exposer
+            toute la zone derrière le modal comme un "bouton" plein écran au
+            lecteur d'écran serait plus perturbant qu'utile (cible géante,
+            fait doublon avec "Annuler" dans la feuille — voir la doc RN sur
+            ce pattern backdrop). Pas de importantForAccessibility
+            "no-hide-descendants" ici : contrairement au cas générique où le
+            backdrop n'a pas de descendant réel, la feuille modale (avec tout
+            son contenu accessible) est nichée DANS ce Pressable pour que le
+            tap dessus stoppe la propagation — la masquer masquerait le modal
+            entier sur Android. accessible={false} n'affecte que ce
+            Pressable lui-même, pas ses enfants. */}
+        <Pressable style={styles.modalBackdrop} onPress={closeModal} accessible={false}>
           {/* Empêche le tap sur la feuille elle-même de remonter au backdrop
               et de fermer le modal par erreur. */}
           <Pressable style={styles.modalSheet} onPress={(e) => e.stopPropagation()}>
