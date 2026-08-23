@@ -143,6 +143,8 @@ export default function GoalDetailScreen() {
             style={styles.editButton}
             onPress={() => router.push(`/goal/${goal.id}/edit`)}
             hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Modifier l'objectif"
           >
             <Text style={styles.editGlyph}>✎</Text>
           </Pressable>

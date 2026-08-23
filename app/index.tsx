@@ -31,10 +31,20 @@ export default function GoalListScreen() {
                 <Text style={styles.heading}>Mes{'\n'}Objectifs</Text>
               </View>
               <View style={styles.headerActions}>
-                <Pressable style={styles.roundButton} onPress={() => router.push('/weekly')}>
+                <Pressable
+                  style={styles.roundButton}
+                  onPress={() => router.push('/weekly')}
+                  accessibilityRole="button"
+                  accessibilityLabel="Résumé hebdomadaire"
+                >
                   <Text style={styles.roundButtonGlyph}>📊</Text>
                 </Pressable>
-                <Pressable style={styles.roundButton} onPress={() => router.push('/settings')}>
+                <Pressable
+                  style={styles.roundButton}
+                  onPress={() => router.push('/settings')}
+                  accessibilityRole="button"
+                  accessibilityLabel="Réglages"
+                >
                   <Text style={styles.roundButtonGlyph}>⚙️</Text>
                 </Pressable>
               </View>
@@ -96,7 +106,12 @@ export default function GoalListScreen() {
       />
 
       {goals.length > 0 && (
-        <Pressable style={styles.fab} onPress={() => router.push('/create')}>
+        <Pressable
+          style={styles.fab}
+          onPress={() => router.push('/create')}
+          accessibilityRole="button"
+          accessibilityLabel="Créer un objectif"
+        >
           <Text style={styles.fabGlyph}>+</Text>
         </Pressable>
       )}
