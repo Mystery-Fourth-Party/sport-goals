@@ -81,13 +81,41 @@ export function computeNextReminderDate(now: Date, hour: number, minute: number)
   return target;
 }
 
-// Objectifs "en cours" (ni terminés) n'ayant reçu aucune entrée aujourd'hui —
-// ce sont les seuls concernés par le rappel quotidien.
+// Objectifs "en cours" (ni terminés), n'ayant reçu aucune entrée aujourd'hui,
+// et pas explicitement exclus du rappel (reminderEnabled === false — absent
+// ou true reste inclus, voir types.ts) — ce sont les seuls concernés par le
+// rappel quotidien.
 export function ongoingGoalsWithoutTodayEntry(goals: Goal[], today: string): Goal[] {
   return goals.filter((g) => {
+    if (g.reminderEnabled === false) return false;
     if (getGoalStats(g, today).status === 'completed') return false;
     return !g.entries.some((e) => e.date === today && e.value > 0);
   });
+}
+
+// Regroupe des objectifs déjà filtrés (voir ongoingGoalsWithoutTodayEntry —
+// cette fonction n'a pas besoin de connaître reminderEnabled, seulement ce
+// qu'on lui donne) par horaire effectif : goal.reminderTime s'il est posé et
+// valide, sinon defaultTime. Retombe sur defaultTime aussi bien pour un
+// horaire absent que pour un horaire corrompu — un import peut laisser
+// passer un reminderTime mal formé (voir backup.ts, isValidGoal ne vérifie
+// que le type) : c'est ici, à l'usage, que le fallback se produit, pas à
+// l'import.
+export function groupPendingGoalsByReminderTime(
+  pendingGoals: Goal[],
+  defaultTime: string,
+): Map<string, Goal[]> {
+  const groups = new Map<string, Goal[]>();
+  for (const g of pendingGoals) {
+    const time = g.reminderTime && parseReminderTime(g.reminderTime) ? g.reminderTime : defaultTime;
+    const group = groups.get(time);
+    if (group) {
+      group.push(g);
+    } else {
+      groups.set(time, [g]);
+    }
+  }
+  return groups;
 }
 
 export interface ReminderContent {
@@ -159,8 +187,13 @@ export async function rescheduleDailyReminder(
     return { ok: true }; // Pas une erreur utilisateur : juste indisponible sur cette plateforme.
   }
 
-  const parsed = parseReminderTime(reminderTime);
-  if (!parsed) {
+  // La validation de format et la demande de permission ne portent que sur
+  // l'horaire GLOBAL, comme avant : un override par-objectif mal formé
+  // retombe silencieusement sur ce même horaire (voir
+  // groupPendingGoalsByReminderTime) plutôt que de faire échouer toute la
+  // reprogrammation.
+  const parsedDefault = parseReminderTime(reminderTime);
+  if (!parsedDefault) {
     return { ok: false, error: 'Heure invalide — utilise le format HH:mm (ex : 20:00).' };
   }
 
@@ -169,16 +202,27 @@ export async function rescheduleDailyReminder(
     return { ok: false, error: 'Notifications non autorisées.' };
   }
 
-  const target = computeNextReminderDate(new Date(), parsed.hour, parsed.minute);
-  const content = buildReminderContent(pending, today, streakAlertEnabled);
-  await Notifications.scheduleNotificationAsync({
-    content,
-    trigger: {
-      type: Notifications.SchedulableTriggerInputTypes.DATE,
-      date: target,
-      channelId: CHANNEL_ID,
-    },
-  });
+  const now = new Date();
+  // Un cancelDailyReminder() unique en entrée suffit (cancelAll reste
+  // correct, pas besoin de suivre des identifiants individuels) ; ensuite,
+  // une notification par horaire distinct plutôt qu'une seule pour tous les
+  // objectifs en attente — buildReminderContent (inchangée) appelée par
+  // groupe, message mécaniquement plus pertinent puisqu'il ne porte que sur
+  // les objectifs de ce groupe.
+  const groups = groupPendingGoalsByReminderTime(pending, reminderTime);
+  for (const [time, goalsInGroup] of groups) {
+    const parsedTime = parseReminderTime(time) ?? parsedDefault;
+    const target = computeNextReminderDate(now, parsedTime.hour, parsedTime.minute);
+    const content = buildReminderContent(goalsInGroup, today, streakAlertEnabled);
+    await Notifications.scheduleNotificationAsync({
+      content,
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date: target,
+        channelId: CHANNEL_ID,
+      },
+    });
+  }
   return { ok: true };
 }
 
