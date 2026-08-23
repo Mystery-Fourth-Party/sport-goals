@@ -23,6 +23,10 @@ export interface BackupGoal {
   // Pratique pour un outil externe qui n'a pas UNIT_LABELS sous la main.
   unitLabel: string;
   entries: Entry[];
+  // Reflètent Goal.reminderTime/reminderEnabled (voir types.ts) — absents du
+  // JSON si jamais posés, même convention que recordedAt sur Entry ci-dessous.
+  reminderTime?: string;
+  reminderEnabled?: boolean;
   // Instantané dérivé (statut, progression, streak...), calculé au moment
   // de l'export via stats.ts — jamais réimplémenté ici. Purement informatif :
   // ignoré à l'import, voir parseBackupPayload.
@@ -57,6 +61,8 @@ export function buildBackupPayload(
         value: e.value,
         ...(e.recordedAt !== undefined ? { recordedAt: e.recordedAt } : {}),
       })),
+      ...(goal.reminderTime !== undefined ? { reminderTime: goal.reminderTime } : {}),
+      ...(goal.reminderEnabled !== undefined ? { reminderEnabled: goal.reminderEnabled } : {}),
       stats: getGoalStats(goal, today),
     })),
     settings,
@@ -93,6 +99,8 @@ interface RawGoal {
   createdAt: string;
   deadline: string;
   entries: RawEntry[];
+  reminderTime?: string;
+  reminderEnabled?: boolean;
 }
 
 function isValidGoal(value: unknown): value is RawGoal {
@@ -105,6 +113,12 @@ function isValidGoal(value: unknown): value is RawGoal {
   if (typeof g.createdAt !== 'string') return false;
   if (typeof g.deadline !== 'string') return false;
   if (!Array.isArray(g.entries) || !g.entries.every(isValidEntry)) return false;
+  // Validation légère (type seulement) : le format "HH:mm" de reminderTime
+  // n'est pas vérifié ici (ça dupliquerait parseReminderTime) — un horaire
+  // mal formé reste accepté à l'import, le fallback sur l'horaire global se
+  // fait au moment de l'usage (voir groupPendingGoalsByReminderTime).
+  if (g.reminderTime !== undefined && typeof g.reminderTime !== 'string') return false;
+  if (g.reminderEnabled !== undefined && typeof g.reminderEnabled !== 'boolean') return false;
   return true;
 }
 
@@ -146,6 +160,8 @@ export function parseBackupPayload(raw: string): ParseBackupResult {
       value: e.value,
       ...(e.recordedAt !== undefined ? { recordedAt: e.recordedAt } : {}),
     })),
+    ...(g.reminderTime !== undefined ? { reminderTime: g.reminderTime } : {}),
+    ...(g.reminderEnabled !== undefined ? { reminderEnabled: g.reminderEnabled } : {}),
   }));
 
   if (payload.settings === undefined) {

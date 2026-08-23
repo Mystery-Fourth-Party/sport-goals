@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Unit } from '../types';
 import { colors, fontFamily, radius, spacing, white } from '../theme';
+import { TimeField, Toggle } from './ui';
 
 const UNITS: Unit[] = ['reps', 'km', 'min', 'h'];
 
@@ -22,6 +23,18 @@ interface Props {
   titleError?: string;
   targetValueError?: string;
   durationError?: string;
+  // Rappels par objectif : reminderEnabled (actif par défaut, voir
+  // types.ts) exclut cet objectif du rappel quotidien quand désactivé,
+  // indépendamment des autres. reminderTime (optionnel) surcharge l'horaire
+  // global pour cet objectif — undefined hérite de settings.reminderTime
+  // (voir notifications.ts, groupPendingGoalsByReminderTime). Le toggle
+  // "Horaire personnalisé" reflète reminderTime !== undefined : l'activer
+  // pose une valeur par défaut, le désactiver repasse reminderTime à
+  // undefined plutôt qu'à une chaîne vide.
+  reminderEnabled: boolean;
+  onReminderEnabledChange: (v: boolean) => void;
+  reminderTime: string | undefined;
+  onReminderTimeChange: (v: string | undefined) => void;
 }
 
 // Champs de saisie communs à l'écran Création (app/create.tsx) et à l'écran
@@ -40,6 +53,10 @@ export default function GoalFields({
   titleError,
   targetValueError,
   durationError,
+  reminderEnabled,
+  onReminderEnabledChange,
+  reminderTime,
+  onReminderTimeChange,
 }: Props) {
   return (
     <>
@@ -94,6 +111,28 @@ export default function GoalFields({
           </Pressable>
         ))}
       </View>
+
+      <View style={styles.toggleRow}>
+        <Text style={styles.toggleLabel}>Rappels activés</Text>
+        <Toggle value={reminderEnabled} onChange={onReminderEnabledChange} />
+      </View>
+
+      {reminderEnabled && (
+        <View style={styles.toggleRow}>
+          <Text style={styles.toggleLabel}>Horaire personnalisé</Text>
+          <Toggle
+            value={reminderTime !== undefined}
+            onChange={(v) => onReminderTimeChange(v ? '20:00' : undefined)}
+          />
+        </View>
+      )}
+
+      {reminderEnabled && reminderTime !== undefined && (
+        <View style={styles.toggleRow}>
+          <Text style={styles.toggleLabel}>Heure du rappel</Text>
+          <TimeField value={reminderTime} onChange={onReminderTimeChange} />
+        </View>
+      )}
     </>
   );
 }
@@ -162,5 +201,16 @@ const styles = StyleSheet.create({
   },
   chipTextSelected: {
     color: '#fff',
+  },
+  toggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: spacing.gap / 2,
+  },
+  toggleLabel: {
+    fontFamily: fontFamily.bodyMedium,
+    fontSize: 14,
+    color: colors.fg,
   },
 });

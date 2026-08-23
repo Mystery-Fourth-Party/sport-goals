@@ -16,6 +16,11 @@ export default function GoalForm({ onCreate }: Props) {
   const [targetValue, setTargetValue] = useState('');
   const [unit, setUnit] = useState<Unit>('reps');
   const [durationDays, setDurationDays] = useState('');
+  // Actif par défaut (voir types.ts) ; reminderTime absent = hérite de
+  // l'horaire global tant que l'utilisateur n'active pas "Horaire
+  // personnalisé".
+  const [reminderEnabled, setReminderEnabled] = useState(true);
+  const [reminderTime, setReminderTime] = useState<string | undefined>(undefined);
   // Les erreurs ne s'affichent qu'après une première tentative de soumission
   // invalide, pour ne pas asperger l'utilisateur de messages rouges dès
   // qu'il commence à remplir le formulaire.
@@ -54,12 +59,16 @@ export default function GoalForm({ onCreate }: Props) {
       createdAt: now.toISOString(),
       deadline: deadline.toISOString(),
       entries: [],
+      reminderEnabled,
+      reminderTime,
     });
 
     setTitle('');
     setTargetValue('');
     setDurationDays('');
     setUnit('reps');
+    setReminderEnabled(true);
+    setReminderTime(undefined);
     setSubmitAttempted(false);
   }
 
@@ -78,6 +87,10 @@ export default function GoalForm({ onCreate }: Props) {
         titleError={submitAttempted ? titleError : undefined}
         targetValueError={submitAttempted ? targetValueError : undefined}
         durationError={submitAttempted ? durationError : undefined}
+        reminderEnabled={reminderEnabled}
+        onReminderEnabledChange={setReminderEnabled}
+        reminderTime={reminderTime}
+        onReminderTimeChange={setReminderTime}
       />
 
       {dailyAvg > 0 && (

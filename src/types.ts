@@ -31,6 +31,15 @@ export interface Goal {
   // stats.ts) : pas de champs dédiés supplémentaires pour éviter de
   // dupliquer la même information sous deux noms différents.
   entries: Entry[];
+  // "HH:mm" — absent = hérite de settings.reminderTime (voir
+  // notifications.ts, groupPendingGoalsByReminderTime).
+  reminderTime?: string;
+  // Absent = équivalent à true (rappels actifs par défaut, cohérent avec le
+  // comportement actuel où tout objectif en cours est rappelé). Gouverne
+  // uniquement le rappel quotidien — ne touche pas goalReachedNotifs ni
+  // almostThereNotifs, réglages globaux sans lien avec ce champ (voir
+  // ongoingGoalsWithoutTodayEntry).
+  reminderEnabled?: boolean;
 }
 
 // Traductions FR affichées à la place des clés techniques ('reps', 'km'...).
