@@ -104,7 +104,7 @@ export default function GoalForm({ onCreate }: Props) {
       {/* Pressable = équivalent RN de <button onClick>. Reste toujours
           actif : une tentative de soumission invalide affiche les erreurs
           inline plutôt que de simplement ignorer le press. */}
-      <Pressable style={styles.button} onPress={handleSubmit}>
+      <Pressable style={styles.button} onPress={handleSubmit} accessibilityRole="button">
         <Text style={styles.buttonText}>Créer l&apos;objectif</Text>
       </Pressable>
     </View>

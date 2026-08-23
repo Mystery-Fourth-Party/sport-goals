@@ -126,7 +126,7 @@ export default function DataSection() {
       <Text style={[s.sectionLabel, s.sectionLabelSpaced]}>Données</Text>
       {dataError && <Text style={s.errorText}>{dataError}</Text>}
       <View style={s.card}>
-        <Pressable style={[s.row, s.rowBorder]} onPress={handleExport}>
+        <Pressable style={[s.row, s.rowBorder]} onPress={handleExport} accessibilityRole="button">
           <View style={s.rowTexts}>
             <Text style={s.rowTitle}>Exporter mes données</Text>
             <Text style={s.rowSubtitle}>
@@ -135,7 +135,7 @@ export default function DataSection() {
           </View>
           <Text style={s.rowChevron}>›</Text>
         </Pressable>
-        <Pressable style={s.row} onPress={handleImport}>
+        <Pressable style={s.row} onPress={handleImport} accessibilityRole="button">
           <View style={s.rowTexts}>
             <Text style={s.rowTitle}>Importer des données</Text>
             <Text style={s.rowSubtitle}>Remplace tes objectifs actuels par un fichier exporté</Text>

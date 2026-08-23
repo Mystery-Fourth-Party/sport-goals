@@ -59,6 +59,11 @@ export default function GoalListScreen() {
                 <Pressable
                   style={[styles.statCard, styles.statCardDone]}
                   onPress={() => router.push('/archive')}
+                  accessibilityRole="button"
+                  // Explicite plutôt que laissé à la concaténation par
+                  // défaut : le chevron "›" seul ne veut rien dire pour un
+                  // lecteur d'écran.
+                  accessibilityLabel={`Terminés, ${completed.length} objectifs`}
                 >
                   <View style={styles.statLabelRow}>
                     <Text style={[styles.statLabel, { color: colors.ahead }]}>Terminés</Text>
@@ -82,7 +87,11 @@ export default function GoalListScreen() {
               <Text style={styles.emptyText}>
                 Fixe ton premier objectif sportif et suis ta progression chaque jour.
               </Text>
-              <Pressable style={styles.emptyButton} onPress={() => router.push('/create')}>
+              <Pressable
+                style={styles.emptyButton}
+                onPress={() => router.push('/create')}
+                accessibilityRole="button"
+              >
                 <Text style={styles.emptyButtonText}>Créer un objectif</Text>
               </Pressable>
             </View>
@@ -97,7 +106,11 @@ export default function GoalListScreen() {
                 Tous tes objectifs sont terminés — retrouve-les dans l&apos;archive, ou fixe-toi un
                 nouveau défi.
               </Text>
-              <Pressable style={styles.emptyButton} onPress={() => router.push('/archive')}>
+              <Pressable
+                style={styles.emptyButton}
+                onPress={() => router.push('/archive')}
+                accessibilityRole="button"
+              >
                 <Text style={styles.emptyButtonText}>Voir l&apos;archive</Text>
               </Pressable>
             </View>

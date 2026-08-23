@@ -293,13 +293,13 @@ export default function GoalDetailScreen() {
           })}
         </View>
 
-        <Pressable style={styles.deleteLink} onPress={handleDelete}>
+        <Pressable style={styles.deleteLink} onPress={handleDelete} accessibilityRole="button">
           <Text style={styles.deleteLinkText}>🗑 Supprimer l&apos;objectif</Text>
         </Pressable>
       </ScrollView>
 
       <View style={styles.ctaWrap}>
-        <Pressable style={styles.ctaButton} onPress={openAddModal}>
+        <Pressable style={styles.ctaButton} onPress={openAddModal} accessibilityRole="button">
           <Text style={styles.ctaButtonText}>+ Ajouter la progression du jour</Text>
         </Pressable>
       </View>
@@ -350,6 +350,7 @@ export default function GoalDetailScreen() {
               <Pressable
                 style={[styles.modalButton, styles.modalCancelButton]}
                 onPress={closeModal}
+                accessibilityRole="button"
               >
                 <Text style={styles.modalCancelText}>Annuler</Text>
               </Pressable>
@@ -360,12 +361,17 @@ export default function GoalDetailScreen() {
                   !(Number(modalValue) > 0) && styles.modalConfirmButtonDisabled,
                 ]}
                 onPress={handleSave}
+                accessibilityRole="button"
               >
                 <Text style={styles.modalConfirmText}>Enregistrer</Text>
               </Pressable>
             </View>
             {modalMode === 'edit' && (
-              <Pressable style={styles.deleteLink} onPress={handleDeleteEntry}>
+              <Pressable
+                style={styles.deleteLink}
+                onPress={handleDeleteEntry}
+                accessibilityRole="button"
+              >
                 <Text style={styles.deleteLinkText}>🗑 Supprimer cette entrée</Text>
               </Pressable>
             )}

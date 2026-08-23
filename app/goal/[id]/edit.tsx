@@ -140,7 +140,7 @@ export default function EditGoalScreen() {
       </ScrollView>
 
       <View style={styles.footer}>
-        <Pressable style={styles.saveButton} onPress={handleSave}>
+        <Pressable style={styles.saveButton} onPress={handleSave} accessibilityRole="button">
           <Text style={styles.saveButtonText}>Enregistrer les modifications</Text>
         </Pressable>
       </View>
