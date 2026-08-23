@@ -24,6 +24,11 @@ export default function EditGoalScreen() {
   const [unit, setUnit] = useState<Unit>(goal?.unit ?? 'reps');
   const [days, setDays] = useState(String(Math.max(1, s?.remainingDays ?? 1)));
   const [saveAttempted, setSaveAttempted] = useState(false);
+  // absent = true (voir types.ts) — reflété tel quel plutôt que normalisé,
+  // pour ne pas introduire de valeur inventée pour un objectif qui n'avait
+  // jamais explicitement ce champ.
+  const [reminderEnabled, setReminderEnabled] = useState(goal?.reminderEnabled ?? true);
+  const [reminderTime, setReminderTime] = useState<string | undefined>(goal?.reminderTime);
 
   if (!goal || !s) {
     return (
@@ -66,6 +71,13 @@ export default function EditGoalScreen() {
       targetValue: targetNum,
       unit,
       deadline: deadline.toISOString(),
+      // Toujours inclus (même quand undefined) : updateGoal merge par
+      // spread, donc un champ absent de cet objet laisserait l'ancienne
+      // valeur inchangée — ici on veut au contraire pouvoir repasser
+      // reminderTime à undefined si l'utilisateur désactive l'horaire
+      // personnalisé après l'avoir activé.
+      reminderEnabled,
+      reminderTime,
     });
     router.back();
   }
@@ -110,6 +122,10 @@ export default function EditGoalScreen() {
           titleError={saveAttempted ? titleError : undefined}
           targetValueError={saveAttempted ? targetError : undefined}
           durationError={saveAttempted ? daysError : undefined}
+          reminderEnabled={reminderEnabled}
+          onReminderEnabledChange={setReminderEnabled}
+          reminderTime={reminderTime}
+          onReminderTimeChange={setReminderTime}
         />
 
         {newDailyRequired > 0 && (
