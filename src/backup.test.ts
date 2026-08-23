@@ -17,6 +17,13 @@ const goal: Goal = {
 
 const settings: Settings = { ...DEFAULT_SETTINGS, dailyReminder: true };
 
+const goalWithReminderOverrides: Goal = {
+  ...goal,
+  id: 'g2',
+  reminderTime: '07:30',
+  reminderEnabled: false,
+};
+
 describe('buildBackupPayload', () => {
   it('matches the documented shape, including a stats snapshot from stats.ts', () => {
     const payload = buildBackupPayload([goal], settings, '2026-08-20');
@@ -54,6 +61,20 @@ describe('buildBackupPayload', () => {
     expect(raw).not.toContain('"recordedAt":null');
     const reparsed = JSON.parse(raw);
     expect(Object.keys(reparsed.goals[0].entries[1])).toEqual(['date', 'value']);
+  });
+
+  it('includes reminderTime/reminderEnabled when set, omits them when never set', () => {
+    const payload = buildBackupPayload([goal, goalWithReminderOverrides], settings, '2026-08-20');
+
+    const withoutOverrides = payload.goals[0];
+    expect(withoutOverrides.reminderTime).toBeUndefined();
+    expect(withoutOverrides.reminderEnabled).toBeUndefined();
+    expect(Object.prototype.hasOwnProperty.call(withoutOverrides, 'reminderTime')).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(withoutOverrides, 'reminderEnabled')).toBe(false);
+
+    const withOverrides = payload.goals[1];
+    expect(withOverrides.reminderTime).toBe('07:30');
+    expect(withOverrides.reminderEnabled).toBe(false);
   });
 });
 
@@ -97,6 +118,27 @@ describe('parseBackupPayload', () => {
     if (!result.ok) return;
     expect(result.goals[0].entries[0].recordedAt).toBe('2026-08-01T10:00:00.000Z');
     expect(result.goals[0].entries[1].recordedAt).toBeUndefined();
+  });
+
+  it('round-trips reminderTime/reminderEnabled, present or absent', () => {
+    const payload = buildBackupPayload([goal, goalWithReminderOverrides], settings, '2026-08-20');
+    const result = parseBackupPayload(JSON.stringify(payload));
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.goals).toEqual([goal, goalWithReminderOverrides]);
+  });
+
+  it('accepts a malformed reminderTime instead of rejecting the whole file — the fallback to the global time happens at usage, not at import (see notifications.ts)', () => {
+    const payload = buildBackupPayload([goal], settings, '2026-08-20');
+    const goals = JSON.parse(JSON.stringify(payload.goals)) as Record<string, unknown>[];
+    goals[0].reminderTime = 'not-a-time';
+    const raw = JSON.stringify({ ...payload, goals });
+    const result = parseBackupPayload(raw);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.goals[0].reminderTime).toBe('not-a-time');
   });
 
   it("never lets the file's stats snapshot land in the parsed result", () => {
@@ -160,6 +202,8 @@ describe('parseBackupPayload', () => {
         (g.entries as Record<string, unknown>[])[0] = { value: 1 };
       },
     ],
+    ['reminderTime as a number', (g: Record<string, unknown>) => (g.reminderTime = 800)],
+    ['reminderEnabled as a string', (g: Record<string, unknown>) => (g.reminderEnabled = 'false')],
   ])('rejects a malformed goal: %s', (_label, mutate) => {
     const payload = buildBackupPayload([goal], settings, '2026-08-20');
     const goals = JSON.parse(JSON.stringify(payload.goals)) as Record<string, unknown>[];
