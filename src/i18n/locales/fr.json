@@ -1,4 +1,19 @@
 {
+  "notif": {
+    "streakDanger": {
+      "title": "Ton streak est en danger 🔥",
+      "body_one": "Ton streak de {{count}} jour sur \"{{title}}\" va se casser si tu n'ajoutes rien aujourd'hui !",
+      "body_other": "Ton streak de {{count}} jours sur \"{{title}}\" va se casser si tu n'ajoutes rien aujourd'hui !"
+    },
+    "generic": {
+      "title": "Objectif sportif 💪",
+      "body": "Tu n'as pas encore ajouté ta progression aujourd'hui."
+    },
+    "goalReached": {
+      "title": "Objectif atteint 🏆",
+      "body": "\"{{title}}\" est terminé — bravo !"
+    }
+  },
   "common": {
     "back": "Retour",
     "cancel": "Annuler",

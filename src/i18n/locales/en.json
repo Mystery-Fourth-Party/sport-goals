@@ -1,4 +1,19 @@
 {
+  "notif": {
+    "streakDanger": {
+      "title": "Your streak is at risk 🔥",
+      "body_one": "Your streak of {{count}} day on \"{{title}}\" will break if you don't add anything today!",
+      "body_other": "Your streak of {{count}} days on \"{{title}}\" will break if you don't add anything today!"
+    },
+    "generic": {
+      "title": "Fitness goal 💪",
+      "body": "You haven't logged your progress today yet."
+    },
+    "goalReached": {
+      "title": "Goal reached 🏆",
+      "body": "\"{{title}}\" is complete — well done!"
+    }
+  },
   "common": {
     "back": "Back",
     "cancel": "Cancel",

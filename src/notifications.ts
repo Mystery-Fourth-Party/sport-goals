@@ -16,6 +16,7 @@
 // réelle sur appareil/simulateur — à tester sur un vrai build avant mise en prod.
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
+import type { TFunction } from 'i18next';
 import i18n from './i18n';
 import { calcStreak, dateStr, getGoalStats, parseDate } from './stats';
 import { Goal } from './types';
@@ -135,10 +136,16 @@ function yesterdayStr(today: string): string {
 // justement pas encore d'entrée (sinon on ne serait pas ici), donc
 // calcStreak(..., today) vaudrait toujours 0. On veut le streak "qui va se
 // casser si rien n'est ajouté aujourd'hui", donc celui qui s'arrête hier.
+// `t` reçu en paramètre (pas d'import direct de l'instance i18next comme
+// dans stats.ts/dateLabels.ts/confirm.ts) : cette fonction reste pure et
+// testable avec un `t` stub, sans avoir à faire booter tout le runtime
+// i18n dans notifications.test.ts (voir rescheduleDailyReminder plus bas
+// pour la résolution du `t` réel, elle, orchestration).
 export function buildReminderContent(
   pendingGoals: Goal[],
   today: string,
   streakAlertEnabled: boolean,
+  t: TFunction,
 ): ReminderContent {
   if (streakAlertEnabled) {
     const yesterday = yesterdayStr(today);
@@ -151,14 +158,14 @@ export function buildReminderContent(
     }
     if (best) {
       return {
-        title: 'Ton streak est en danger 🔥',
-        body: `Ton streak de ${best.streak} jour(s) sur "${best.title}" va se casser si tu n'ajoutes rien aujourd'hui !`,
+        title: t('notif.streakDanger.title'),
+        body: t('notif.streakDanger.body', { count: best.streak, title: best.title }),
       };
     }
   }
   return {
-    title: 'Objectif sportif 💪',
-    body: "Tu n'as pas encore ajouté ta progression aujourd'hui.",
+    title: t('notif.generic.title'),
+    body: t('notif.generic.body'),
   };
 }
 
@@ -214,7 +221,7 @@ export async function rescheduleDailyReminder(
   for (const [time, goalsInGroup] of groups) {
     const parsedTime = parseReminderTime(time) ?? parsedDefault;
     const target = computeNextReminderDate(now, parsedTime.hour, parsedTime.minute);
-    const content = buildReminderContent(goalsInGroup, today, streakAlertEnabled);
+    const content = buildReminderContent(goalsInGroup, today, streakAlertEnabled, i18n.t);
     await Notifications.scheduleNotificationAsync({
       content,
       trigger: {
@@ -243,8 +250,8 @@ export async function sendGoalReachedNotification(goalTitle: string): Promise<vo
   if (!granted) return;
   await Notifications.scheduleNotificationAsync({
     content: {
-      title: 'Objectif atteint 🏆',
-      body: `"${goalTitle}" est terminé — bravo !`,
+      title: i18n.t('notif.goalReached.title'),
+      body: i18n.t('notif.goalReached.body', { title: goalTitle }),
     },
     trigger: null,
   });

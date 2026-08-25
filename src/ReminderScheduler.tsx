@@ -24,9 +24,13 @@ export default function ReminderScheduler() {
   const { goals, loaded: goalsLoaded } = useGoals();
   const { settings, loaded: settingsLoaded } = useSettings();
   const { setError } = useReminderStatus();
-  // Redéclenche la reprogrammation quand la langue change, pour que
-  // reminderStatusError (affiché dans NotificationsSection) ne reste pas
-  // figé dans l'ancienne langue si une erreur est déjà affichée.
+  // Redéclenche la reprogrammation quand la langue change : à la fois pour
+  // que reminderStatusError (affiché dans NotificationsSection) ne reste
+  // pas figé dans l'ancienne langue si une erreur est déjà affichée, et
+  // pour que le contenu de la notification déjà programmée (titre/corps,
+  // voir buildReminderContent) soit regénéré dans la nouvelle langue —
+  // sinon elle resterait programmée dans l'ancienne jusqu'au prochain
+  // changement de `goals`/`settings`.
   const { i18n } = useTranslation();
   // Incrémenté à chaque exécution de l'effet, capturé localement avant
   // l'appel async : l'effet peut se redéclencher plusieurs fois avant qu'une
