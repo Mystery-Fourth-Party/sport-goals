@@ -3,14 +3,15 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import GoalDetailHeader from '../../src/components/goal-detail/GoalDetailHeader';
+import GoalProgressCard from '../../src/components/goal-detail/GoalProgressCard';
 import ProgressEntryModal from '../../src/components/goal-detail/ProgressEntryModal';
-import { BackButton, BarChart, ProgressBar } from '../../src/components/ui';
+import { BackButton, BarChart } from '../../src/components/ui';
 import { confirmDestructive } from '../../src/confirm';
 import { longDateLabel, weekdayShort } from '../../src/dateLabels';
 import { useGoals } from '../../src/goals-context';
 import { useSettings } from '../../src/settings-context';
 import { fmt, getGoalStats, parseDate, todayStr } from '../../src/stats';
-import { colors, fontFamily, radius, spacing, statusColors, white } from '../../src/theme';
+import { colors, fontFamily, radius, spacing, white } from '../../src/theme';
 import { Entry, UNIT_LABELS } from '../../src/types';
 
 export default function GoalDetailScreen() {
@@ -119,55 +120,7 @@ export default function GoalDetailScreen() {
       />
 
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.card}>
-          <View style={styles.progressHeader}>
-            <View>
-              <Text style={styles.label}>Progression totale</Text>
-              <Text style={styles.progressValue}>
-                {fmt(s.actual, goal.unit)}
-                <Text style={styles.progressValueMuted}>
-                  {' '}
-                  / {goal.targetValue} {UNIT_LABELS[goal.unit]}
-                </Text>
-              </Text>
-            </View>
-            <View style={styles.progressPercentBlock}>
-              <Text style={[styles.progressPercent, { color: statusColors[s.status].text }]}>
-                {(s.progress * 100).toFixed(0)}%
-              </Text>
-              <Text style={styles.expectedLabel}>
-                Attendu {(s.expectedProgress * 100).toFixed(0)}%
-              </Text>
-            </View>
-          </View>
-
-          <ProgressBar value={s.progress} status={s.status} thick />
-
-          <View style={styles.statsRow}>
-            <View style={styles.statCol}>
-              <Text style={styles.label}>Streak</Text>
-              <Text style={[styles.statValue, { color: colors.brand }]}>
-                {s.streak} <Text style={styles.statValueSuffix}>🔥</Text>
-              </Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statCol}>
-              <Text style={styles.label}>Rythme actuel</Text>
-              <Text style={styles.statValue}>
-                {s.elapsedDays > 0 ? fmt(s.actual / s.elapsedDays, goal.unit) : '—'}
-                <Text style={styles.statValueSuffix}>/j</Text>
-              </Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statCol}>
-              <Text style={styles.label}>Requis</Text>
-              <Text style={[styles.statValue, s.status === 'late' && { color: colors.late }]}>
-                {fmt(s.dailyRequired, goal.unit)}
-                <Text style={styles.statValueSuffix}>/j</Text>
-              </Text>
-            </View>
-          </View>
-        </View>
+        <GoalProgressCard goal={goal} stats={s} />
 
         {recentEntries.length > 0 && (
           <View style={styles.card}>
@@ -289,58 +242,6 @@ const styles = StyleSheet.create({
   },
   cardSectionLabel: {
     marginBottom: 20,
-  },
-  progressHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    marginBottom: 12,
-  },
-  progressValue: {
-    fontFamily: fontFamily.displayBlack,
-    fontSize: 34,
-    color: colors.fg,
-    marginTop: 4,
-  },
-  progressValueMuted: {
-    fontFamily: fontFamily.bodyRegular,
-    fontSize: 16,
-    color: white(0.35),
-  },
-  progressPercentBlock: {
-    alignItems: 'flex-end',
-  },
-  progressPercent: {
-    fontFamily: fontFamily.displayBlack,
-    fontSize: 28,
-  },
-  expectedLabel: {
-    fontFamily: fontFamily.bodyRegular,
-    fontSize: 12,
-    color: white(0.25),
-    marginTop: 2,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    marginTop: 18,
-  },
-  statCol: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  statDivider: {
-    width: 1,
-    backgroundColor: white(0.08),
-  },
-  statValue: {
-    fontFamily: fontFamily.displayExtraBold,
-    fontSize: 18,
-    color: colors.fg,
-    marginTop: 4,
-  },
-  statValueSuffix: {
-    fontSize: 12,
-    color: white(0.35),
   },
   historyCard: {
     padding: 0,
