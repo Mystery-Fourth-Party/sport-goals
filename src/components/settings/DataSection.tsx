@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Platform, Pressable, Text, View } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { File, Paths } from 'expo-file-system';
@@ -21,6 +22,7 @@ function backupFilename(): string {
 // propre. Découpé hors de app/settings.tsx sans changement de comportement
 // — voir aussi NotificationsSection pour la carte "Notifications".
 export default function DataSection() {
+  const { t } = useTranslation();
   const { settings, updateSettings } = useSettings();
   const { goals, replaceAllGoals } = useGoals();
   // Même pattern que notifError (NotificationsSection).
@@ -51,13 +53,13 @@ export default function DataSection() {
       file.write(json);
 
       if (!(await Sharing.isAvailableAsync())) {
-        setDataError("Le partage de fichiers n'est pas disponible sur cet appareil.");
+        setDataError(t('data.sharingUnavailable'));
         return;
       }
       await Sharing.shareAsync(file.uri, { mimeType: 'application/json', UTI: 'public.json' });
     } catch (error) {
       console.error('handleExport: échec.', error);
-      setDataError("Échec de l'export — réessaie.");
+      setDataError(t('data.exportFailed'));
     }
   }
 
@@ -76,9 +78,12 @@ export default function DataSection() {
     const importedCount = result.goals.length;
     const currentCount = goals.length;
     confirmDestructive({
-      title: 'Importer ces données ?',
-      message: `Ça va REMPLACER tes ${currentCount} objectif(s) actuel(s) par les ${importedCount} objectif(s) de ce fichier.`,
-      confirmLabel: 'Importer',
+      title: t('data.importConfirmTitle'),
+      message: t('data.importConfirmMessage', {
+        currentPart: t('data.importCurrentCount', { count: currentCount }),
+        importedPart: t('data.importedGoalCount', { count: importedCount }),
+      }),
+      confirmLabel: t('common.import'),
       onConfirm: () => {
         replaceAllGoals(result.goals);
         if (result.settings) updateSettings(result.settings);
@@ -100,7 +105,7 @@ export default function DataSection() {
           if (!picked) return; // annulation : rien ne se passe.
           const reader = new FileReader();
           reader.onload = () => confirmAndImport(String(reader.result ?? ''));
-          reader.onerror = () => setDataError('Échec de la lecture du fichier.');
+          reader.onerror = () => setDataError(t('data.readFailed'));
           reader.readAsText(picked);
         };
         input.click();
@@ -113,28 +118,26 @@ export default function DataSection() {
       confirmAndImport(text);
     } catch (error) {
       console.error('handleImport: échec.', error);
-      setDataError("Échec de l'import — réessaie.");
+      setDataError(t('data.importFailed'));
     }
   }
 
   return (
     <>
-      <Text style={[s.sectionLabel, s.sectionLabelSpaced]}>Données</Text>
+      <Text style={[s.sectionLabel, s.sectionLabelSpaced]}>{t('data.sectionTitle')}</Text>
       {dataError && <Text style={s.errorText}>{dataError}</Text>}
       <View style={s.card}>
         <Pressable style={[s.row, s.rowBorder]} onPress={handleExport} accessibilityRole="button">
           <View style={s.rowTexts}>
-            <Text style={s.rowTitle}>Exporter mes données</Text>
-            <Text style={s.rowSubtitle}>
-              Sauvegarde tes objectifs et réglages dans un fichier JSON
-            </Text>
+            <Text style={s.rowTitle}>{t('data.exportTitle')}</Text>
+            <Text style={s.rowSubtitle}>{t('data.exportSubtitle')}</Text>
           </View>
           <Text style={s.rowChevron}>›</Text>
         </Pressable>
         <Pressable style={s.row} onPress={handleImport} accessibilityRole="button">
           <View style={s.rowTexts}>
-            <Text style={s.rowTitle}>Importer des données</Text>
-            <Text style={s.rowSubtitle}>Remplace tes objectifs actuels par un fichier exporté</Text>
+            <Text style={s.rowTitle}>{t('data.importTitle')}</Text>
+            <Text style={s.rowSubtitle}>{t('data.importSubtitle')}</Text>
           </View>
           <Text style={s.rowChevron}>›</Text>
         </Pressable>

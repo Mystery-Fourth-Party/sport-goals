@@ -128,23 +128,25 @@ export function parseBackupPayload(raw: string): ParseBackupResult {
   try {
     data = JSON.parse(raw);
   } catch {
-    return { ok: false, error: 'Fichier JSON invalide.' };
+    return { ok: false, error: i18n.t('backup.invalidJson') };
   }
 
   if (typeof data !== 'object' || data === null) {
-    return { ok: false, error: 'Format de fichier invalide.' };
+    return { ok: false, error: i18n.t('backup.invalidFileFormat') };
   }
   const payload = data as Record<string, unknown>;
 
   if (payload.schemaVersion !== SCHEMA_VERSION) {
     return {
       ok: false,
-      error: `Version de fichier non prise en charge (${JSON.stringify(payload.schemaVersion)}).`,
+      error: i18n.t('backup.unsupportedVersion', {
+        version: JSON.stringify(payload.schemaVersion),
+      }),
     };
   }
 
   if (!Array.isArray(payload.goals) || !payload.goals.every(isValidGoal)) {
-    return { ok: false, error: 'Liste des objectifs manquante ou mal formée dans le fichier.' };
+    return { ok: false, error: i18n.t('backup.missingGoals') };
   }
 
   // stats/unitLabel (s'ils sont présents dans le fichier) ne sont jamais
@@ -169,7 +171,7 @@ export function parseBackupPayload(raw: string): ParseBackupResult {
     return { ok: true, goals };
   }
   if (typeof payload.settings !== 'object' || payload.settings === null) {
-    return { ok: false, error: 'Réglages mal formés dans le fichier.' };
+    return { ok: false, error: i18n.t('backup.invalidSettings') };
   }
   // Fusionné avec DEFAULT_SETTINGS comme le fait déjà loadSettings, pour
   // tolérer un fichier plus ancien avec des clés manquantes.

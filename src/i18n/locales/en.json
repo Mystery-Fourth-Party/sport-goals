@@ -191,6 +191,30 @@
     "rescheduleInvalidTime": "Invalid time — use the HH:mm format (e.g. 20:00).",
     "rescheduleDenied": "Notifications not authorized."
   },
+  "data": {
+    "sectionTitle": "Data",
+    "sharingUnavailable": "File sharing isn't available on this device.",
+    "exportFailed": "Export failed — try again.",
+    "importFailed": "Import failed — try again.",
+    "readFailed": "Failed to read the file.",
+    "exportTitle": "Export my data",
+    "exportSubtitle": "Back up your goals and settings to a JSON file",
+    "importTitle": "Import data",
+    "importSubtitle": "Replace your current goals with an exported file",
+    "importConfirmTitle": "Import this data?",
+    "importConfirmMessage": "This will REPLACE your {{currentPart}} with the {{importedPart}} from this file.",
+    "importCurrentCount_one": "{{count}} current goal",
+    "importCurrentCount_other": "{{count}} current goals",
+    "importedGoalCount_one": "{{count}} goal",
+    "importedGoalCount_other": "{{count}} goals"
+  },
+  "backup": {
+    "invalidJson": "Invalid JSON file.",
+    "invalidFileFormat": "Invalid file format.",
+    "unsupportedVersion": "Unsupported file version ({{version}}).",
+    "missingGoals": "Missing or malformed goal list in the file.",
+    "invalidSettings": "Malformed settings in the file."
+  },
   "settings": {
     "title": "Settings",
     "appSection": "App",

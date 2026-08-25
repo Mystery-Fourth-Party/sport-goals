@@ -191,6 +191,30 @@
     "rescheduleInvalidTime": "Heure invalide — utilise le format HH:mm (ex : 20:00).",
     "rescheduleDenied": "Notifications non autorisées."
   },
+  "data": {
+    "sectionTitle": "Données",
+    "sharingUnavailable": "Le partage de fichiers n'est pas disponible sur cet appareil.",
+    "exportFailed": "Échec de l'export — réessaie.",
+    "importFailed": "Échec de l'import — réessaie.",
+    "readFailed": "Échec de la lecture du fichier.",
+    "exportTitle": "Exporter mes données",
+    "exportSubtitle": "Sauvegarde tes objectifs et réglages dans un fichier JSON",
+    "importTitle": "Importer des données",
+    "importSubtitle": "Remplace tes objectifs actuels par un fichier exporté",
+    "importConfirmTitle": "Importer ces données ?",
+    "importConfirmMessage": "Ça va REMPLACER tes {{currentPart}} par les {{importedPart}} de ce fichier.",
+    "importCurrentCount_one": "{{count}} objectif actuel",
+    "importCurrentCount_other": "{{count}} objectifs actuels",
+    "importedGoalCount_one": "{{count}} objectif",
+    "importedGoalCount_other": "{{count}} objectifs"
+  },
+  "backup": {
+    "invalidJson": "Fichier JSON invalide.",
+    "invalidFileFormat": "Format de fichier invalide.",
+    "unsupportedVersion": "Version de fichier non prise en charge ({{version}}).",
+    "missingGoals": "Liste des objectifs manquante ou mal formée dans le fichier.",
+    "invalidSettings": "Réglages mal formés dans le fichier."
+  },
   "settings": {
     "title": "Paramètres",
     "appSection": "Application",
