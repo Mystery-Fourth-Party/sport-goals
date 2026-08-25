@@ -20,7 +20,7 @@ export default function GoalProgressCard({ goal, stats: s }: Props) {
     <View style={styles.card}>
       <View style={styles.progressHeader}>
         <View>
-          <Text style={styles.label}>Progression totale</Text>
+          <Text style={styles.label}>{t('goalDetail.progress.total')}</Text>
           <Text style={styles.progressValue}>
             {fmt(s.actual, goal.unit)}
             <Text style={styles.progressValueMuted}>
@@ -33,7 +33,9 @@ export default function GoalProgressCard({ goal, stats: s }: Props) {
           <Text style={[styles.progressPercent, { color: statusColors[s.status].text }]}>
             {(s.progress * 100).toFixed(0)}%
           </Text>
-          <Text style={styles.expectedLabel}>Attendu {(s.expectedProgress * 100).toFixed(0)}%</Text>
+          <Text style={styles.expectedLabel}>
+            {t('goalDetail.progress.expected', { percent: (s.expectedProgress * 100).toFixed(0) })}
+          </Text>
         </View>
       </View>
 
@@ -41,25 +43,25 @@ export default function GoalProgressCard({ goal, stats: s }: Props) {
 
       <View style={styles.statsRow}>
         <View style={styles.statCol}>
-          <Text style={styles.label}>Streak</Text>
+          <Text style={styles.label}>{t('goalDetail.progress.streak')}</Text>
           <Text style={[styles.statValue, { color: colors.brand }]}>
             {s.streak} <Text style={styles.statValueSuffix}>🔥</Text>
           </Text>
         </View>
         <View style={styles.statDivider} />
         <View style={styles.statCol}>
-          <Text style={styles.label}>Rythme actuel</Text>
+          <Text style={styles.label}>{t('goalDetail.progress.currentPace')}</Text>
           <Text style={styles.statValue}>
             {s.elapsedDays > 0 ? fmt(s.actual / s.elapsedDays, goal.unit) : '—'}
-            <Text style={styles.statValueSuffix}>/j</Text>
+            <Text style={styles.statValueSuffix}>{t('goalDetail.progress.perDaySuffix')}</Text>
           </Text>
         </View>
         <View style={styles.statDivider} />
         <View style={styles.statCol}>
-          <Text style={styles.label}>Requis</Text>
+          <Text style={styles.label}>{t('goalDetail.progress.required')}</Text>
           <Text style={[styles.statValue, s.status === 'late' && { color: colors.late }]}>
             {fmt(s.dailyRequired, goal.unit)}
-            <Text style={styles.statValueSuffix}>/j</Text>
+            <Text style={styles.statValueSuffix}>{t('goalDetail.progress.perDaySuffix')}</Text>
           </Text>
         </View>
       </View>

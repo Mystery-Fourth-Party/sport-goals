@@ -121,6 +121,14 @@
     "reminderTime": "Heure du rappel"
   },
   "goalDetail": {
+    "progress": {
+      "total": "Progression totale",
+      "expected": "Attendu {{percent}}%",
+      "streak": "Streak",
+      "currentPace": "Rythme actuel",
+      "required": "Requis",
+      "perDaySuffix": "/j"
+    },
     "header": {
       "meta": "Jour {{elapsedDays}} / {{totalDays}} · {{remainingDays}}",
       "editA11y": "Modifier l'objectif",
