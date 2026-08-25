@@ -5,6 +5,13 @@
     "min": "minutes",
     "h": "heures"
   },
+  "status": {
+    "ahead": "En avance",
+    "onTrack": "Dans les temps",
+    "late": "En retard",
+    "completed": "Terminé ✓",
+    "notStarted": "Pas commencé"
+  },
   "settings": {
     "title": "Paramètres",
     "appSection": "Application",

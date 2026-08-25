@@ -8,6 +8,7 @@
 // `toDayStr` ci-dessous. Fonctions pures, `today` toujours passé en
 // paramètre (jamais lu via `new Date()` à l'intérieur) pour rester
 // testables ; `todayStr()` fournit la vraie date du jour pour les appelants.
+import i18n from './i18n';
 import { Entry, Goal } from './types';
 
 export type Status = 'ahead' | 'on-track' | 'late' | 'completed' | 'not-started';
@@ -194,12 +195,18 @@ export function fmt(value: number, unit: Goal['unit']): string {
   return Math.round(value).toString();
 }
 
+// Clés de traduction (voir src/i18n/locales/*.json) — statusLabel reste une
+// fonction pure hors composant, appelée aussi bien depuis GoalCard que
+// StatusBadge : lit directement l'instance i18next (pas de Hook disponible
+// ici) plutôt que de forcer chaque appelant à lui passer `t`.
+const STATUS_KEYS: Record<Status, string> = {
+  ahead: 'status.ahead',
+  'on-track': 'status.onTrack',
+  late: 'status.late',
+  completed: 'status.completed',
+  'not-started': 'status.notStarted',
+};
+
 export function statusLabel(s: Status): string {
-  return {
-    ahead: 'En avance',
-    'on-track': 'Dans les temps',
-    late: 'En retard',
-    completed: 'Terminé ✓',
-    'not-started': 'Pas commencé',
-  }[s];
+  return i18n.t(STATUS_KEYS[s]);
 }
