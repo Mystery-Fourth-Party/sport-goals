@@ -2,15 +2,16 @@ import { useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import GoalDetailHeader from '../../src/components/goal-detail/GoalDetailHeader';
 import ProgressEntryModal from '../../src/components/goal-detail/ProgressEntryModal';
-import { BackButton, BarChart, ProgressBar, StatusBadge } from '../../src/components/ui';
+import { BackButton, BarChart, ProgressBar } from '../../src/components/ui';
 import { confirmDestructive } from '../../src/confirm';
 import { longDateLabel, weekdayShort } from '../../src/dateLabels';
 import { useGoals } from '../../src/goals-context';
 import { useSettings } from '../../src/settings-context';
 import { fmt, getGoalStats, parseDate, todayStr } from '../../src/stats';
 import { colors, fontFamily, radius, spacing, statusColors, white } from '../../src/theme';
-import { Entry, UNIT_ICONS, UNIT_LABELS } from '../../src/types';
+import { Entry, UNIT_LABELS } from '../../src/types';
 
 export default function GoalDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -108,72 +109,14 @@ export default function GoalDetailScreen() {
 
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
-      <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <BackButton onPress={() => router.back()} />
-          <View style={styles.headerTexts}>
-            <View style={styles.headerTitleRow}>
-              <Text style={styles.headerIcon}>{UNIT_ICONS[goal.unit]}</Text>
-              <Text style={styles.headerTitle} numberOfLines={1}>
-                {goal.title}
-              </Text>
-            </View>
-            <Text style={styles.headerMeta}>
-              Jour {s.elapsedDays} / {s.totalDays} · {s.remainingDays}j restants
-            </Text>
-          </View>
-          <Pressable
-            style={styles.editButton}
-            onPress={() => router.push(`/goal/${goal.id}/edit`)}
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel="Modifier l'objectif"
-          >
-            <Text style={styles.editGlyph}>✎</Text>
-          </Pressable>
-          <StatusBadge status={s.status} />
-        </View>
-
-        {s.status === 'late' && (
-          <View style={[styles.banner, styles.bannerLate]}>
-            <Text style={styles.bannerEmoji}>⚠️</Text>
-            <View style={styles.bannerTexts}>
-              <Text style={[styles.bannerTitle, { color: colors.late }]}>
-                Tu es en retard sur le rythme
-              </Text>
-              <Text style={styles.bannerSubtitle}>
-                {fmt(s.dailyRequired, goal.unit)} {UNIT_LABELS[goal.unit]}/jour pour rattraper le
-                retard
-              </Text>
-            </View>
-          </View>
-        )}
-        {s.status === 'ahead' && !showAlmostThere && (
-          <View style={[styles.banner, styles.bannerAhead]}>
-            <Text style={styles.bannerEmoji}>🔥</Text>
-            <View style={styles.bannerTexts}>
-              <Text style={[styles.bannerTitle, { color: colors.ahead }]}>
-                En avance sur le planning !
-              </Text>
-              <Text style={styles.bannerSubtitle}>
-                Plus que {fmt(remaining, goal.unit)} {UNIT_LABELS[goal.unit]} à accomplir
-              </Text>
-            </View>
-          </View>
-        )}
-        {showAlmostThere && (
-          <View style={[styles.banner, styles.bannerAlmost]}>
-            <Text style={styles.bannerEmoji}>🎯</Text>
-            <View style={styles.bannerTexts}>
-              <Text style={[styles.bannerTitle, { color: colors.almostThere }]}>Presque là !</Text>
-              <Text style={styles.bannerSubtitle}>
-                Plus que {fmt(remaining, goal.unit)} {UNIT_LABELS[goal.unit]} avant l&apos;objectif
-                — continue !
-              </Text>
-            </View>
-          </View>
-        )}
-      </View>
+      <GoalDetailHeader
+        goal={goal}
+        stats={s}
+        remaining={remaining}
+        showAlmostThere={showAlmostThere}
+        onBack={() => router.back()}
+        onEdit={() => router.push(`/goal/${goal.id}/edit`)}
+      />
 
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.card}>
@@ -317,91 +260,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.appBg,
   },
+  // Utilisé par le seul retour "introuvable" ci-dessus (le header complet
+  // vit désormais dans GoalDetailHeader, avec sa propre copie de ce style).
   header: {
     paddingHorizontal: spacing.screenPadding,
     paddingTop: 12,
     paddingBottom: 4,
     gap: 12,
-  },
-  headerTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  headerTexts: {
-    flex: 1,
-    minWidth: 0,
-  },
-  headerTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  headerIcon: {
-    fontSize: 16,
-  },
-  headerTitle: {
-    flexShrink: 1,
-    fontFamily: fontFamily.displayExtraBold,
-    fontSize: 18,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    color: colors.fg,
-  },
-  headerMeta: {
-    fontFamily: fontFamily.bodyRegular,
-    fontSize: 12,
-    color: white(0.35),
-    marginTop: 2,
-  },
-  editButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: white(0.08),
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  editGlyph: {
-    color: white(0.6),
-    fontSize: 14,
-  },
-  banner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    borderRadius: radius.button,
-    borderWidth: 1,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  bannerLate: {
-    backgroundColor: 'rgba(239,68,68,0.1)',
-    borderColor: 'rgba(239,68,68,0.2)',
-  },
-  bannerAhead: {
-    backgroundColor: 'rgba(34,197,94,0.1)',
-    borderColor: 'rgba(34,197,94,0.2)',
-  },
-  bannerAlmost: {
-    backgroundColor: 'rgba(245,158,11,0.1)',
-    borderColor: 'rgba(245,158,11,0.2)',
-  },
-  bannerEmoji: {
-    fontSize: 18,
-  },
-  bannerTexts: {
-    flexShrink: 1,
-  },
-  bannerTitle: {
-    fontFamily: fontFamily.bodySemiBold,
-    fontSize: 14,
-  },
-  bannerSubtitle: {
-    fontFamily: fontFamily.bodyRegular,
-    fontSize: 12,
-    color: white(0.45),
-    marginTop: 2,
   },
   content: {
     padding: spacing.screenPadding,
