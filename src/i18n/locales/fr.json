@@ -121,6 +121,11 @@
     "reminderTime": "Heure du rappel"
   },
   "goalDetail": {
+    "history": {
+      "title": "Historique",
+      "noEntry": "aucune entrée",
+      "today": "(auj.)"
+    },
     "recentSessions": {
       "title": "Dernières séances"
     },

@@ -121,6 +121,11 @@
     "reminderTime": "Reminder time"
   },
   "goalDetail": {
+    "history": {
+      "title": "History",
+      "noEntry": "no entry",
+      "today": "(today)"
+    },
     "recentSessions": {
       "title": "Recent sessions"
     },

@@ -22,14 +22,14 @@ export default function GoalHistoryList({ entries, unit, today, onEntryPress }: 
 
   return (
     <View style={[styles.card, styles.historyCard]}>
-      <Text style={[styles.label, styles.historyHeader]}>Historique</Text>
+      <Text style={[styles.label, styles.historyHeader]}>{t('goalDetail.history.title')}</Text>
       {historyEntries.map((entry, i) => {
         const d = parseDate(entry.date);
         const isToday = entry.date === today;
         const entryAccessibilityLabel =
           entry.value > 0
             ? `${longDateLabel(d)}, ${fmt(entry.value, unit)} ${unitLabel}`
-            : `${longDateLabel(d)}, aucune entrée`;
+            : `${longDateLabel(d)}, ${t('goalDetail.history.noEntry')}`;
         return (
           <Pressable
             key={entry.date}
@@ -46,7 +46,9 @@ export default function GoalHistoryList({ entries, unit, today, onEntryPress }: 
               <View style={[styles.historyDot, entry.value > 0 && styles.historyDotActive]} />
               <Text style={styles.historyDate}>
                 {longDateLabel(d)}
-                {isToday && <Text style={styles.historyToday}> (auj.)</Text>}
+                {isToday && (
+                  <Text style={styles.historyToday}> {t('goalDetail.history.today')}</Text>
+                )}
               </Text>
             </View>
             <Text style={styles.historyValue}>
