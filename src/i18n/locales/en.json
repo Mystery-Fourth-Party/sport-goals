@@ -161,6 +161,19 @@
     "save": "Save",
     "deleteEntry": "🗑 Delete this entry"
   },
+  "editGoal": {
+    "title": "Edit",
+    "subtitle": "Reschedule the goal",
+    "currentProgress": "Current progress",
+    "durationLabel": "Days left",
+    "titleRequired": "The goal title is required.",
+    "targetTooLow": "The target must be ≥ what's already done ({{value}} {{unit}}).",
+    "targetPositive": "The target value must be a positive number.",
+    "daysPositive": "The days left must be a positive number.",
+    "newPace": "New daily pace",
+    "remainingToComplete": "{{unit}}/day · {{value}} {{unitLabel}} left to complete",
+    "save": "Save changes"
+  },
   "settings": {
     "title": "Settings",
     "appSection": "App",

@@ -161,6 +161,19 @@
     "save": "Enregistrer",
     "deleteEntry": "🗑 Supprimer cette entrée"
   },
+  "editGoal": {
+    "title": "Modifier",
+    "subtitle": "Replanification de l'objectif",
+    "currentProgress": "Progression actuelle",
+    "durationLabel": "Jours restants",
+    "titleRequired": "Le titre de l'objectif est requis.",
+    "targetTooLow": "La cible doit être ≥ à ce qui est déjà accompli ({{value}} {{unit}}).",
+    "targetPositive": "La valeur cible doit être un nombre positif.",
+    "daysPositive": "Les jours restants doivent être un nombre positif.",
+    "newPace": "Nouveau rythme quotidien",
+    "remainingToComplete": "{{unit}}/jour · encore {{value}} {{unitLabel}} à accomplir",
+    "save": "Enregistrer les modifications"
+  },
   "settings": {
     "title": "Paramètres",
     "appSection": "Application",
