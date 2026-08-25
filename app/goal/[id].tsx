@@ -2,11 +2,13 @@ import { useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import GoalDetailHeader from '../../src/components/goal-detail/GoalDetailHeader';
-import GoalHistoryList from '../../src/components/goal-detail/GoalHistoryList';
-import GoalProgressCard from '../../src/components/goal-detail/GoalProgressCard';
-import ProgressEntryModal from '../../src/components/goal-detail/ProgressEntryModal';
-import RecentSessionsCard from '../../src/components/goal-detail/RecentSessionsCard';
+import {
+  GoalDetailHeader,
+  GoalHistoryList,
+  GoalProgressCard,
+  ProgressEntryModal,
+  RecentSessionsCard,
+} from '../../src/components/goal-detail';
 import { BackButton } from '../../src/components/ui';
 import { confirmDestructive } from '../../src/confirm';
 import { longDateLabel } from '../../src/dateLabels';
