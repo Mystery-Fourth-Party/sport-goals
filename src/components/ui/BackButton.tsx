@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, Text } from 'react-native';
 import { size, white } from '../../theme';
 
@@ -10,13 +11,15 @@ interface Props {
 // (react-native-svg / @expo/vector-icons) à ce stade — à revoir si un vrai
 // jeu d'icônes est introduit plus tard.
 export default function BackButton({ onPress }: Props) {
+  const { t } = useTranslation();
+
   return (
     <Pressable
       onPress={onPress}
       style={styles.container}
       hitSlop={8}
       accessibilityRole="button"
-      accessibilityLabel="Retour"
+      accessibilityLabel={t('common.back')}
     >
       <Text style={styles.glyph}>‹</Text>
     </Pressable>
