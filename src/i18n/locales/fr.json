@@ -88,6 +88,19 @@
     "weekTotal": "+{{value}} {{unit}}",
     "empty": "Aucun objectif pour l'instant — crée-en un pour voir ton résumé de la semaine."
   },
+  "goalCard": {
+    "progressA11y": "{{percent}}% de l'objectif",
+    "remainingDaysA11y_one": "{{count}} jour restant",
+    "remainingDaysA11y_other": "{{count}} jours restants",
+    "lateRequiredA11y": "{{value}} {{unit}} par jour nécessaires pour rattraper",
+    "aheadA11y_one": "{{count}} jour consécutif, en avance sur le planning",
+    "aheadA11y_other": "{{count}} jours consécutifs, en avance sur le planning",
+    "remainingDays_one": "{{count}}j restant",
+    "remainingDays_other": "{{count}}j restants",
+    "lateHint": "↑ {{value}} {{unit}}/jour nécessaires pour rattraper",
+    "aheadHint_one": "🔥 {{count}} jour consécutif · en avance sur le planning",
+    "aheadHint_other": "🔥 {{count}} jours consécutifs · en avance sur le planning"
+  },
   "settings": {
     "title": "Paramètres",
     "appSection": "Application",

@@ -28,16 +28,16 @@ export default function GoalCard({ goal, onPress }: Props) {
   // accessible={false} dessus (vérifié dans la doc RN sur l'accessibilité).
   const accessibilityParts = [
     goal.title,
-    `${Math.round(s.progress * 100)}% de l'objectif`,
-    `${s.remainingDays} jours restants`,
+    t('goalCard.progressA11y', { percent: Math.round(s.progress * 100) }),
+    t('goalCard.remainingDaysA11y', { count: s.remainingDays }),
     statusLabel(s.status),
   ];
   if (s.status === 'late') {
     accessibilityParts.push(
-      `${fmt(s.dailyRequired, goal.unit)} ${unitLabel} par jour nécessaires pour rattraper`,
+      t('goalCard.lateRequiredA11y', { value: fmt(s.dailyRequired, goal.unit), unit: unitLabel }),
     );
   } else if (s.status === 'ahead') {
-    accessibilityParts.push(`${s.streak} jours consécutifs, en avance sur le planning`);
+    accessibilityParts.push(t('goalCard.aheadA11y', { count: s.streak }));
   }
 
   return (
@@ -56,7 +56,9 @@ export default function GoalCard({ goal, onPress }: Props) {
             <Text style={styles.title} numberOfLines={1}>
               {goal.title}
             </Text>
-            <Text style={styles.remaining}>{s.remainingDays}j restants</Text>
+            <Text style={styles.remaining}>
+              {t('goalCard.remainingDays', { count: s.remainingDays })}
+            </Text>
           </View>
         </View>
         <StatusBadge status={s.status} />
@@ -79,13 +81,11 @@ export default function GoalCard({ goal, onPress }: Props) {
 
       {s.status === 'late' && (
         <Text style={styles.lateHint}>
-          ↑ {fmt(s.dailyRequired, goal.unit)} {unitLabel}/jour nécessaires pour rattraper
+          {t('goalCard.lateHint', { value: fmt(s.dailyRequired, goal.unit), unit: unitLabel })}
         </Text>
       )}
       {s.status === 'ahead' && (
-        <Text style={styles.aheadHint}>
-          🔥 {s.streak} jour(s) consécutif(s) · en avance sur le planning
-        </Text>
+        <Text style={styles.aheadHint}>{t('goalCard.aheadHint', { count: s.streak })}</Text>
       )}
     </Pressable>
   );

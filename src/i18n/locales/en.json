@@ -88,6 +88,19 @@
     "weekTotal": "+{{value}} {{unit}}",
     "empty": "No goals yet — create one to see your weekly summary."
   },
+  "goalCard": {
+    "progressA11y": "{{percent}}% of the goal",
+    "remainingDaysA11y_one": "{{count}} day left",
+    "remainingDaysA11y_other": "{{count}} days left",
+    "lateRequiredA11y": "{{value}} {{unit}} per day needed to catch up",
+    "aheadA11y_one": "{{count}} day streak, ahead of schedule",
+    "aheadA11y_other": "{{count}} day streak, ahead of schedule",
+    "remainingDays_one": "{{count}}d left",
+    "remainingDays_other": "{{count}}d left",
+    "lateHint": "↑ {{value}} {{unit}}/day needed to catch up",
+    "aheadHint_one": "🔥 {{count}} day streak · ahead of schedule",
+    "aheadHint_other": "🔥 {{count}} day streak · ahead of schedule"
+  },
   "settings": {
     "title": "Settings",
     "appSection": "App",
