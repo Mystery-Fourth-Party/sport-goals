@@ -5,9 +5,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import GoalDetailHeader from '../../src/components/goal-detail/GoalDetailHeader';
 import GoalProgressCard from '../../src/components/goal-detail/GoalProgressCard';
 import ProgressEntryModal from '../../src/components/goal-detail/ProgressEntryModal';
-import { BackButton, BarChart } from '../../src/components/ui';
+import RecentSessionsCard from '../../src/components/goal-detail/RecentSessionsCard';
+import { BackButton } from '../../src/components/ui';
 import { confirmDestructive } from '../../src/confirm';
-import { longDateLabel, weekdayShort } from '../../src/dateLabels';
+import { longDateLabel } from '../../src/dateLabels';
 import { useGoals } from '../../src/goals-context';
 import { useSettings } from '../../src/settings-context';
 import { fmt, getGoalStats, parseDate, todayStr } from '../../src/stats';
@@ -47,7 +48,6 @@ export default function GoalDetailScreen() {
   const remaining = goal.targetValue - s.actual;
   const showAlmostThere = settings.almostThereNotifs && s.progress >= 0.9 && s.progress < 1;
 
-  const recentEntries = goal.entries.filter((e) => e.value > 0).slice(-7);
   const historyEntries = [...goal.entries].reverse().slice(0, 12);
   const todayEntry = goal.entries.find((e) => e.date === today);
 
@@ -122,23 +122,7 @@ export default function GoalDetailScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <GoalProgressCard goal={goal} stats={s} />
 
-        {recentEntries.length > 0 && (
-          <View style={styles.card}>
-            <Text style={[styles.label, styles.cardSectionLabel]}>Dernières séances</Text>
-            <BarChart
-              bars={recentEntries.map((e) => {
-                const d = parseDate(e.date);
-                return {
-                  key: e.date,
-                  label: weekdayShort(d),
-                  value: e.value,
-                  valueLabel: fmt(e.value, goal.unit),
-                  highlighted: e.date === today,
-                };
-              })}
-            />
-          </View>
-        )}
+        <RecentSessionsCard entries={goal.entries} unit={goal.unit} today={today} />
 
         <View style={[styles.card, styles.historyCard]}>
           <Text style={[styles.label, styles.historyHeader]}>Historique</Text>
