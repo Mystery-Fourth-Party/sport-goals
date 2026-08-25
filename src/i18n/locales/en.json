@@ -110,6 +110,16 @@
     "perDay": "{{unit}} per day",
     "submit": "Create the goal"
   },
+  "goalFields": {
+    "name": "Goal name",
+    "namePlaceholder": "e.g. 1000 push-ups in 30 days",
+    "targetValue": "Target value",
+    "unit": "Unit",
+    "unitA11y": "Unit: {{unit}}",
+    "remindersEnabled": "Reminders enabled",
+    "customTime": "Custom time",
+    "reminderTime": "Reminder time"
+  },
   "settings": {
     "title": "Settings",
     "appSection": "App",

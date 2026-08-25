@@ -110,6 +110,16 @@
     "perDay": "{{unit}} par jour",
     "submit": "Créer l'objectif"
   },
+  "goalFields": {
+    "name": "Nom de l'objectif",
+    "namePlaceholder": "ex : 1000 pompes en 30 jours",
+    "targetValue": "Valeur cible",
+    "unit": "Unité",
+    "unitA11y": "Unité : {{unit}}",
+    "remindersEnabled": "Rappels activés",
+    "customTime": "Horaire personnalisé",
+    "reminderTime": "Heure du rappel"
+  },
   "settings": {
     "title": "Paramètres",
     "appSection": "Application",
