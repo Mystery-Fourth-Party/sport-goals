@@ -49,6 +49,22 @@
       "Dec"
     ]
   },
+  "goalList": {
+    "heading": "My\nGoals",
+    "weeklySummaryA11y": "Weekly summary",
+    "settingsA11y": "Settings",
+    "active": "Active",
+    "completed": "Completed",
+    "completedA11y_one": "Completed, {{count}} goal",
+    "completedA11y_other": "Completed, {{count}} goals",
+    "total": "Total",
+    "emptyNoGoalsTitle": "No goals yet",
+    "emptyNoGoalsText": "Set your first fitness goal and track your progress every day.",
+    "emptyAllDoneTitle": "All done",
+    "emptyAllDoneText": "All your goals are complete — find them in the archive, or set yourself a new challenge.",
+    "createGoal": "Create a goal",
+    "viewArchive": "View archive"
+  },
   "settings": {
     "title": "Settings",
     "appSection": "App",

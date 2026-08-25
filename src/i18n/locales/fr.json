@@ -49,6 +49,22 @@
       "déc."
     ]
   },
+  "goalList": {
+    "heading": "Mes\nObjectifs",
+    "weeklySummaryA11y": "Résumé hebdomadaire",
+    "settingsA11y": "Réglages",
+    "active": "En cours",
+    "completed": "Terminés",
+    "completedA11y_one": "Terminés, {{count}} objectif",
+    "completedA11y_other": "Terminés, {{count}} objectifs",
+    "total": "Total",
+    "emptyNoGoalsTitle": "Aucun objectif",
+    "emptyNoGoalsText": "Fixe ton premier objectif sportif et suis ta progression chaque jour.",
+    "emptyAllDoneTitle": "Tout est accompli",
+    "emptyAllDoneText": "Tous tes objectifs sont terminés — retrouve-les dans l'archive, ou fixe-toi un nouveau défi.",
+    "createGoal": "Créer un objectif",
+    "viewArchive": "Voir l'archive"
+  },
   "settings": {
     "title": "Paramètres",
     "appSection": "Application",
