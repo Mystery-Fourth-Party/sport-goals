@@ -120,6 +120,18 @@
     "customTime": "Horaire personnalisé",
     "reminderTime": "Heure du rappel"
   },
+  "goalDetail": {
+    "header": {
+      "meta": "Jour {{elapsedDays}} / {{totalDays}} · {{remainingDays}}",
+      "editA11y": "Modifier l'objectif",
+      "lateBannerTitle": "Tu es en retard sur le rythme",
+      "lateBannerSubtitle": "{{value}} {{unit}}/jour pour rattraper le retard",
+      "aheadBannerTitle": "En avance sur le planning !",
+      "aheadBannerSubtitle": "Plus que {{value}} {{unit}} à accomplir",
+      "almostBannerTitle": "Presque là !",
+      "almostBannerSubtitle": "Plus que {{value}} {{unit}} avant l'objectif — continue !"
+    }
+  },
   "settings": {
     "title": "Paramètres",
     "appSection": "Application",

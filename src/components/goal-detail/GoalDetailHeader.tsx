@@ -41,7 +41,11 @@ export default function GoalDetailHeader({
             </Text>
           </View>
           <Text style={styles.headerMeta}>
-            Jour {s.elapsedDays} / {s.totalDays} · {s.remainingDays}j restants
+            {t('goalDetail.header.meta', {
+              elapsedDays: s.elapsedDays,
+              totalDays: s.totalDays,
+              remainingDays: t('goalCard.remainingDays', { count: s.remainingDays }),
+            })}
           </Text>
         </View>
         <Pressable
@@ -49,7 +53,7 @@ export default function GoalDetailHeader({
           onPress={onEdit}
           hitSlop={8}
           accessibilityRole="button"
-          accessibilityLabel="Modifier l'objectif"
+          accessibilityLabel={t('goalDetail.header.editA11y')}
         >
           <Text style={styles.editGlyph}>✎</Text>
         </Pressable>
@@ -61,10 +65,13 @@ export default function GoalDetailHeader({
           <Text style={styles.bannerEmoji}>⚠️</Text>
           <View style={styles.bannerTexts}>
             <Text style={[styles.bannerTitle, { color: colors.late }]}>
-              Tu es en retard sur le rythme
+              {t('goalDetail.header.lateBannerTitle')}
             </Text>
             <Text style={styles.bannerSubtitle}>
-              {fmt(s.dailyRequired, goal.unit)} {unitLabel}/jour pour rattraper le retard
+              {t('goalDetail.header.lateBannerSubtitle', {
+                value: fmt(s.dailyRequired, goal.unit),
+                unit: unitLabel,
+              })}
             </Text>
           </View>
         </View>
@@ -74,10 +81,13 @@ export default function GoalDetailHeader({
           <Text style={styles.bannerEmoji}>🔥</Text>
           <View style={styles.bannerTexts}>
             <Text style={[styles.bannerTitle, { color: colors.ahead }]}>
-              En avance sur le planning !
+              {t('goalDetail.header.aheadBannerTitle')}
             </Text>
             <Text style={styles.bannerSubtitle}>
-              Plus que {fmt(remaining, goal.unit)} {unitLabel} à accomplir
+              {t('goalDetail.header.aheadBannerSubtitle', {
+                value: fmt(remaining, goal.unit),
+                unit: unitLabel,
+              })}
             </Text>
           </View>
         </View>
@@ -86,9 +96,14 @@ export default function GoalDetailHeader({
         <View style={[styles.banner, styles.bannerAlmost]}>
           <Text style={styles.bannerEmoji}>🎯</Text>
           <View style={styles.bannerTexts}>
-            <Text style={[styles.bannerTitle, { color: colors.almostThere }]}>Presque là !</Text>
+            <Text style={[styles.bannerTitle, { color: colors.almostThere }]}>
+              {t('goalDetail.header.almostBannerTitle')}
+            </Text>
             <Text style={styles.bannerSubtitle}>
-              Plus que {fmt(remaining, goal.unit)} {unitLabel} avant l&apos;objectif — continue !
+              {t('goalDetail.header.almostBannerSubtitle', {
+                value: fmt(remaining, goal.unit),
+                unit: unitLabel,
+              })}
             </Text>
           </View>
         </View>

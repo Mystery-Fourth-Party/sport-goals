@@ -120,6 +120,18 @@
     "customTime": "Custom time",
     "reminderTime": "Reminder time"
   },
+  "goalDetail": {
+    "header": {
+      "meta": "Day {{elapsedDays}} / {{totalDays}} · {{remainingDays}}",
+      "editA11y": "Edit the goal",
+      "lateBannerTitle": "You're behind schedule",
+      "lateBannerSubtitle": "{{value}} {{unit}}/day to catch up",
+      "aheadBannerTitle": "Ahead of schedule!",
+      "aheadBannerSubtitle": "{{value}} {{unit}} left to go",
+      "almostBannerTitle": "Almost there!",
+      "almostBannerSubtitle": "{{value}} {{unit}} left before the goal — keep going!"
+    }
+  },
   "settings": {
     "title": "Settings",
     "appSection": "App",
