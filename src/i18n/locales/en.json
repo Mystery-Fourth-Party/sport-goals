@@ -101,6 +101,15 @@
     "aheadHint_one": "🔥 {{count}} day streak · ahead of schedule",
     "aheadHint_other": "🔥 {{count}} day streak · ahead of schedule"
   },
+  "goalForm": {
+    "titleRequired": "The goal title is required.",
+    "targetPositive": "The target value must be a positive number.",
+    "durationPositive": "The duration must be a positive number of days.",
+    "durationLabel": "Duration (days)",
+    "dailyAvgRequired": "Required daily pace",
+    "perDay": "{{unit}} per day",
+    "submit": "Create the goal"
+  },
   "settings": {
     "title": "Settings",
     "appSection": "App",

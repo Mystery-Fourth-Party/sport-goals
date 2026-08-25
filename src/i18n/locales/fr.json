@@ -101,6 +101,15 @@
     "aheadHint_one": "🔥 {{count}} jour consécutif · en avance sur le planning",
     "aheadHint_other": "🔥 {{count}} jours consécutifs · en avance sur le planning"
   },
+  "goalForm": {
+    "titleRequired": "Le titre de l'objectif est requis.",
+    "targetPositive": "La valeur cible doit être un nombre positif.",
+    "durationPositive": "La durée doit être un nombre de jours positif.",
+    "durationLabel": "Durée (jours)",
+    "dailyAvgRequired": "Rythme quotidien requis",
+    "perDay": "{{unit}} par jour",
+    "submit": "Créer l'objectif"
+  },
   "settings": {
     "title": "Paramètres",
     "appSection": "Application",

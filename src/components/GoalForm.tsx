@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import * as Crypto from 'expo-crypto';
+import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Goal, Unit } from '../types';
 import { fmt } from '../stats';
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export default function GoalForm({ onCreate }: Props) {
+  const { t } = useTranslation();
   // Formulaire contrôlé classique (comme en React web) : un useState par champ.
   const [title, setTitle] = useState('');
   const [targetValue, setTargetValue] = useState('');
@@ -26,11 +28,9 @@ export default function GoalForm({ onCreate }: Props) {
   // qu'il commence à remplir le formulaire.
   const [submitAttempted, setSubmitAttempted] = useState(false);
 
-  const titleError = title.trim() === '' ? "Le titre de l'objectif est requis." : undefined;
-  const targetValueError =
-    Number(targetValue) > 0 ? undefined : 'La valeur cible doit être un nombre positif.';
-  const durationError =
-    Number(durationDays) > 0 ? undefined : 'La durée doit être un nombre de jours positif.';
+  const titleError = title.trim() === '' ? t('goalForm.titleRequired') : undefined;
+  const targetValueError = Number(targetValue) > 0 ? undefined : t('goalForm.targetPositive');
+  const durationError = Number(durationDays) > 0 ? undefined : t('goalForm.durationPositive');
   const canSubmit = !titleError && !targetValueError && !durationError;
 
   // Rythme quotidien requis affiché en direct dès que les 3 champs sont
@@ -81,7 +81,7 @@ export default function GoalForm({ onCreate }: Props) {
         onTargetValueChange={setTargetValue}
         unit={unit}
         onUnitChange={setUnit}
-        durationLabel="Durée (jours)"
+        durationLabel={t('goalForm.durationLabel')}
         duration={durationDays}
         onDurationChange={setDurationDays}
         titleError={submitAttempted ? titleError : undefined}
@@ -95,9 +95,9 @@ export default function GoalForm({ onCreate }: Props) {
 
       {dailyAvg > 0 && (
         <View style={styles.dailyAvgCard}>
-          <Text style={styles.dailyAvgLabel}>Rythme quotidien requis</Text>
+          <Text style={styles.dailyAvgLabel}>{t('goalForm.dailyAvgRequired')}</Text>
           <Text style={styles.dailyAvgValue}>≈ {fmt(dailyAvg, unit)}</Text>
-          <Text style={styles.dailyAvgUnit}>{unit} par jour</Text>
+          <Text style={styles.dailyAvgUnit}>{t('goalForm.perDay', { unit })}</Text>
         </View>
       )}
 
@@ -105,7 +105,7 @@ export default function GoalForm({ onCreate }: Props) {
           actif : une tentative de soumission invalide affiche les erreurs
           inline plutôt que de simplement ignorer le press. */}
       <Pressable style={styles.button} onPress={handleSubmit} accessibilityRole="button">
-        <Text style={styles.buttonText}>Créer l&apos;objectif</Text>
+        <Text style={styles.buttonText}>{t('goalForm.submit')}</Text>
       </Pressable>
     </View>
   );
