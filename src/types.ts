@@ -50,8 +50,8 @@ export interface Goal {
 // que par une table statique ici.
 
 // Icône par unité (voir design-tokens.md § Composants réutilisables —
-// GoalCard). Purement visuel, à côté de UNIT_LABELS plutôt que dans
-// theme.ts : c'est une table totale sur `Unit`, comme UNIT_LABELS.
+// GoalCard). Purement visuel, ici plutôt que dans theme.ts : c'est une
+// table totale sur `Unit`, comme les clés de traduction unit.* ci-dessus.
 export const UNIT_ICONS: Record<Unit, string> = {
   reps: '💪',
   km: '🏃',

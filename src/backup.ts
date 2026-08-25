@@ -21,7 +21,8 @@ export interface BackupGoal {
   targetValue: number;
   createdAt: string;
   deadline: string;
-  // Pratique pour un outil externe qui n'a pas UNIT_LABELS sous la main.
+  // Pratique pour un outil externe qui n'a pas accès aux traductions
+  // unit.* (voir src/i18n/locales/*.json) sous la main.
   unitLabel: string;
   entries: Entry[];
   // Reflètent Goal.reminderTime/reminderEnabled (voir types.ts) — absents du
