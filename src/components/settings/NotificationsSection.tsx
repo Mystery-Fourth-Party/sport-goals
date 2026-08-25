@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Platform, StyleSheet, Text, View } from 'react-native';
 import {
   ensureNotificationPermission,
@@ -17,6 +18,7 @@ import { settingsStyles as s } from './styles';
 // UI+logique+styles mélangés) sans changement de comportement — voir aussi
 // DataSection pour la carte "Données".
 export default function NotificationsSection() {
+  const { t } = useTranslation();
   const { settings, updateSettings } = useSettings();
   const { error: reminderStatusError } = useReminderStatus();
   // Message affiché si la demande de permission échoue (plateforme non
@@ -27,7 +29,7 @@ export default function NotificationsSection() {
   // seul le repli texte libre du web (voir TimeField) en a besoin.
   const reminderTimeError =
     Platform.OS === 'web' && settings.dailyReminder && !parseReminderTime(settings.reminderTime)
-      ? 'Format invalide — utilise HH:mm (ex : 20:00).'
+      ? t('notifications.invalidTimeFormat')
       : undefined;
 
   // La permission est demandée ici, au moment où l'utilisateur active un
@@ -39,12 +41,12 @@ export default function NotificationsSection() {
   // automatiques (voir ReminderScheduler) — les deux coexistent.
   async function requestPermissionOrExplain(): Promise<boolean> {
     if (!notificationsSupported()) {
-      setNotifError('Notifications indisponibles sur cette plateforme (web).');
+      setNotifError(t('notifications.unavailableWeb'));
       return false;
     }
     const granted = await ensureNotificationPermission();
     if (!granted) {
-      setNotifError("Notifications refusées — active-les dans les réglages de l'appareil.");
+      setNotifError(t('notifications.denied'));
       return false;
     }
     setNotifError(undefined);
@@ -63,25 +65,25 @@ export default function NotificationsSection() {
 
   return (
     <>
-      <Text style={s.sectionLabel}>Notifications</Text>
+      <Text style={s.sectionLabel}>{t('notifications.sectionTitle')}</Text>
       {notifError && <Text style={s.errorText}>{notifError}</Text>}
       <View style={s.card}>
         <View style={[s.row, s.rowBorder]}>
           <View style={s.rowTexts}>
-            <Text style={s.rowTitle}>Rappel quotidien</Text>
-            <Text style={s.rowSubtitle}>Pour entrer ta progression chaque jour</Text>
+            <Text style={s.rowTitle}>{t('notifications.dailyReminder')}</Text>
+            <Text style={s.rowSubtitle}>{t('notifications.dailyReminderSubtitle')}</Text>
           </View>
           <Toggle
             value={settings.dailyReminder}
             onChange={handleDailyReminderToggle}
-            accessibilityLabel="Rappel quotidien"
+            accessibilityLabel={t('notifications.dailyReminder')}
           />
         </View>
 
         {settings.dailyReminder && (
           <View style={[s.row, s.rowBorder, styles.rowWrap]}>
             <View style={styles.timeRow}>
-              <Text style={s.rowTitle}>Heure du rappel</Text>
+              <Text style={s.rowTitle}>{t('notifications.reminderTime')}</Text>
               <TimeField
                 value={settings.reminderTime}
                 onChange={(v) => updateSettings({ reminderTime: v })}
@@ -98,37 +100,37 @@ export default function NotificationsSection() {
 
         <View style={[s.row, s.rowBorder]}>
           <View style={s.rowTexts}>
-            <Text style={s.rowTitle}>Objectif atteint 🏆</Text>
-            <Text style={s.rowSubtitle}>Célébration quand un objectif est complété</Text>
+            <Text style={s.rowTitle}>{t('notifications.goalReached')}</Text>
+            <Text style={s.rowSubtitle}>{t('notifications.goalReachedSubtitle')}</Text>
           </View>
           <Toggle
             value={settings.goalReachedNotifs}
             onChange={handleGoalReachedToggle}
-            accessibilityLabel="Objectif atteint 🏆"
+            accessibilityLabel={t('notifications.goalReached')}
           />
         </View>
 
         <View style={[s.row, s.rowBorder]}>
           <View style={s.rowTexts}>
-            <Text style={s.rowTitle}>Objectif bientôt atteint 🎯</Text>
-            <Text style={s.rowSubtitle}>Quand il ne reste que quelques % pour finir</Text>
+            <Text style={s.rowTitle}>{t('notifications.almostThere')}</Text>
+            <Text style={s.rowSubtitle}>{t('notifications.almostThereSubtitle')}</Text>
           </View>
           <Toggle
             value={settings.almostThereNotifs}
             onChange={(v) => updateSettings({ almostThereNotifs: v })}
-            accessibilityLabel="Objectif bientôt atteint 🎯"
+            accessibilityLabel={t('notifications.almostThere')}
           />
         </View>
 
         <View style={s.row}>
           <View style={s.rowTexts}>
-            <Text style={s.rowTitle}>Streak en danger 🔥</Text>
-            <Text style={s.rowSubtitle}>Si tu n&apos;as pas encore entré ta progression</Text>
+            <Text style={s.rowTitle}>{t('notifications.streakAlert')}</Text>
+            <Text style={s.rowSubtitle}>{t('notifications.streakAlertSubtitle')}</Text>
           </View>
           <Toggle
             value={settings.streakAlert}
             onChange={(v) => updateSettings({ streakAlert: v })}
-            accessibilityLabel="Streak en danger 🔥"
+            accessibilityLabel={t('notifications.streakAlert')}
           />
         </View>
       </View>

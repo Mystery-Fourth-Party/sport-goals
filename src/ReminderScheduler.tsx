@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useGoals } from './goals-context';
 import { cancelDailyReminder, rescheduleDailyReminder } from './notifications';
 import { useReminderStatus } from './reminder-status';
@@ -23,6 +24,10 @@ export default function ReminderScheduler() {
   const { goals, loaded: goalsLoaded } = useGoals();
   const { settings, loaded: settingsLoaded } = useSettings();
   const { setError } = useReminderStatus();
+  // Redéclenche la reprogrammation quand la langue change, pour que
+  // reminderStatusError (affiché dans NotificationsSection) ne reste pas
+  // figé dans l'ancienne langue si une erreur est déjà affichée.
+  const { i18n } = useTranslation();
   // Incrémenté à chaque exécution de l'effet, capturé localement avant
   // l'appel async : l'effet peut se redéclencher plusieurs fois avant qu'une
   // promesse précédente ne se résolve (ex. sur web, la saisie libre de
@@ -58,6 +63,7 @@ export default function ReminderScheduler() {
     goalsLoaded,
     settingsLoaded,
     setError,
+    i18n.language,
   ]);
 
   return null;
