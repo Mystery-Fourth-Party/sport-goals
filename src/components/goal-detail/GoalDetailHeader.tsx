@@ -1,8 +1,9 @@
+import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { BackButton, StatusBadge } from '../ui';
 import { fmt, GoalStats } from '../../stats';
 import { colors, fontFamily, radius, spacing, white } from '../../theme';
-import { Goal, UNIT_ICONS, UNIT_LABELS } from '../../types';
+import { Goal, UNIT_ICONS } from '../../types';
 
 interface Props {
   goal: Goal;
@@ -25,6 +26,9 @@ export default function GoalDetailHeader({
   onBack,
   onEdit,
 }: Props) {
+  const { t } = useTranslation();
+  const unitLabel = t(`unit.${goal.unit}`);
+
   return (
     <View style={styles.header}>
       <View style={styles.headerTop}>
@@ -60,8 +64,7 @@ export default function GoalDetailHeader({
               Tu es en retard sur le rythme
             </Text>
             <Text style={styles.bannerSubtitle}>
-              {fmt(s.dailyRequired, goal.unit)} {UNIT_LABELS[goal.unit]}/jour pour rattraper le
-              retard
+              {fmt(s.dailyRequired, goal.unit)} {unitLabel}/jour pour rattraper le retard
             </Text>
           </View>
         </View>
@@ -74,7 +77,7 @@ export default function GoalDetailHeader({
               En avance sur le planning !
             </Text>
             <Text style={styles.bannerSubtitle}>
-              Plus que {fmt(remaining, goal.unit)} {UNIT_LABELS[goal.unit]} à accomplir
+              Plus que {fmt(remaining, goal.unit)} {unitLabel} à accomplir
             </Text>
           </View>
         </View>
@@ -85,8 +88,7 @@ export default function GoalDetailHeader({
           <View style={styles.bannerTexts}>
             <Text style={[styles.bannerTitle, { color: colors.almostThere }]}>Presque là !</Text>
             <Text style={styles.bannerSubtitle}>
-              Plus que {fmt(remaining, goal.unit)} {UNIT_LABELS[goal.unit]} avant l&apos;objectif —
-              continue !
+              Plus que {fmt(remaining, goal.unit)} {unitLabel} avant l&apos;objectif — continue !
             </Text>
           </View>
         </View>

@@ -1,6 +1,12 @@
 import { buildBackupPayload, parseBackupPayload, SCHEMA_VERSION } from './backup';
+import i18n from './i18n';
 import { DEFAULT_SETTINGS, Settings } from './settingsStorage';
 import { Goal } from './types';
+
+// unitLabel (voir buildBackupPayload) dépend désormais de la langue
+// courante d'i18next — fixée ici pour un test déterministe, indépendant de
+// la langue détectée par défaut dans l'environnement Jest.
+beforeAll(() => i18n.changeLanguage('fr'));
 
 const goal: Goal = {
   id: 'g1',

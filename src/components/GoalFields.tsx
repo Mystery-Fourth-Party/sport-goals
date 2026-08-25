@@ -1,9 +1,8 @@
+import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { Unit, UNIT_LABELS } from '../types';
+import { Unit, UNITS } from '../types';
 import { colors, fontFamily, radius, spacing, white } from '../theme';
 import { TimeField, Toggle } from './ui';
-
-const UNITS: Unit[] = ['reps', 'km', 'min', 'h'];
 
 interface Props {
   title: string;
@@ -58,6 +57,8 @@ export default function GoalFields({
   reminderTime,
   onReminderTimeChange,
 }: Props) {
+  const { t } = useTranslation();
+
   return (
     <>
       <Text style={styles.label}>Nom de l&apos;objectif</Text>
@@ -110,7 +111,7 @@ export default function GoalFields({
             // veut rien dire lu tel quel).
             accessibilityRole="button"
             accessibilityState={{ selected: unit === u }}
-            accessibilityLabel={`Unité : ${UNIT_LABELS[u]}`}
+            accessibilityLabel={`Unité : ${t(`unit.${u}`)}`}
           >
             <Text style={[styles.chipText, unit === u && styles.chipTextSelected]}>
               {u.toUpperCase()}

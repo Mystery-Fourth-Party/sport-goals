@@ -1,5 +1,6 @@
+import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Goal, UNIT_ICONS, UNIT_LABELS } from '../types';
+import { Goal, UNIT_ICONS } from '../types';
 import { fmt, getGoalStats, statusLabel, todayStr } from '../stats';
 import { colors, fontFamily, radius, spacing, statusColors, white } from '../theme';
 import { ProgressBar, StatusBadge } from './ui';
@@ -13,7 +14,9 @@ interface Props {
 // tap → écran Détail. L'ajout de progression et l'édition/suppression
 // vivent désormais sur l'écran Détail plutôt qu'inline ici.
 export default function GoalCard({ goal, onPress }: Props) {
+  const { t } = useTranslation();
   const s = getGoalStats(goal, todayStr());
+  const unitLabel = t(`unit.${goal.unit}`);
 
   // Phrase complète plutôt que de laisser le lecteur d'écran concaténer les
   // ~7 Text internes dans l'ordre visuel (résultat peu naturel : "45 %"
@@ -31,7 +34,7 @@ export default function GoalCard({ goal, onPress }: Props) {
   ];
   if (s.status === 'late') {
     accessibilityParts.push(
-      `${fmt(s.dailyRequired, goal.unit)} ${UNIT_LABELS[goal.unit]} par jour nécessaires pour rattraper`,
+      `${fmt(s.dailyRequired, goal.unit)} ${unitLabel} par jour nécessaires pour rattraper`,
     );
   } else if (s.status === 'ahead') {
     accessibilityParts.push(`${s.streak} jours consécutifs, en avance sur le planning`);
@@ -66,7 +69,7 @@ export default function GoalCard({ goal, onPress }: Props) {
           {fmt(s.actual, goal.unit)}
           <Text style={styles.valueMuted}>
             {' '}
-            / {goal.targetValue} {UNIT_LABELS[goal.unit]}
+            / {goal.targetValue} {unitLabel}
           </Text>
         </Text>
         <Text style={[styles.percent, { color: statusColors[s.status].text }]}>
@@ -76,8 +79,7 @@ export default function GoalCard({ goal, onPress }: Props) {
 
       {s.status === 'late' && (
         <Text style={styles.lateHint}>
-          ↑ {fmt(s.dailyRequired, goal.unit)} {UNIT_LABELS[goal.unit]}/jour nécessaires pour
-          rattraper
+          ↑ {fmt(s.dailyRequired, goal.unit)} {unitLabel}/jour nécessaires pour rattraper
         </Text>
       )}
       {s.status === 'ahead' && (

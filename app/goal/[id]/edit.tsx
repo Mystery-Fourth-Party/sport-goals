@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import GoalFields from '../../../src/components/GoalFields';
@@ -7,9 +8,10 @@ import { BackButton } from '../../../src/components/ui';
 import { useGoals } from '../../../src/goals-context';
 import { fmt, getGoalStats, todayStr } from '../../../src/stats';
 import { colors, fontFamily, radius, spacing, statusColors, white } from '../../../src/theme';
-import { Unit, UNIT_LABELS } from '../../../src/types';
+import { Unit } from '../../../src/types';
 
 export default function EditGoalScreen() {
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { goals, updateGoal } = useGoals();
   const goal = goals.find((g) => g.id === id);
@@ -46,7 +48,7 @@ export default function EditGoalScreen() {
   const targetError =
     targetNum > 0
       ? targetNum < s.actual
-        ? `La cible doit être ≥ à ce qui est déjà accompli (${fmt(s.actual, unit)} ${UNIT_LABELS[unit]}).`
+        ? `La cible doit être ≥ à ce qui est déjà accompli (${fmt(s.actual, unit)} ${t(`unit.${unit}`)}).`
         : undefined
       : 'La valeur cible doit être un nombre positif.';
   const daysNum = Number(days);
@@ -100,7 +102,7 @@ export default function EditGoalScreen() {
               {fmt(s.actual, goal.unit)}
               <Text style={styles.summaryValueMuted}>
                 {' '}
-                / {goal.targetValue} {UNIT_LABELS[goal.unit]}
+                / {goal.targetValue} {t(`unit.${goal.unit}`)}
               </Text>
             </Text>
           </View>
@@ -133,7 +135,7 @@ export default function EditGoalScreen() {
             <Text style={styles.dailyAvgLabel}>Nouveau rythme quotidien</Text>
             <Text style={styles.dailyAvgValue}>≈ {fmt(newDailyRequired, unit)}</Text>
             <Text style={styles.dailyAvgUnit}>
-              {unit}/jour · encore {fmt(remaining, unit)} {UNIT_LABELS[unit]} à accomplir
+              {unit}/jour · encore {fmt(remaining, unit)} {t(`unit.${unit}`)} à accomplir
             </Text>
           </View>
         )}

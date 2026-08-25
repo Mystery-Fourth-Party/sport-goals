@@ -1,4 +1,10 @@
 {
+  "unit": {
+    "reps": "reps",
+    "km": "km",
+    "min": "minutes",
+    "h": "hours"
+  },
   "settings": {
     "title": "Settings",
     "appSection": "App",

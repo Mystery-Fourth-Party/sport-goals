@@ -1,8 +1,9 @@
+import { useTranslation } from 'react-i18next';
 import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { longDateLabel } from '../../dateLabels';
 import { fmt, parseDate } from '../../stats';
 import { colors, fontFamily, radius, white } from '../../theme';
-import { Entry, Unit, UNIT_LABELS } from '../../types';
+import { Entry, Unit } from '../../types';
 
 interface Props {
   mode: 'add' | 'edit' | null;
@@ -34,6 +35,9 @@ export default function ProgressEntryModal({
   onSave,
   onDeleteEntry,
 }: Props) {
+  const { t } = useTranslation();
+  const unitLabel = t(`unit.${unit}`);
+
   return (
     <Modal
       visible={mode !== null}
@@ -66,7 +70,7 @@ export default function ProgressEntryModal({
             <Text style={styles.modalAlready}>
               Déjà enregistré :{' '}
               <Text style={styles.modalAlreadyValue}>
-                {fmt(todayEntry.value, unit)} {UNIT_LABELS[unit]}
+                {fmt(todayEntry.value, unit)} {unitLabel}
               </Text>
             </Text>
           )}
@@ -81,7 +85,7 @@ export default function ProgressEntryModal({
               onChangeText={onChangeValue}
             />
             <View style={styles.modalUnitBox}>
-              <Text style={styles.modalUnitText}>{UNIT_LABELS[unit]}</Text>
+              <Text style={styles.modalUnitText}>{unitLabel}</Text>
             </View>
           </View>
           {error && <Text style={styles.modalErrorText}>Entre une valeur supérieure à 0.</Text>}

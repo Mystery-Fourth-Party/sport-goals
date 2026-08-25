@@ -7,9 +7,10 @@
 // Le format est documenté et figé pour être directement exploitable par un
 // outil de traitement de données externe, pas seulement comme mécanisme de
 // restauration interne — voir buildBackupPayload pour sa forme exacte.
+import i18n from './i18n';
 import { DEFAULT_SETTINGS, Settings } from './settingsStorage';
 import { getGoalStats, GoalStats } from './stats';
-import { Entry, Goal, Unit, UNIT_LABELS } from './types';
+import { Entry, Goal, Unit, UNITS } from './types';
 
 export const SCHEMA_VERSION = 1;
 
@@ -55,7 +56,7 @@ export function buildBackupPayload(
       targetValue: goal.targetValue,
       createdAt: goal.createdAt,
       deadline: goal.deadline,
-      unitLabel: UNIT_LABELS[goal.unit],
+      unitLabel: i18n.t(`unit.${goal.unit}`),
       entries: goal.entries.map((e) => ({
         date: e.date,
         value: e.value,
@@ -74,7 +75,7 @@ export function buildBackupPayload(
 export type ParseBackupResult =
   { ok: true; goals: Goal[]; settings?: Settings } | { ok: false; error: string };
 
-const VALID_UNITS = new Set(Object.keys(UNIT_LABELS));
+const VALID_UNITS = new Set<string>(UNITS);
 
 interface RawEntry {
   date: string;

@@ -1,8 +1,9 @@
+import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { longDateLabel } from '../../dateLabels';
 import { fmt, parseDate } from '../../stats';
 import { colors, fontFamily, radius, spacing, white } from '../../theme';
-import { Entry, Unit, UNIT_LABELS } from '../../types';
+import { Entry, Unit } from '../../types';
 
 interface Props {
   entries: Entry[];
@@ -15,6 +16,8 @@ interface Props {
 // construction de l'accessibilityLabel composite par ligne déplacés ici,
 // c'était leur seul usage.
 export default function GoalHistoryList({ entries, unit, today, onEntryPress }: Props) {
+  const { t } = useTranslation();
+  const unitLabel = t(`unit.${unit}`);
   const historyEntries = [...entries].reverse().slice(0, 12);
 
   return (
@@ -25,7 +28,7 @@ export default function GoalHistoryList({ entries, unit, today, onEntryPress }: 
         const isToday = entry.date === today;
         const entryAccessibilityLabel =
           entry.value > 0
-            ? `${longDateLabel(d)}, ${fmt(entry.value, unit)} ${UNIT_LABELS[unit]}`
+            ? `${longDateLabel(d)}, ${fmt(entry.value, unit)} ${unitLabel}`
             : `${longDateLabel(d)}, aucune entrée`;
         return (
           <Pressable
@@ -47,7 +50,7 @@ export default function GoalHistoryList({ entries, unit, today, onEntryPress }: 
               </Text>
             </View>
             <Text style={styles.historyValue}>
-              {entry.value > 0 ? `${fmt(entry.value, unit)} ${UNIT_LABELS[unit]}` : '—'}
+              {entry.value > 0 ? `${fmt(entry.value, unit)} ${unitLabel}` : '—'}
             </Text>
           </Pressable>
         );

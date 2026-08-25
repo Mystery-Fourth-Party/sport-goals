@@ -1,8 +1,9 @@
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, View } from 'react-native';
 import { ProgressBar } from '../ui';
 import { fmt, GoalStats } from '../../stats';
 import { colors, fontFamily, radius, spacing, statusColors, white } from '../../theme';
-import { Goal, UNIT_LABELS } from '../../types';
+import { Goal } from '../../types';
 
 interface Props {
   goal: Goal;
@@ -12,6 +13,9 @@ interface Props {
 // Carte "Progression totale" : valeur/cible, %, attendu, ProgressBar,
 // streak/rythme/requis.
 export default function GoalProgressCard({ goal, stats: s }: Props) {
+  const { t } = useTranslation();
+  const unitLabel = t(`unit.${goal.unit}`);
+
   return (
     <View style={styles.card}>
       <View style={styles.progressHeader}>
@@ -21,7 +25,7 @@ export default function GoalProgressCard({ goal, stats: s }: Props) {
             {fmt(s.actual, goal.unit)}
             <Text style={styles.progressValueMuted}>
               {' '}
-              / {goal.targetValue} {UNIT_LABELS[goal.unit]}
+              / {goal.targetValue} {unitLabel}
             </Text>
           </Text>
         </View>
