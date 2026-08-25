@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -19,6 +20,7 @@ import { colors, fontFamily, radius, spacing, white } from '../../src/theme';
 import { Entry } from '../../src/types';
 
 export default function GoalDetailScreen() {
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { goals, addProgress, updateEntry, deleteEntry, deleteGoal } = useGoals();
   const { settings } = useSettings();
@@ -41,7 +43,7 @@ export default function GoalDetailScreen() {
         <View style={styles.header}>
           <BackButton onPress={() => router.back()} />
         </View>
-        <Text style={styles.notFound}>Objectif introuvable.</Text>
+        <Text style={styles.notFound}>{t('goalDetail.notFound')}</Text>
       </SafeAreaView>
     );
   }
@@ -90,7 +92,7 @@ export default function GoalDetailScreen() {
   function handleDeleteEntry() {
     const date = modalDate;
     confirmDestructive({
-      title: 'Supprimer cette entrée ?',
+      title: t('goalDetail.deleteEntryConfirmTitle'),
       message: longDateLabel(parseDate(date)),
       onConfirm: () => {
         deleteEntry(goal!.id, date);
@@ -101,7 +103,7 @@ export default function GoalDetailScreen() {
 
   function handleDelete() {
     confirmDestructive({
-      title: 'Supprimer cet objectif ?',
+      title: t('goalDetail.deleteGoalConfirmTitle'),
       message: goal!.title,
       onConfirm: () => {
         deleteGoal(goal!.id);
@@ -134,13 +136,13 @@ export default function GoalDetailScreen() {
         />
 
         <Pressable style={styles.deleteLink} onPress={handleDelete} accessibilityRole="button">
-          <Text style={styles.deleteLinkText}>🗑 Supprimer l&apos;objectif</Text>
+          <Text style={styles.deleteLinkText}>{t('goalDetail.deleteGoal')}</Text>
         </Pressable>
       </ScrollView>
 
       <View style={styles.ctaWrap}>
         <Pressable style={styles.ctaButton} onPress={openAddModal} accessibilityRole="button">
-          <Text style={styles.ctaButtonText}>+ Ajouter la progression du jour</Text>
+          <Text style={styles.ctaButtonText}>{t('goalDetail.addProgressCta')}</Text>
         </Pressable>
       </View>
 

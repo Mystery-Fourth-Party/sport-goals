@@ -121,6 +121,11 @@
     "reminderTime": "Reminder time"
   },
   "goalDetail": {
+    "notFound": "Goal not found.",
+    "deleteGoal": "🗑 Delete the goal",
+    "addProgressCta": "+ Add today's progress",
+    "deleteGoalConfirmTitle": "Delete this goal?",
+    "deleteEntryConfirmTitle": "Delete this entry?",
     "history": {
       "title": "History",
       "noEntry": "no entry",

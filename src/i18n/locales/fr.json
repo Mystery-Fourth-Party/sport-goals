@@ -121,6 +121,11 @@
     "reminderTime": "Heure du rappel"
   },
   "goalDetail": {
+    "notFound": "Objectif introuvable.",
+    "deleteGoal": "🗑 Supprimer l'objectif",
+    "addProgressCta": "+ Ajouter la progression du jour",
+    "deleteGoalConfirmTitle": "Supprimer cet objectif ?",
+    "deleteEntryConfirmTitle": "Supprimer cette entrée ?",
     "history": {
       "title": "Historique",
       "noEntry": "aucune entrée",
