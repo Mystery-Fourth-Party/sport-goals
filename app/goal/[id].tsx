@@ -1,18 +1,9 @@
 import { useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
-import {
-  Alert,
-  Modal,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BackButton, BarChart, ProgressBar, StatusBadge } from '../../src/components/ui';
+import { confirmDestructive } from '../../src/confirm';
 import { longDateLabel, weekdayShort } from '../../src/dateLabels';
 import { useGoals } from '../../src/goals-context';
 import { useSettings } from '../../src/settings-context';
@@ -93,34 +84,25 @@ export default function GoalDetailScreen() {
 
   function handleDeleteEntry() {
     const date = modalDate;
-    const label = longDateLabel(parseDate(date));
-    const confirmed = () => {
-      deleteEntry(goal!.id, date);
-      closeModal();
-    };
-    if (Platform.OS === 'web') {
-      if (window.confirm(`Supprimer l'entrée du ${label} ?`)) confirmed();
-      return;
-    }
-    Alert.alert('Supprimer cette entrée ?', label, [
-      { text: 'Annuler', style: 'cancel' },
-      { text: 'Supprimer', style: 'destructive', onPress: confirmed },
-    ]);
+    confirmDestructive({
+      title: 'Supprimer cette entrée ?',
+      message: longDateLabel(parseDate(date)),
+      onConfirm: () => {
+        deleteEntry(goal!.id, date);
+        closeModal();
+      },
+    });
   }
 
   function handleDelete() {
-    const confirmed = () => {
-      deleteGoal(goal!.id);
-      router.back();
-    };
-    if (Platform.OS === 'web') {
-      if (window.confirm(`Supprimer "${goal!.title}" ?`)) confirmed();
-      return;
-    }
-    Alert.alert('Supprimer cet objectif ?', goal!.title, [
-      { text: 'Annuler', style: 'cancel' },
-      { text: 'Supprimer', style: 'destructive', onPress: confirmed },
-    ]);
+    confirmDestructive({
+      title: 'Supprimer cet objectif ?',
+      message: goal!.title,
+      onConfirm: () => {
+        deleteGoal(goal!.id);
+        router.back();
+      },
+    });
   }
 
   return (
