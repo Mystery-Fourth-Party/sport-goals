@@ -65,6 +65,14 @@
     "createGoal": "Create a goal",
     "viewArchive": "View archive"
   },
+  "create": {
+    "title": "New Goal"
+  },
+  "archive": {
+    "title": "Archive",
+    "emptyTitle": "Nothing yet",
+    "emptyText": "Completed goals will show up here as you go."
+  },
   "settings": {
     "title": "Settings",
     "appSection": "App",

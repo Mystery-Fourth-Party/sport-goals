@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BackButton } from '../src/components/ui';
@@ -8,6 +9,7 @@ import { splitGoalsByStatus, todayStr } from '../src/stats';
 import { colors, fontFamily, spacing, white } from '../src/theme';
 
 export default function ArchiveScreen() {
+  const { t } = useTranslation();
   const { goals } = useGoals();
   const today = todayStr();
   const { completed } = splitGoalsByStatus(goals, today);
@@ -16,7 +18,7 @@ export default function ArchiveScreen() {
     <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
       <View style={styles.header}>
         <BackButton onPress={() => router.back()} />
-        <Text style={styles.title}>Archive</Text>
+        <Text style={styles.title}>{t('archive.title')}</Text>
       </View>
 
       <FlatList
@@ -36,10 +38,8 @@ export default function ArchiveScreen() {
         ListEmptyComponent={
           <View style={styles.empty}>
             <Text style={styles.emptyEmoji}>🏆</Text>
-            <Text style={styles.emptyTitle}>Rien pour l&apos;instant</Text>
-            <Text style={styles.emptyText}>
-              Les objectifs terminés apparaîtront ici au fur et à mesure.
-            </Text>
+            <Text style={styles.emptyTitle}>{t('archive.emptyTitle')}</Text>
+            <Text style={styles.emptyText}>{t('archive.emptyText')}</Text>
           </View>
         }
       />

@@ -65,6 +65,14 @@
     "createGoal": "Créer un objectif",
     "viewArchive": "Voir l'archive"
   },
+  "create": {
+    "title": "Nouvel Objectif"
+  },
+  "archive": {
+    "title": "Archive",
+    "emptyTitle": "Rien pour l'instant",
+    "emptyText": "Les objectifs terminés apparaîtront ici au fur et à mesure."
+  },
   "settings": {
     "title": "Paramètres",
     "appSection": "Application",
