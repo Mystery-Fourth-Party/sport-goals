@@ -16,6 +16,7 @@
 // réelle sur appareil/simulateur — à tester sur un vrai build avant mise en prod.
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
+import i18n from './i18n';
 import { calcStreak, dateStr, getGoalStats, parseDate } from './stats';
 import { Goal } from './types';
 
@@ -194,12 +195,12 @@ export async function rescheduleDailyReminder(
   // reprogrammation.
   const parsedDefault = parseReminderTime(reminderTime);
   if (!parsedDefault) {
-    return { ok: false, error: 'Heure invalide — utilise le format HH:mm (ex : 20:00).' };
+    return { ok: false, error: i18n.t('notifications.rescheduleInvalidTime') };
   }
 
   const granted = await ensureNotificationPermission();
   if (!granted) {
-    return { ok: false, error: 'Notifications non autorisées.' };
+    return { ok: false, error: i18n.t('notifications.rescheduleDenied') };
   }
 
   const now = new Date();

@@ -1,9 +1,8 @@
+import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { Unit, UNIT_LABELS } from '../types';
+import { Unit, UNITS } from '../types';
 import { colors, fontFamily, radius, spacing, white } from '../theme';
 import { TimeField, Toggle } from './ui';
-
-const UNITS: Unit[] = ['reps', 'km', 'min', 'h'];
 
 interface Props {
   title: string;
@@ -58,12 +57,14 @@ export default function GoalFields({
   reminderTime,
   onReminderTimeChange,
 }: Props) {
+  const { t } = useTranslation();
+
   return (
     <>
-      <Text style={styles.label}>Nom de l&apos;objectif</Text>
+      <Text style={styles.label}>{t('goalFields.name')}</Text>
       <TextInput
         style={styles.input}
-        placeholder="ex : 1000 pompes en 30 jours"
+        placeholder={t('goalFields.namePlaceholder')}
         placeholderTextColor={white(0.2)}
         value={title}
         onChangeText={onTitleChange}
@@ -72,7 +73,7 @@ export default function GoalFields({
 
       <View style={styles.row}>
         <View style={styles.flex1}>
-          <Text style={styles.label}>Valeur cible</Text>
+          <Text style={styles.label}>{t('goalFields.targetValue')}</Text>
           <TextInput
             style={[styles.input, styles.inputDisplay]}
             placeholder="1000"
@@ -97,7 +98,7 @@ export default function GoalFields({
         </View>
       </View>
 
-      <Text style={styles.label}>Unité</Text>
+      <Text style={styles.label}>{t('goalFields.unit')}</Text>
       <View style={styles.unitRow}>
         {UNITS.map((u) => (
           <Pressable
@@ -110,7 +111,7 @@ export default function GoalFields({
             // veut rien dire lu tel quel).
             accessibilityRole="button"
             accessibilityState={{ selected: unit === u }}
-            accessibilityLabel={`Unité : ${UNIT_LABELS[u]}`}
+            accessibilityLabel={t('goalFields.unitA11y', { unit: t(`unit.${u}`) })}
           >
             <Text style={[styles.chipText, unit === u && styles.chipTextSelected]}>
               {u.toUpperCase()}
@@ -120,28 +121,28 @@ export default function GoalFields({
       </View>
 
       <View style={styles.toggleRow}>
-        <Text style={styles.toggleLabel}>Rappels activés</Text>
+        <Text style={styles.toggleLabel}>{t('goalFields.remindersEnabled')}</Text>
         <Toggle
           value={reminderEnabled}
           onChange={onReminderEnabledChange}
-          accessibilityLabel="Rappels activés"
+          accessibilityLabel={t('goalFields.remindersEnabled')}
         />
       </View>
 
       {reminderEnabled && (
         <View style={styles.toggleRow}>
-          <Text style={styles.toggleLabel}>Horaire personnalisé</Text>
+          <Text style={styles.toggleLabel}>{t('goalFields.customTime')}</Text>
           <Toggle
             value={reminderTime !== undefined}
             onChange={(v) => onReminderTimeChange(v ? '20:00' : undefined)}
-            accessibilityLabel="Horaire personnalisé"
+            accessibilityLabel={t('goalFields.customTime')}
           />
         </View>
       )}
 
       {reminderEnabled && reminderTime !== undefined && (
         <View style={styles.toggleRow}>
-          <Text style={styles.toggleLabel}>Heure du rappel</Text>
+          <Text style={styles.toggleLabel}>{t('goalFields.reminderTime')}</Text>
           <TimeField value={reminderTime} onChange={onReminderTimeChange} />
         </View>
       )}

@@ -1,5 +1,6 @@
+import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Goal, UNIT_ICONS, UNIT_LABELS } from '../types';
+import { Goal, UNIT_ICONS } from '../types';
 import { fmt, getGoalStats, statusLabel, todayStr } from '../stats';
 import { colors, fontFamily, radius, spacing, statusColors, white } from '../theme';
 import { ProgressBar, StatusBadge } from './ui';
@@ -13,7 +14,9 @@ interface Props {
 // tap → écran Détail. L'ajout de progression et l'édition/suppression
 // vivent désormais sur l'écran Détail plutôt qu'inline ici.
 export default function GoalCard({ goal, onPress }: Props) {
+  const { t } = useTranslation();
   const s = getGoalStats(goal, todayStr());
+  const unitLabel = t(`unit.${goal.unit}`);
 
   // Phrase complète plutôt que de laisser le lecteur d'écran concaténer les
   // ~7 Text internes dans l'ordre visuel (résultat peu naturel : "45 %"
@@ -25,16 +28,16 @@ export default function GoalCard({ goal, onPress }: Props) {
   // accessible={false} dessus (vérifié dans la doc RN sur l'accessibilité).
   const accessibilityParts = [
     goal.title,
-    `${Math.round(s.progress * 100)}% de l'objectif`,
-    `${s.remainingDays} jours restants`,
+    t('goalCard.progressA11y', { percent: Math.round(s.progress * 100) }),
+    t('goalCard.remainingDaysA11y', { count: s.remainingDays }),
     statusLabel(s.status),
   ];
   if (s.status === 'late') {
     accessibilityParts.push(
-      `${fmt(s.dailyRequired, goal.unit)} ${UNIT_LABELS[goal.unit]} par jour nécessaires pour rattraper`,
+      t('goalCard.lateRequiredA11y', { value: fmt(s.dailyRequired, goal.unit), unit: unitLabel }),
     );
   } else if (s.status === 'ahead') {
-    accessibilityParts.push(`${s.streak} jours consécutifs, en avance sur le planning`);
+    accessibilityParts.push(t('goalCard.aheadA11y', { count: s.streak }));
   }
 
   return (
@@ -53,7 +56,9 @@ export default function GoalCard({ goal, onPress }: Props) {
             <Text style={styles.title} numberOfLines={1}>
               {goal.title}
             </Text>
-            <Text style={styles.remaining}>{s.remainingDays}j restants</Text>
+            <Text style={styles.remaining}>
+              {t('goalCard.remainingDays', { count: s.remainingDays })}
+            </Text>
           </View>
         </View>
         <StatusBadge status={s.status} />
@@ -66,7 +71,7 @@ export default function GoalCard({ goal, onPress }: Props) {
           {fmt(s.actual, goal.unit)}
           <Text style={styles.valueMuted}>
             {' '}
-            / {goal.targetValue} {UNIT_LABELS[goal.unit]}
+            / {goal.targetValue} {unitLabel}
           </Text>
         </Text>
         <Text style={[styles.percent, { color: statusColors[s.status].text }]}>
@@ -76,14 +81,11 @@ export default function GoalCard({ goal, onPress }: Props) {
 
       {s.status === 'late' && (
         <Text style={styles.lateHint}>
-          ↑ {fmt(s.dailyRequired, goal.unit)} {UNIT_LABELS[goal.unit]}/jour nécessaires pour
-          rattraper
+          {t('goalCard.lateHint', { value: fmt(s.dailyRequired, goal.unit), unit: unitLabel })}
         </Text>
       )}
       {s.status === 'ahead' && (
-        <Text style={styles.aheadHint}>
-          🔥 {s.streak} jour(s) consécutif(s) · en avance sur le planning
-        </Text>
+        <Text style={styles.aheadHint}>{t('goalCard.aheadHint', { count: s.streak })}</Text>
       )}
     </Pressable>
   );

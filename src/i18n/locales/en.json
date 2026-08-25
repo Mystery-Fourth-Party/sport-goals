@@ -1,0 +1,233 @@
+{
+  "common": {
+    "back": "Back",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "import": "Import"
+  },
+  "unit": {
+    "reps": "reps",
+    "km": "km",
+    "min": "minutes",
+    "h": "hours"
+  },
+  "status": {
+    "ahead": "Ahead",
+    "onTrack": "On track",
+    "late": "Late",
+    "completed": "Completed ✓",
+    "notStarted": "Not started"
+  },
+  "dateLabels": {
+    "weekdayLong": ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+    "weekdayShort": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+    "monthLong": [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December"
+    ],
+    "monthShort": [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec"
+    ]
+  },
+  "goalList": {
+    "heading": "My\nGoals",
+    "weeklySummaryA11y": "Weekly summary",
+    "settingsA11y": "Settings",
+    "active": "Active",
+    "completed": "Completed",
+    "completedA11y_one": "Completed, {{count}} goal",
+    "completedA11y_other": "Completed, {{count}} goals",
+    "total": "Total",
+    "emptyNoGoalsTitle": "No goals yet",
+    "emptyNoGoalsText": "Set your first fitness goal and track your progress every day.",
+    "emptyAllDoneTitle": "All done",
+    "emptyAllDoneText": "All your goals are complete — find them in the archive, or set yourself a new challenge.",
+    "createGoal": "Create a goal",
+    "viewArchive": "View archive"
+  },
+  "create": {
+    "title": "New Goal"
+  },
+  "archive": {
+    "title": "Archive",
+    "emptyTitle": "Nothing yet",
+    "emptyText": "Completed goals will show up here as you go."
+  },
+  "weekly": {
+    "title": "Week",
+    "activeDays": "Active days",
+    "sessions": "Sessions",
+    "thisWeek": "this week",
+    "sessionsPerDay": "Sessions per day",
+    "mostAdvanced": "Most advanced goal 🏆",
+    "mostLate": "Most behind goal ⚠️",
+    "leastAdvanced": "Least advanced goal",
+    "expectedActual": "Expected {{expected}}% · actual {{actual}}%",
+    "catchUpHint": "↑ {{value}}/day to catch up",
+    "allGoals": "All goals",
+    "weekTotal": "+{{value}} {{unit}}",
+    "empty": "No goals yet — create one to see your weekly summary."
+  },
+  "goalCard": {
+    "progressA11y": "{{percent}}% of the goal",
+    "remainingDaysA11y_one": "{{count}} day left",
+    "remainingDaysA11y_other": "{{count}} days left",
+    "lateRequiredA11y": "{{value}} {{unit}} per day needed to catch up",
+    "aheadA11y_one": "{{count}} day streak, ahead of schedule",
+    "aheadA11y_other": "{{count}} day streak, ahead of schedule",
+    "remainingDays_one": "{{count}}d left",
+    "remainingDays_other": "{{count}}d left",
+    "lateHint": "↑ {{value}} {{unit}}/day needed to catch up",
+    "aheadHint_one": "🔥 {{count}} day streak · ahead of schedule",
+    "aheadHint_other": "🔥 {{count}} day streak · ahead of schedule"
+  },
+  "goalForm": {
+    "titleRequired": "The goal title is required.",
+    "targetPositive": "The target value must be a positive number.",
+    "durationPositive": "The duration must be a positive number of days.",
+    "durationLabel": "Duration (days)",
+    "dailyAvgRequired": "Required daily pace",
+    "perDay": "{{unit}} per day",
+    "submit": "Create the goal"
+  },
+  "goalFields": {
+    "name": "Goal name",
+    "namePlaceholder": "e.g. 1000 push-ups in 30 days",
+    "targetValue": "Target value",
+    "unit": "Unit",
+    "unitA11y": "Unit: {{unit}}",
+    "remindersEnabled": "Reminders enabled",
+    "customTime": "Custom time",
+    "reminderTime": "Reminder time"
+  },
+  "goalDetail": {
+    "notFound": "Goal not found.",
+    "deleteGoal": "🗑 Delete the goal",
+    "addProgressCta": "+ Add today's progress",
+    "deleteGoalConfirmTitle": "Delete this goal?",
+    "deleteEntryConfirmTitle": "Delete this entry?",
+    "history": {
+      "title": "History",
+      "noEntry": "no entry",
+      "today": "(today)"
+    },
+    "recentSessions": {
+      "title": "Recent sessions"
+    },
+    "progress": {
+      "total": "Total progress",
+      "expected": "Expected {{percent}}%",
+      "streak": "Streak",
+      "currentPace": "Current pace",
+      "required": "Required",
+      "perDaySuffix": "/d"
+    },
+    "header": {
+      "meta": "Day {{elapsedDays}} / {{totalDays}} · {{remainingDays}}",
+      "editA11y": "Edit the goal",
+      "lateBannerTitle": "You're behind schedule",
+      "lateBannerSubtitle": "{{value}} {{unit}}/day to catch up",
+      "aheadBannerTitle": "Ahead of schedule!",
+      "aheadBannerSubtitle": "{{value}} {{unit}} left to go",
+      "almostBannerTitle": "Almost there!",
+      "almostBannerSubtitle": "{{value}} {{unit}} left before the goal — keep going!"
+    }
+  },
+  "progressModal": {
+    "titleAdd": "Today",
+    "titleEdit": "Edit",
+    "alreadyLogged": "Already logged:",
+    "errorPositive": "Enter a value greater than 0.",
+    "save": "Save",
+    "deleteEntry": "🗑 Delete this entry"
+  },
+  "editGoal": {
+    "title": "Edit",
+    "subtitle": "Reschedule the goal",
+    "currentProgress": "Current progress",
+    "durationLabel": "Days left",
+    "titleRequired": "The goal title is required.",
+    "targetTooLow": "The target must be ≥ what's already done ({{value}} {{unit}}).",
+    "targetPositive": "The target value must be a positive number.",
+    "daysPositive": "The days left must be a positive number.",
+    "newPace": "New daily pace",
+    "remainingToComplete": "{{unit}}/day · {{value}} {{unitLabel}} left to complete",
+    "save": "Save changes"
+  },
+  "notifications": {
+    "sectionTitle": "Notifications",
+    "unavailableWeb": "Notifications aren't available on this platform (web).",
+    "denied": "Notifications denied — enable them in your device settings.",
+    "invalidTimeFormat": "Invalid format — use HH:mm (e.g. 20:00).",
+    "dailyReminder": "Daily reminder",
+    "dailyReminderSubtitle": "To log your progress every day",
+    "reminderTime": "Reminder time",
+    "goalReached": "Goal reached 🏆",
+    "goalReachedSubtitle": "Celebration when a goal is completed",
+    "almostThere": "Almost there 🎯",
+    "almostThereSubtitle": "When only a few % remain to finish",
+    "streakAlert": "Streak at risk 🔥",
+    "streakAlertSubtitle": "If you haven't logged your progress yet",
+    "rescheduleInvalidTime": "Invalid time — use the HH:mm format (e.g. 20:00).",
+    "rescheduleDenied": "Notifications not authorized."
+  },
+  "data": {
+    "sectionTitle": "Data",
+    "sharingUnavailable": "File sharing isn't available on this device.",
+    "exportFailed": "Export failed — try again.",
+    "importFailed": "Import failed — try again.",
+    "readFailed": "Failed to read the file.",
+    "exportTitle": "Export my data",
+    "exportSubtitle": "Back up your goals and settings to a JSON file",
+    "importTitle": "Import data",
+    "importSubtitle": "Replace your current goals with an exported file",
+    "importConfirmTitle": "Import this data?",
+    "importConfirmMessage": "This will REPLACE your {{currentPart}} with the {{importedPart}} from this file.",
+    "importCurrentCount_one": "{{count}} current goal",
+    "importCurrentCount_other": "{{count}} current goals",
+    "importedGoalCount_one": "{{count}} goal",
+    "importedGoalCount_other": "{{count}} goals"
+  },
+  "backup": {
+    "invalidJson": "Invalid JSON file.",
+    "invalidFileFormat": "Invalid file format.",
+    "unsupportedVersion": "Unsupported file version ({{version}}).",
+    "missingGoals": "Missing or malformed goal list in the file.",
+    "invalidSettings": "Malformed settings in the file."
+  },
+  "settings": {
+    "title": "Settings",
+    "appSection": "App",
+    "version": "Version",
+    "appName": "Objectif-sport",
+    "beta": "Beta",
+    "watermark": "NO PAIN\nNO GAIN"
+  },
+  "languageSection": {
+    "title": "Language",
+    "french": "Français",
+    "english": "English",
+    "system": "System"
+  }
+}

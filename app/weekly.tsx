@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BackButton, BarChart, ProgressBar, StatusBadge } from '../src/components/ui';
@@ -14,6 +15,7 @@ function weekTotalFor(goal: Goal, weekDates: string[]): number {
 }
 
 export default function WeeklyScreen() {
+  const { t } = useTranslation();
   const { goals } = useGoals();
   const today = todayStr();
   const { weekDates, sessionsPerDay, activeDays, totalSessions, mostAdvanced, mostBehind } =
@@ -24,7 +26,7 @@ export default function WeeklyScreen() {
       <View style={styles.header}>
         <BackButton onPress={() => router.back()} />
         <View>
-          <Text style={styles.title}>Semaine</Text>
+          <Text style={styles.title}>{t('weekly.title')}</Text>
           <Text style={styles.subtitle}>
             {weekRangeLabel(parseDate(weekDates[0]), parseDate(weekDates[weekDates.length - 1]))}
           </Text>
@@ -34,7 +36,7 @@ export default function WeeklyScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.topStatsRow}>
           <View style={styles.card}>
-            <Text style={styles.label}>Jours actifs</Text>
+            <Text style={styles.label}>{t('weekly.activeDays')}</Text>
             <Text style={styles.bigValue}>
               {activeDays}
               <Text style={styles.bigValueMuted}> / 7</Text>
@@ -46,14 +48,14 @@ export default function WeeklyScreen() {
             </View>
           </View>
           <View style={styles.card}>
-            <Text style={styles.label}>Séances</Text>
+            <Text style={styles.label}>{t('weekly.sessions')}</Text>
             <Text style={styles.bigValue}>{totalSessions}</Text>
-            <Text style={styles.cardFootnote}>cette semaine</Text>
+            <Text style={styles.cardFootnote}>{t('weekly.thisWeek')}</Text>
           </View>
         </View>
 
         <View style={styles.card}>
-          <Text style={[styles.label, styles.cardSectionLabel]}>Séances par jour</Text>
+          <Text style={[styles.label, styles.cardSectionLabel]}>{t('weekly.sessionsPerDay')}</Text>
           <BarChart
             showZeroValueLabel={false}
             bars={sessionsPerDay.map((d, i) => ({
@@ -67,7 +69,7 @@ export default function WeeklyScreen() {
 
         {mostAdvanced && (
           <View style={[styles.card, styles.listCard]}>
-            <Text style={[styles.label, styles.listCardHeader]}>Objectif le plus avancé 🏆</Text>
+            <Text style={[styles.label, styles.listCardHeader]}>{t('weekly.mostAdvanced')}</Text>
             <View style={styles.goalRow}>
               <View style={styles.goalRowTop}>
                 <View style={styles.goalRowLeft}>
@@ -95,8 +97,8 @@ export default function WeeklyScreen() {
           <View style={[styles.card, styles.listCard]}>
             <Text style={[styles.label, styles.listCardHeader]}>
               {mostBehind.stats.status === 'late'
-                ? 'Objectif le plus en retard ⚠️'
-                : 'Objectif le moins avancé'}
+                ? t('weekly.mostLate')
+                : t('weekly.leastAdvanced')}
             </Text>
             <View style={styles.goalRow}>
               <View style={styles.goalRowTop}>
@@ -107,8 +109,10 @@ export default function WeeklyScreen() {
                   <View>
                     <Text style={styles.goalTitle}>{mostBehind.goal.title}</Text>
                     <Text style={styles.goalSubtitle}>
-                      Attendu {(mostBehind.stats.expectedProgress * 100).toFixed(0)}% · actuel{' '}
-                      {(mostBehind.stats.progress * 100).toFixed(0)}%
+                      {t('weekly.expectedActual', {
+                        expected: (mostBehind.stats.expectedProgress * 100).toFixed(0),
+                        actual: (mostBehind.stats.progress * 100).toFixed(0),
+                      })}
                     </Text>
                   </View>
                 </View>
@@ -117,7 +121,9 @@ export default function WeeklyScreen() {
               <ProgressBar value={mostBehind.stats.progress} status={mostBehind.stats.status} />
               {mostBehind.stats.status === 'late' && mostBehind.stats.dailyRequired > 0 && (
                 <Text style={styles.behindHint}>
-                  ↑ {fmt(mostBehind.stats.dailyRequired, mostBehind.goal.unit)}/jour pour rattraper
+                  {t('weekly.catchUpHint', {
+                    value: fmt(mostBehind.stats.dailyRequired, mostBehind.goal.unit),
+                  })}
                 </Text>
               )}
             </View>
@@ -126,7 +132,7 @@ export default function WeeklyScreen() {
 
         {goals.length > 0 && (
           <View style={[styles.card, styles.listCard]}>
-            <Text style={[styles.label, styles.listCardHeader]}>Tous les objectifs</Text>
+            <Text style={[styles.label, styles.listCardHeader]}>{t('weekly.allGoals')}</Text>
             {goals.map((g, i) => {
               const stats = getGoalStats(g, today);
               const weekTotal = weekTotalFor(g, weekDates);
@@ -141,7 +147,7 @@ export default function WeeklyScreen() {
                       <Text style={styles.goalTitle}>{g.title}</Text>
                     </View>
                     <Text style={styles.goalBreakdownTotal}>
-                      +{fmt(weekTotal, g.unit)} {g.unit}
+                      {t('weekly.weekTotal', { value: fmt(weekTotal, g.unit), unit: g.unit })}
                     </Text>
                   </View>
                   <ProgressBar value={stats.progress} status={stats.status} />
@@ -151,11 +157,7 @@ export default function WeeklyScreen() {
           </View>
         )}
 
-        {goals.length === 0 && (
-          <Text style={styles.empty}>
-            Aucun objectif pour l&apos;instant — crée-en un pour voir ton résumé de la semaine.
-          </Text>
-        )}
+        {goals.length === 0 && <Text style={styles.empty}>{t('weekly.empty')}</Text>}
       </ScrollView>
     </SafeAreaView>
   );

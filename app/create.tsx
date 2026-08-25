@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import GoalForm from '../src/components/GoalForm';
@@ -8,6 +9,7 @@ import { colors, fontFamily, spacing } from '../src/theme';
 import { Goal } from '../src/types';
 
 export default function CreateGoalScreen() {
+  const { t } = useTranslation();
   const { createGoal } = useGoals();
 
   function handleCreate(goal: Goal) {
@@ -19,7 +21,7 @@ export default function CreateGoalScreen() {
     <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
       <View style={styles.header}>
         <BackButton onPress={() => router.back()} />
-        <Text style={styles.title}>Nouvel Objectif</Text>
+        <Text style={styles.title}>{t('create.title')}</Text>
       </View>
       <KeyboardAvoidingView
         style={styles.keyboardAvoider}

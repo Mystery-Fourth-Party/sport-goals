@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import GoalFields from '../../../src/components/GoalFields';
@@ -7,9 +8,10 @@ import { BackButton } from '../../../src/components/ui';
 import { useGoals } from '../../../src/goals-context';
 import { fmt, getGoalStats, todayStr } from '../../../src/stats';
 import { colors, fontFamily, radius, spacing, statusColors, white } from '../../../src/theme';
-import { Unit, UNIT_LABELS } from '../../../src/types';
+import { Unit } from '../../../src/types';
 
 export default function EditGoalScreen() {
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { goals, updateGoal } = useGoals();
   const goal = goals.find((g) => g.id === id);
@@ -36,21 +38,21 @@ export default function EditGoalScreen() {
         <View style={styles.header}>
           <BackButton onPress={() => router.back()} />
         </View>
-        <Text style={styles.notFound}>Objectif introuvable.</Text>
+        <Text style={styles.notFound}>{t('goalDetail.notFound')}</Text>
       </SafeAreaView>
     );
   }
 
-  const titleError = title.trim() === '' ? "Le titre de l'objectif est requis." : undefined;
+  const titleError = title.trim() === '' ? t('editGoal.titleRequired') : undefined;
   const targetNum = Number(target);
   const targetError =
     targetNum > 0
       ? targetNum < s.actual
-        ? `La cible doit être ≥ à ce qui est déjà accompli (${fmt(s.actual, unit)} ${UNIT_LABELS[unit]}).`
+        ? t('editGoal.targetTooLow', { value: fmt(s.actual, unit), unit: t(`unit.${unit}`) })
         : undefined
-      : 'La valeur cible doit être un nombre positif.';
+      : t('editGoal.targetPositive');
   const daysNum = Number(days);
-  const daysError = daysNum > 0 ? undefined : 'Les jours restants doivent être un nombre positif.';
+  const daysError = daysNum > 0 ? undefined : t('editGoal.daysPositive');
   const canSave = !titleError && !targetError && !daysError;
 
   // Recalcul en direct du nouveau rythme quotidien requis, comme le calcul
@@ -87,20 +89,20 @@ export default function EditGoalScreen() {
       <View style={styles.header}>
         <BackButton onPress={() => router.back()} />
         <View>
-          <Text style={styles.title}>Modifier</Text>
-          <Text style={styles.subtitle}>Replanification de l&apos;objectif</Text>
+          <Text style={styles.title}>{t('editGoal.title')}</Text>
+          <Text style={styles.subtitle}>{t('editGoal.subtitle')}</Text>
         </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.summaryCard}>
           <View>
-            <Text style={styles.summaryLabel}>Progression actuelle</Text>
+            <Text style={styles.summaryLabel}>{t('editGoal.currentProgress')}</Text>
             <Text style={styles.summaryValue}>
               {fmt(s.actual, goal.unit)}
               <Text style={styles.summaryValueMuted}>
                 {' '}
-                / {goal.targetValue} {UNIT_LABELS[goal.unit]}
+                / {goal.targetValue} {t(`unit.${goal.unit}`)}
               </Text>
             </Text>
           </View>
@@ -116,7 +118,7 @@ export default function EditGoalScreen() {
           onTargetValueChange={setTarget}
           unit={unit}
           onUnitChange={setUnit}
-          durationLabel="Jours restants"
+          durationLabel={t('editGoal.durationLabel')}
           duration={days}
           onDurationChange={setDays}
           titleError={saveAttempted ? titleError : undefined}
@@ -130,10 +132,14 @@ export default function EditGoalScreen() {
 
         {newDailyRequired > 0 && (
           <View style={styles.dailyAvgCard}>
-            <Text style={styles.dailyAvgLabel}>Nouveau rythme quotidien</Text>
+            <Text style={styles.dailyAvgLabel}>{t('editGoal.newPace')}</Text>
             <Text style={styles.dailyAvgValue}>≈ {fmt(newDailyRequired, unit)}</Text>
             <Text style={styles.dailyAvgUnit}>
-              {unit}/jour · encore {fmt(remaining, unit)} {UNIT_LABELS[unit]} à accomplir
+              {t('editGoal.remainingToComplete', {
+                unit,
+                value: fmt(remaining, unit),
+                unitLabel: t(`unit.${unit}`),
+              })}
             </Text>
           </View>
         )}
@@ -141,7 +147,7 @@ export default function EditGoalScreen() {
 
       <View style={styles.footer}>
         <Pressable style={styles.saveButton} onPress={handleSave} accessibilityRole="button">
-          <Text style={styles.saveButtonText}>Enregistrer les modifications</Text>
+          <Text style={styles.saveButtonText}>{t('editGoal.save')}</Text>
         </Pressable>
       </View>
     </SafeAreaView>

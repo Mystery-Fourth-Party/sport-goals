@@ -9,6 +9,12 @@ export interface Settings {
   // app/goal/[id].tsx) — pas seulement l'affichage sur cet écran.
   almostThereNotifs: boolean;
   streakAlert: boolean;
+  // 'fr' | 'en' | absent — absent suit la langue détectée de l'appareil
+  // (voir src/i18n/index.ts, detectDeviceLanguage), même convention que
+  // reminderTime/reminderEnabled sur Goal (voir types.ts) : pas de valeur
+  // stockée tant que l'utilisateur n'a pas explicitement choisi une langue
+  // dans Réglages.
+  language?: 'fr' | 'en';
 }
 
 // dailyReminder/goalReachedNotifs démarrent désactivés (opt-in), contrairement

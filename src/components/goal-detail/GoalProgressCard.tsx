@@ -1,8 +1,9 @@
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, View } from 'react-native';
 import { ProgressBar } from '../ui';
 import { fmt, GoalStats } from '../../stats';
 import { colors, fontFamily, radius, spacing, statusColors, white } from '../../theme';
-import { Goal, UNIT_LABELS } from '../../types';
+import { Goal } from '../../types';
 
 interface Props {
   goal: Goal;
@@ -12,16 +13,19 @@ interface Props {
 // Carte "Progression totale" : valeur/cible, %, attendu, ProgressBar,
 // streak/rythme/requis.
 export default function GoalProgressCard({ goal, stats: s }: Props) {
+  const { t } = useTranslation();
+  const unitLabel = t(`unit.${goal.unit}`);
+
   return (
     <View style={styles.card}>
       <View style={styles.progressHeader}>
         <View>
-          <Text style={styles.label}>Progression totale</Text>
+          <Text style={styles.label}>{t('goalDetail.progress.total')}</Text>
           <Text style={styles.progressValue}>
             {fmt(s.actual, goal.unit)}
             <Text style={styles.progressValueMuted}>
               {' '}
-              / {goal.targetValue} {UNIT_LABELS[goal.unit]}
+              / {goal.targetValue} {unitLabel}
             </Text>
           </Text>
         </View>
@@ -29,7 +33,9 @@ export default function GoalProgressCard({ goal, stats: s }: Props) {
           <Text style={[styles.progressPercent, { color: statusColors[s.status].text }]}>
             {(s.progress * 100).toFixed(0)}%
           </Text>
-          <Text style={styles.expectedLabel}>Attendu {(s.expectedProgress * 100).toFixed(0)}%</Text>
+          <Text style={styles.expectedLabel}>
+            {t('goalDetail.progress.expected', { percent: (s.expectedProgress * 100).toFixed(0) })}
+          </Text>
         </View>
       </View>
 
@@ -37,25 +43,25 @@ export default function GoalProgressCard({ goal, stats: s }: Props) {
 
       <View style={styles.statsRow}>
         <View style={styles.statCol}>
-          <Text style={styles.label}>Streak</Text>
+          <Text style={styles.label}>{t('goalDetail.progress.streak')}</Text>
           <Text style={[styles.statValue, { color: colors.brand }]}>
             {s.streak} <Text style={styles.statValueSuffix}>🔥</Text>
           </Text>
         </View>
         <View style={styles.statDivider} />
         <View style={styles.statCol}>
-          <Text style={styles.label}>Rythme actuel</Text>
+          <Text style={styles.label}>{t('goalDetail.progress.currentPace')}</Text>
           <Text style={styles.statValue}>
             {s.elapsedDays > 0 ? fmt(s.actual / s.elapsedDays, goal.unit) : '—'}
-            <Text style={styles.statValueSuffix}>/j</Text>
+            <Text style={styles.statValueSuffix}>{t('goalDetail.progress.perDaySuffix')}</Text>
           </Text>
         </View>
         <View style={styles.statDivider} />
         <View style={styles.statCol}>
-          <Text style={styles.label}>Requis</Text>
+          <Text style={styles.label}>{t('goalDetail.progress.required')}</Text>
           <Text style={[styles.statValue, s.status === 'late' && { color: colors.late }]}>
             {fmt(s.dailyRequired, goal.unit)}
-            <Text style={styles.statValueSuffix}>/j</Text>
+            <Text style={styles.statValueSuffix}>{t('goalDetail.progress.perDaySuffix')}</Text>
           </Text>
         </View>
       </View>

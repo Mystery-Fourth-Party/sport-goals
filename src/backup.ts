@@ -7,9 +7,10 @@
 // Le format est documenté et figé pour être directement exploitable par un
 // outil de traitement de données externe, pas seulement comme mécanisme de
 // restauration interne — voir buildBackupPayload pour sa forme exacte.
+import i18n from './i18n';
 import { DEFAULT_SETTINGS, Settings } from './settingsStorage';
 import { getGoalStats, GoalStats } from './stats';
-import { Entry, Goal, Unit, UNIT_LABELS } from './types';
+import { Entry, Goal, Unit, UNITS } from './types';
 
 export const SCHEMA_VERSION = 1;
 
@@ -55,7 +56,7 @@ export function buildBackupPayload(
       targetValue: goal.targetValue,
       createdAt: goal.createdAt,
       deadline: goal.deadline,
-      unitLabel: UNIT_LABELS[goal.unit],
+      unitLabel: i18n.t(`unit.${goal.unit}`),
       entries: goal.entries.map((e) => ({
         date: e.date,
         value: e.value,
@@ -74,7 +75,7 @@ export function buildBackupPayload(
 export type ParseBackupResult =
   { ok: true; goals: Goal[]; settings?: Settings } | { ok: false; error: string };
 
-const VALID_UNITS = new Set(Object.keys(UNIT_LABELS));
+const VALID_UNITS = new Set<string>(UNITS);
 
 interface RawEntry {
   date: string;
@@ -127,23 +128,25 @@ export function parseBackupPayload(raw: string): ParseBackupResult {
   try {
     data = JSON.parse(raw);
   } catch {
-    return { ok: false, error: 'Fichier JSON invalide.' };
+    return { ok: false, error: i18n.t('backup.invalidJson') };
   }
 
   if (typeof data !== 'object' || data === null) {
-    return { ok: false, error: 'Format de fichier invalide.' };
+    return { ok: false, error: i18n.t('backup.invalidFileFormat') };
   }
   const payload = data as Record<string, unknown>;
 
   if (payload.schemaVersion !== SCHEMA_VERSION) {
     return {
       ok: false,
-      error: `Version de fichier non prise en charge (${JSON.stringify(payload.schemaVersion)}).`,
+      error: i18n.t('backup.unsupportedVersion', {
+        version: JSON.stringify(payload.schemaVersion),
+      }),
     };
   }
 
   if (!Array.isArray(payload.goals) || !payload.goals.every(isValidGoal)) {
-    return { ok: false, error: 'Liste des objectifs manquante ou mal formée dans le fichier.' };
+    return { ok: false, error: i18n.t('backup.missingGoals') };
   }
 
   // stats/unitLabel (s'ils sont présents dans le fichier) ne sont jamais
@@ -168,7 +171,7 @@ export function parseBackupPayload(raw: string): ParseBackupResult {
     return { ok: true, goals };
   }
   if (typeof payload.settings !== 'object' || payload.settings === null) {
-    return { ok: false, error: 'Réglages mal formés dans le fichier.' };
+    return { ok: false, error: i18n.t('backup.invalidSettings') };
   }
   // Fusionné avec DEFAULT_SETTINGS comme le fait déjà loadSettings, pour
   // tolérer un fichier plus ancien avec des clés manquantes.

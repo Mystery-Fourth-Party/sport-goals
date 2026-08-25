@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import GoalCard from '../src/components/GoalCard';
@@ -8,6 +9,7 @@ import { splitGoalsByStatus, todayStr } from '../src/stats';
 import { colors, fontFamily, radius, size, spacing, white } from '../src/theme';
 
 export default function GoalListScreen() {
+  const { t } = useTranslation();
   const { goals, loaded } = useGoals();
   const today = todayStr();
   const { active, completed } = splitGoalsByStatus(goals, today);
@@ -28,14 +30,14 @@ export default function GoalListScreen() {
             <View style={styles.headerRow}>
               <View>
                 <Text style={styles.dateLabel}>{fullDateLabel(new Date())}</Text>
-                <Text style={styles.heading}>Mes{'\n'}Objectifs</Text>
+                <Text style={styles.heading}>{t('goalList.heading')}</Text>
               </View>
               <View style={styles.headerActions}>
                 <Pressable
                   style={styles.roundButton}
                   onPress={() => router.push('/weekly')}
                   accessibilityRole="button"
-                  accessibilityLabel="Résumé hebdomadaire"
+                  accessibilityLabel={t('goalList.weeklySummaryA11y')}
                 >
                   <Text style={styles.roundButtonGlyph}>📊</Text>
                 </Pressable>
@@ -43,7 +45,7 @@ export default function GoalListScreen() {
                   style={styles.roundButton}
                   onPress={() => router.push('/settings')}
                   accessibilityRole="button"
-                  accessibilityLabel="Réglages"
+                  accessibilityLabel={t('goalList.settingsA11y')}
                 >
                   <Text style={styles.roundButtonGlyph}>⚙️</Text>
                 </Pressable>
@@ -53,7 +55,9 @@ export default function GoalListScreen() {
             {goals.length > 0 && (
               <View style={styles.statsRow}>
                 <View style={[styles.statCard, styles.statCardActive]}>
-                  <Text style={[styles.statLabel, { color: colors.brand }]}>En cours</Text>
+                  <Text style={[styles.statLabel, { color: colors.brand }]}>
+                    {t('goalList.active')}
+                  </Text>
                   <Text style={styles.statValue}>{active.length}</Text>
                 </View>
                 <Pressable
@@ -63,16 +67,18 @@ export default function GoalListScreen() {
                   // Explicite plutôt que laissé à la concaténation par
                   // défaut : le chevron "›" seul ne veut rien dire pour un
                   // lecteur d'écran.
-                  accessibilityLabel={`Terminés, ${completed.length} objectifs`}
+                  accessibilityLabel={t('goalList.completedA11y', { count: completed.length })}
                 >
                   <View style={styles.statLabelRow}>
-                    <Text style={[styles.statLabel, { color: colors.ahead }]}>Terminés</Text>
+                    <Text style={[styles.statLabel, { color: colors.ahead }]}>
+                      {t('goalList.completed')}
+                    </Text>
                     <Text style={styles.statChevron}>›</Text>
                   </View>
                   <Text style={styles.statValue}>{completed.length}</Text>
                 </Pressable>
                 <View style={styles.statCard}>
-                  <Text style={styles.statLabelMuted}>Total</Text>
+                  <Text style={styles.statLabelMuted}>{t('goalList.total')}</Text>
                   <Text style={styles.statValue}>{goals.length}</Text>
                 </View>
               </View>
@@ -83,16 +89,14 @@ export default function GoalListScreen() {
           !loaded ? null : goals.length === 0 ? (
             <View style={styles.empty}>
               <Text style={styles.emptyEmoji}>🎯</Text>
-              <Text style={styles.emptyTitle}>Aucun objectif</Text>
-              <Text style={styles.emptyText}>
-                Fixe ton premier objectif sportif et suis ta progression chaque jour.
-              </Text>
+              <Text style={styles.emptyTitle}>{t('goalList.emptyNoGoalsTitle')}</Text>
+              <Text style={styles.emptyText}>{t('goalList.emptyNoGoalsText')}</Text>
               <Pressable
                 style={styles.emptyButton}
                 onPress={() => router.push('/create')}
                 accessibilityRole="button"
               >
-                <Text style={styles.emptyButtonText}>Créer un objectif</Text>
+                <Text style={styles.emptyButtonText}>{t('goalList.createGoal')}</Text>
               </Pressable>
             </View>
           ) : (
@@ -101,17 +105,14 @@ export default function GoalListScreen() {
             // que de tomber dans le même état vide.
             <View style={styles.empty}>
               <Text style={styles.emptyEmoji}>🏆</Text>
-              <Text style={styles.emptyTitle}>Tout est accompli</Text>
-              <Text style={styles.emptyText}>
-                Tous tes objectifs sont terminés — retrouve-les dans l&apos;archive, ou fixe-toi un
-                nouveau défi.
-              </Text>
+              <Text style={styles.emptyTitle}>{t('goalList.emptyAllDoneTitle')}</Text>
+              <Text style={styles.emptyText}>{t('goalList.emptyAllDoneText')}</Text>
               <Pressable
                 style={styles.emptyButton}
                 onPress={() => router.push('/archive')}
                 accessibilityRole="button"
               >
-                <Text style={styles.emptyButtonText}>Voir l&apos;archive</Text>
+                <Text style={styles.emptyButtonText}>{t('goalList.viewArchive')}</Text>
               </Pressable>
             </View>
           )
@@ -123,7 +124,7 @@ export default function GoalListScreen() {
           style={styles.fab}
           onPress={() => router.push('/create')}
           accessibilityRole="button"
-          accessibilityLabel="Créer un objectif"
+          accessibilityLabel={t('goalList.createGoal')}
         >
           <Text style={styles.fabGlyph}>+</Text>
         </Pressable>

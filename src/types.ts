@@ -1,5 +1,7 @@
 export type Unit = 'reps' | 'km' | 'min' | 'h';
 
+export const UNITS: Unit[] = ['reps', 'km', 'min', 'h'];
+
 // Une entrée de progression pour un jour donné ("YYYY-MM-DD" — même format
 // que les clés utilisées par stats.ts pour l'historique et le streak).
 // Si l'utilisateur ajoute plusieurs fois de la progression le même jour,
@@ -42,13 +44,10 @@ export interface Goal {
   reminderEnabled?: boolean;
 }
 
-// Traductions FR affichées à la place des clés techniques ('reps', 'km'...).
-export const UNIT_LABELS: Record<Unit, string> = {
-  reps: 'répétitions',
-  km: 'km',
-  min: 'minutes',
-  h: 'heures',
-};
+// Le libellé affiché à la place des clés techniques ('reps', 'km'...) vit
+// désormais dans les traductions (clés unit.reps/unit.km/unit.min/unit.h,
+// voir src/i18n/locales/*.json), résolu via t() aux points d'usage plutôt
+// que par une table statique ici.
 
 // Icône par unité (voir design-tokens.md § Composants réutilisables —
 // GoalCard). Purement visuel, à côté de UNIT_LABELS plutôt que dans

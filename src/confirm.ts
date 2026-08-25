@@ -1,11 +1,12 @@
 import { Alert, Platform } from 'react-native';
+import i18n from './i18n';
 
 interface ConfirmDestructiveOptions {
   title: string;
   message: string;
-  // Défaut 'Supprimer' : la plupart des call sites sont des suppressions
-  // (handleDelete/handleDeleteEntry) — DataSection.confirmAndImport passe
-  // 'Importer' explicitement.
+  // Défaut common.delete ('Supprimer') : la plupart des call sites sont des
+  // suppressions (handleDelete/handleDeleteEntry) — DataSection.
+  // confirmAndImport passe common.import ('Importer') explicitement.
   confirmLabel?: string;
   onConfirm: () => void;
 }
@@ -15,10 +16,14 @@ interface ConfirmDestructiveOptions {
 // handleDeleteEntry). Format web volontairement "title\n\nmessage" (déjà
 // celui de DataSection) : les deux call sites de goal/[id].tsx passaient
 // jusqu'ici une unique chaîne fusionnée, désormais alignés dessus.
+// title/message restent la responsabilité de chaque appelant (déjà traduits
+// là où ils sont construits) ; seul le chrome de l'alerte (bouton Annuler,
+// libellé de confirmation par défaut) est traduit ici, fonction pure hors
+// composant comme statusLabel (stats.ts) et dateLabels.ts.
 export function confirmDestructive({
   title,
   message,
-  confirmLabel = 'Supprimer',
+  confirmLabel = i18n.t('common.delete'),
   onConfirm,
 }: ConfirmDestructiveOptions): void {
   if (Platform.OS === 'web') {
@@ -26,7 +31,7 @@ export function confirmDestructive({
     return;
   }
   Alert.alert(title, message, [
-    { text: 'Annuler', style: 'cancel' },
+    { text: i18n.t('common.cancel'), style: 'cancel' },
     { text: confirmLabel, style: 'destructive', onPress: onConfirm },
   ]);
 }

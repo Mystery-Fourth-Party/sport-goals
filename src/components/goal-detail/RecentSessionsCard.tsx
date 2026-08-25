@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, View } from 'react-native';
 import { BarChart } from '../ui';
 import { weekdayShort } from '../../dateLabels';
@@ -16,12 +17,15 @@ interface Props {
 // si aucune séance récente : évite au parent de dupliquer la condition
 // (recentEntries.length > 0) déjà connue par ce composant.
 export default function RecentSessionsCard({ entries, unit, today }: Props) {
+  const { t } = useTranslation();
   const recentEntries = entries.filter((e) => e.value > 0).slice(-7);
   if (recentEntries.length === 0) return null;
 
   return (
     <View style={styles.card}>
-      <Text style={[styles.label, styles.cardSectionLabel]}>Dernières séances</Text>
+      <Text style={[styles.label, styles.cardSectionLabel]}>
+        {t('goalDetail.recentSessions.title')}
+      </Text>
       <BarChart
         bars={recentEntries.map((e) => {
           const d = parseDate(e.date);

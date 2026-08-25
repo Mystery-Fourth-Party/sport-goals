@@ -1,0 +1,233 @@
+{
+  "common": {
+    "back": "Retour",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "import": "Importer"
+  },
+  "unit": {
+    "reps": "répétitions",
+    "km": "km",
+    "min": "minutes",
+    "h": "heures"
+  },
+  "status": {
+    "ahead": "En avance",
+    "onTrack": "Dans les temps",
+    "late": "En retard",
+    "completed": "Terminé ✓",
+    "notStarted": "Pas commencé"
+  },
+  "dateLabels": {
+    "weekdayLong": ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"],
+    "weekdayShort": ["dim", "lun", "mar", "mer", "jeu", "ven", "sam"],
+    "monthLong": [
+      "janvier",
+      "février",
+      "mars",
+      "avril",
+      "mai",
+      "juin",
+      "juillet",
+      "août",
+      "septembre",
+      "octobre",
+      "novembre",
+      "décembre"
+    ],
+    "monthShort": [
+      "janv.",
+      "févr.",
+      "mars",
+      "avr.",
+      "mai",
+      "juin",
+      "juil.",
+      "août",
+      "sept.",
+      "oct.",
+      "nov.",
+      "déc."
+    ]
+  },
+  "goalList": {
+    "heading": "Mes\nObjectifs",
+    "weeklySummaryA11y": "Résumé hebdomadaire",
+    "settingsA11y": "Réglages",
+    "active": "En cours",
+    "completed": "Terminés",
+    "completedA11y_one": "Terminés, {{count}} objectif",
+    "completedA11y_other": "Terminés, {{count}} objectifs",
+    "total": "Total",
+    "emptyNoGoalsTitle": "Aucun objectif",
+    "emptyNoGoalsText": "Fixe ton premier objectif sportif et suis ta progression chaque jour.",
+    "emptyAllDoneTitle": "Tout est accompli",
+    "emptyAllDoneText": "Tous tes objectifs sont terminés — retrouve-les dans l'archive, ou fixe-toi un nouveau défi.",
+    "createGoal": "Créer un objectif",
+    "viewArchive": "Voir l'archive"
+  },
+  "create": {
+    "title": "Nouvel Objectif"
+  },
+  "archive": {
+    "title": "Archive",
+    "emptyTitle": "Rien pour l'instant",
+    "emptyText": "Les objectifs terminés apparaîtront ici au fur et à mesure."
+  },
+  "weekly": {
+    "title": "Semaine",
+    "activeDays": "Jours actifs",
+    "sessions": "Séances",
+    "thisWeek": "cette semaine",
+    "sessionsPerDay": "Séances par jour",
+    "mostAdvanced": "Objectif le plus avancé 🏆",
+    "mostLate": "Objectif le plus en retard ⚠️",
+    "leastAdvanced": "Objectif le moins avancé",
+    "expectedActual": "Attendu {{expected}}% · actuel {{actual}}%",
+    "catchUpHint": "↑ {{value}}/jour pour rattraper",
+    "allGoals": "Tous les objectifs",
+    "weekTotal": "+{{value}} {{unit}}",
+    "empty": "Aucun objectif pour l'instant — crée-en un pour voir ton résumé de la semaine."
+  },
+  "goalCard": {
+    "progressA11y": "{{percent}}% de l'objectif",
+    "remainingDaysA11y_one": "{{count}} jour restant",
+    "remainingDaysA11y_other": "{{count}} jours restants",
+    "lateRequiredA11y": "{{value}} {{unit}} par jour nécessaires pour rattraper",
+    "aheadA11y_one": "{{count}} jour consécutif, en avance sur le planning",
+    "aheadA11y_other": "{{count}} jours consécutifs, en avance sur le planning",
+    "remainingDays_one": "{{count}}j restant",
+    "remainingDays_other": "{{count}}j restants",
+    "lateHint": "↑ {{value}} {{unit}}/jour nécessaires pour rattraper",
+    "aheadHint_one": "🔥 {{count}} jour consécutif · en avance sur le planning",
+    "aheadHint_other": "🔥 {{count}} jours consécutifs · en avance sur le planning"
+  },
+  "goalForm": {
+    "titleRequired": "Le titre de l'objectif est requis.",
+    "targetPositive": "La valeur cible doit être un nombre positif.",
+    "durationPositive": "La durée doit être un nombre de jours positif.",
+    "durationLabel": "Durée (jours)",
+    "dailyAvgRequired": "Rythme quotidien requis",
+    "perDay": "{{unit}} par jour",
+    "submit": "Créer l'objectif"
+  },
+  "goalFields": {
+    "name": "Nom de l'objectif",
+    "namePlaceholder": "ex : 1000 pompes en 30 jours",
+    "targetValue": "Valeur cible",
+    "unit": "Unité",
+    "unitA11y": "Unité : {{unit}}",
+    "remindersEnabled": "Rappels activés",
+    "customTime": "Horaire personnalisé",
+    "reminderTime": "Heure du rappel"
+  },
+  "goalDetail": {
+    "notFound": "Objectif introuvable.",
+    "deleteGoal": "🗑 Supprimer l'objectif",
+    "addProgressCta": "+ Ajouter la progression du jour",
+    "deleteGoalConfirmTitle": "Supprimer cet objectif ?",
+    "deleteEntryConfirmTitle": "Supprimer cette entrée ?",
+    "history": {
+      "title": "Historique",
+      "noEntry": "aucune entrée",
+      "today": "(auj.)"
+    },
+    "recentSessions": {
+      "title": "Dernières séances"
+    },
+    "progress": {
+      "total": "Progression totale",
+      "expected": "Attendu {{percent}}%",
+      "streak": "Streak",
+      "currentPace": "Rythme actuel",
+      "required": "Requis",
+      "perDaySuffix": "/j"
+    },
+    "header": {
+      "meta": "Jour {{elapsedDays}} / {{totalDays}} · {{remainingDays}}",
+      "editA11y": "Modifier l'objectif",
+      "lateBannerTitle": "Tu es en retard sur le rythme",
+      "lateBannerSubtitle": "{{value}} {{unit}}/jour pour rattraper le retard",
+      "aheadBannerTitle": "En avance sur le planning !",
+      "aheadBannerSubtitle": "Plus que {{value}} {{unit}} à accomplir",
+      "almostBannerTitle": "Presque là !",
+      "almostBannerSubtitle": "Plus que {{value}} {{unit}} avant l'objectif — continue !"
+    }
+  },
+  "progressModal": {
+    "titleAdd": "Aujourd'hui",
+    "titleEdit": "Modifier",
+    "alreadyLogged": "Déjà enregistré :",
+    "errorPositive": "Entre une valeur supérieure à 0.",
+    "save": "Enregistrer",
+    "deleteEntry": "🗑 Supprimer cette entrée"
+  },
+  "editGoal": {
+    "title": "Modifier",
+    "subtitle": "Replanification de l'objectif",
+    "currentProgress": "Progression actuelle",
+    "durationLabel": "Jours restants",
+    "titleRequired": "Le titre de l'objectif est requis.",
+    "targetTooLow": "La cible doit être ≥ à ce qui est déjà accompli ({{value}} {{unit}}).",
+    "targetPositive": "La valeur cible doit être un nombre positif.",
+    "daysPositive": "Les jours restants doivent être un nombre positif.",
+    "newPace": "Nouveau rythme quotidien",
+    "remainingToComplete": "{{unit}}/jour · encore {{value}} {{unitLabel}} à accomplir",
+    "save": "Enregistrer les modifications"
+  },
+  "notifications": {
+    "sectionTitle": "Notifications",
+    "unavailableWeb": "Notifications indisponibles sur cette plateforme (web).",
+    "denied": "Notifications refusées — active-les dans les réglages de l'appareil.",
+    "invalidTimeFormat": "Format invalide — utilise HH:mm (ex : 20:00).",
+    "dailyReminder": "Rappel quotidien",
+    "dailyReminderSubtitle": "Pour entrer ta progression chaque jour",
+    "reminderTime": "Heure du rappel",
+    "goalReached": "Objectif atteint 🏆",
+    "goalReachedSubtitle": "Célébration quand un objectif est complété",
+    "almostThere": "Objectif bientôt atteint 🎯",
+    "almostThereSubtitle": "Quand il ne reste que quelques % pour finir",
+    "streakAlert": "Streak en danger 🔥",
+    "streakAlertSubtitle": "Si tu n'as pas encore entré ta progression",
+    "rescheduleInvalidTime": "Heure invalide — utilise le format HH:mm (ex : 20:00).",
+    "rescheduleDenied": "Notifications non autorisées."
+  },
+  "data": {
+    "sectionTitle": "Données",
+    "sharingUnavailable": "Le partage de fichiers n'est pas disponible sur cet appareil.",
+    "exportFailed": "Échec de l'export — réessaie.",
+    "importFailed": "Échec de l'import — réessaie.",
+    "readFailed": "Échec de la lecture du fichier.",
+    "exportTitle": "Exporter mes données",
+    "exportSubtitle": "Sauvegarde tes objectifs et réglages dans un fichier JSON",
+    "importTitle": "Importer des données",
+    "importSubtitle": "Remplace tes objectifs actuels par un fichier exporté",
+    "importConfirmTitle": "Importer ces données ?",
+    "importConfirmMessage": "Ça va REMPLACER tes {{currentPart}} par les {{importedPart}} de ce fichier.",
+    "importCurrentCount_one": "{{count}} objectif actuel",
+    "importCurrentCount_other": "{{count}} objectifs actuels",
+    "importedGoalCount_one": "{{count}} objectif",
+    "importedGoalCount_other": "{{count}} objectifs"
+  },
+  "backup": {
+    "invalidJson": "Fichier JSON invalide.",
+    "invalidFileFormat": "Format de fichier invalide.",
+    "unsupportedVersion": "Version de fichier non prise en charge ({{version}}).",
+    "missingGoals": "Liste des objectifs manquante ou mal formée dans le fichier.",
+    "invalidSettings": "Réglages mal formés dans le fichier."
+  },
+  "settings": {
+    "title": "Paramètres",
+    "appSection": "Application",
+    "version": "Version",
+    "appName": "Objectif-sport",
+    "beta": "Bêta",
+    "watermark": "NO PAIN\nNO GAIN"
+  },
+  "languageSection": {
+    "title": "Langue",
+    "french": "Français",
+    "english": "English",
+    "system": "Système"
+  }
+}
