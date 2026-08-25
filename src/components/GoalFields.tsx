@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { Unit } from '../types';
+import { Unit, UNIT_LABELS } from '../types';
 import { colors, fontFamily, radius, spacing, white } from '../theme';
 import { TimeField, Toggle } from './ui';
 
@@ -104,6 +104,13 @@ export default function GoalFields({
             key={u}
             onPress={() => onUnitChange(u)}
             style={[styles.chip, unit === u && styles.chipSelected]}
+            // Boutons de sélection (une seule unité active à la fois), pas
+            // de simples boutons indépendants — accessibilityState.selected
+            // et un libellé explicite plutôt que le glyphe seul ("REPS" ne
+            // veut rien dire lu tel quel).
+            accessibilityRole="button"
+            accessibilityState={{ selected: unit === u }}
+            accessibilityLabel={`Unité : ${UNIT_LABELS[u]}`}
           >
             <Text style={[styles.chipText, unit === u && styles.chipTextSelected]}>
               {u.toUpperCase()}
@@ -114,7 +121,11 @@ export default function GoalFields({
 
       <View style={styles.toggleRow}>
         <Text style={styles.toggleLabel}>Rappels activés</Text>
-        <Toggle value={reminderEnabled} onChange={onReminderEnabledChange} />
+        <Toggle
+          value={reminderEnabled}
+          onChange={onReminderEnabledChange}
+          accessibilityLabel="Rappels activés"
+        />
       </View>
 
       {reminderEnabled && (
@@ -123,6 +134,7 @@ export default function GoalFields({
           <Toggle
             value={reminderTime !== undefined}
             onChange={(v) => onReminderTimeChange(v ? '20:00' : undefined)}
+            accessibilityLabel="Horaire personnalisé"
           />
         </View>
       )}

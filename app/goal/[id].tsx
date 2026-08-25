@@ -143,6 +143,8 @@ export default function GoalDetailScreen() {
             style={styles.editButton}
             onPress={() => router.push(`/goal/${goal.id}/edit`)}
             hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Modifier l'objectif"
           >
             <Text style={styles.editGlyph}>✎</Text>
           </Pressable>
@@ -264,6 +266,10 @@ export default function GoalDetailScreen() {
           {historyEntries.map((entry, i) => {
             const d = parseDate(entry.date);
             const isToday = entry.date === today;
+            const entryAccessibilityLabel =
+              entry.value > 0
+                ? `${longDateLabel(d)}, ${fmt(entry.value, goal.unit)} ${UNIT_LABELS[goal.unit]}`
+                : `${longDateLabel(d)}, aucune entrée`;
             return (
               <Pressable
                 key={entry.date}
@@ -273,6 +279,8 @@ export default function GoalDetailScreen() {
                   i < historyEntries.length - 1 && styles.historyRowBorder,
                   isToday && styles.historyRowToday,
                 ]}
+                accessibilityRole="button"
+                accessibilityLabel={entryAccessibilityLabel}
               >
                 <View style={styles.historyLeft}>
                   <View style={[styles.historyDot, entry.value > 0 && styles.historyDotActive]} />
@@ -291,19 +299,36 @@ export default function GoalDetailScreen() {
           })}
         </View>
 
-        <Pressable style={styles.deleteLink} onPress={handleDelete}>
+        <Pressable style={styles.deleteLink} onPress={handleDelete} accessibilityRole="button">
           <Text style={styles.deleteLinkText}>🗑 Supprimer l&apos;objectif</Text>
         </Pressable>
       </ScrollView>
 
       <View style={styles.ctaWrap}>
-        <Pressable style={styles.ctaButton} onPress={openAddModal}>
+        <Pressable style={styles.ctaButton} onPress={openAddModal} accessibilityRole="button">
           <Text style={styles.ctaButtonText}>+ Ajouter la progression du jour</Text>
         </Pressable>
       </View>
 
-      <Modal visible={modalMode !== null} transparent animationType="slide">
-        <Pressable style={styles.modalBackdrop} onPress={closeModal}>
+      <Modal
+        visible={modalMode !== null}
+        transparent
+        animationType="slide"
+        // Cantonne le lecteur d'écran au contenu du modal tant qu'il est ouvert.
+        accessibilityViewIsModal
+      >
+        {/* accessible={false} plutôt que accessibilityRole="button" : exposer
+            toute la zone derrière le modal comme un "bouton" plein écran au
+            lecteur d'écran serait plus perturbant qu'utile (cible géante,
+            fait doublon avec "Annuler" dans la feuille — voir la doc RN sur
+            ce pattern backdrop). Pas de importantForAccessibility
+            "no-hide-descendants" ici : contrairement au cas générique où le
+            backdrop n'a pas de descendant réel, la feuille modale (avec tout
+            son contenu accessible) est nichée DANS ce Pressable pour que le
+            tap dessus stoppe la propagation — la masquer masquerait le modal
+            entier sur Android. accessible={false} n'affecte que ce
+            Pressable lui-même, pas ses enfants. */}
+        <Pressable style={styles.modalBackdrop} onPress={closeModal} accessible={false}>
           {/* Empêche le tap sur la feuille elle-même de remonter au backdrop
               et de fermer le modal par erreur. */}
           <Pressable style={styles.modalSheet} onPress={(e) => e.stopPropagation()}>
@@ -348,6 +373,7 @@ export default function GoalDetailScreen() {
               <Pressable
                 style={[styles.modalButton, styles.modalCancelButton]}
                 onPress={closeModal}
+                accessibilityRole="button"
               >
                 <Text style={styles.modalCancelText}>Annuler</Text>
               </Pressable>
@@ -358,12 +384,17 @@ export default function GoalDetailScreen() {
                   !(Number(modalValue) > 0) && styles.modalConfirmButtonDisabled,
                 ]}
                 onPress={handleSave}
+                accessibilityRole="button"
               >
                 <Text style={styles.modalConfirmText}>Enregistrer</Text>
               </Pressable>
             </View>
             {modalMode === 'edit' && (
-              <Pressable style={styles.deleteLink} onPress={handleDeleteEntry}>
+              <Pressable
+                style={styles.deleteLink}
+                onPress={handleDeleteEntry}
+                accessibilityRole="button"
+              >
                 <Text style={styles.deleteLinkText}>🗑 Supprimer cette entrée</Text>
               </Pressable>
             )}

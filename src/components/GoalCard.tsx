@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Goal, UNIT_ICONS, UNIT_LABELS } from '../types';
-import { fmt, getGoalStats, todayStr } from '../stats';
+import { fmt, getGoalStats, statusLabel, todayStr } from '../stats';
 import { colors, fontFamily, radius, spacing, statusColors, white } from '../theme';
 import { ProgressBar, StatusBadge } from './ui';
 
@@ -15,8 +15,35 @@ interface Props {
 export default function GoalCard({ goal, onPress }: Props) {
   const s = getGoalStats(goal, todayStr());
 
+  // Phrase complète plutôt que de laisser le lecteur d'écran concaténer les
+  // ~7 Text internes dans l'ordre visuel (résultat peu naturel : "45 %"
+  // épelé, emoji lus tels quels). Pressable est accessible par défaut en RN
+  // (les éléments tactiles le sont) : poser accessibilityLabel dessus suffit
+  // à en faire un unique élément focusable pour le lecteur d'écran, qui
+  // n'entre alors pas dans les enfants — pas besoin en plus de
+  // accessibilityElementsHidden/importantForAccessibility côté enfants ni de
+  // accessible={false} dessus (vérifié dans la doc RN sur l'accessibilité).
+  const accessibilityParts = [
+    goal.title,
+    `${Math.round(s.progress * 100)}% de l'objectif`,
+    `${s.remainingDays} jours restants`,
+    statusLabel(s.status),
+  ];
+  if (s.status === 'late') {
+    accessibilityParts.push(
+      `${fmt(s.dailyRequired, goal.unit)} ${UNIT_LABELS[goal.unit]} par jour nécessaires pour rattraper`,
+    );
+  } else if (s.status === 'ahead') {
+    accessibilityParts.push(`${s.streak} jours consécutifs, en avance sur le planning`);
+  }
+
   return (
-    <Pressable style={styles.card} onPress={onPress}>
+    <Pressable
+      style={styles.card}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityParts.join(', ')}
+    >
       <View style={styles.headerRow}>
         <View style={styles.headerLeft}>
           <View style={styles.icon}>

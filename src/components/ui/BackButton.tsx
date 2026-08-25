@@ -11,7 +11,13 @@ interface Props {
 // jeu d'icônes est introduit plus tard.
 export default function BackButton({ onPress }: Props) {
   return (
-    <Pressable onPress={onPress} style={styles.container} hitSlop={8}>
+    <Pressable
+      onPress={onPress}
+      style={styles.container}
+      hitSlop={8}
+      accessibilityRole="button"
+      accessibilityLabel="Retour"
+    >
       <Text style={styles.glyph}>‹</Text>
     </Pressable>
   );

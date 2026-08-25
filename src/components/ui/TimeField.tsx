@@ -65,7 +65,11 @@ export default function TimeField({ value, onChange }: Props) {
 
   return (
     <>
-      <Pressable style={styles.timeValueButton} onPress={() => setShowAndroidPicker(true)}>
+      <Pressable
+        style={styles.timeValueButton}
+        onPress={() => setShowAndroidPicker(true)}
+        accessibilityRole="button"
+      >
         <Text style={styles.timeValueText}>{value}</Text>
       </Pressable>
       {showAndroidPicker && (
