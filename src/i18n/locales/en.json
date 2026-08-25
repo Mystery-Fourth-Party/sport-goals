@@ -121,6 +121,9 @@
     "reminderTime": "Reminder time"
   },
   "goalDetail": {
+    "recentSessions": {
+      "title": "Recent sessions"
+    },
     "progress": {
       "total": "Total progress",
       "expected": "Expected {{percent}}%",

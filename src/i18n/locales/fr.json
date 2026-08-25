@@ -121,6 +121,9 @@
     "reminderTime": "Heure du rappel"
   },
   "goalDetail": {
+    "recentSessions": {
+      "title": "Dernières séances"
+    },
     "progress": {
       "total": "Progression totale",
       "expected": "Attendu {{percent}}%",
