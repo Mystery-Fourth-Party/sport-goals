@@ -3,6 +3,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import GoalDetailHeader from '../../src/components/goal-detail/GoalDetailHeader';
+import GoalHistoryList from '../../src/components/goal-detail/GoalHistoryList';
 import GoalProgressCard from '../../src/components/goal-detail/GoalProgressCard';
 import ProgressEntryModal from '../../src/components/goal-detail/ProgressEntryModal';
 import RecentSessionsCard from '../../src/components/goal-detail/RecentSessionsCard';
@@ -11,9 +12,9 @@ import { confirmDestructive } from '../../src/confirm';
 import { longDateLabel } from '../../src/dateLabels';
 import { useGoals } from '../../src/goals-context';
 import { useSettings } from '../../src/settings-context';
-import { fmt, getGoalStats, parseDate, todayStr } from '../../src/stats';
+import { getGoalStats, parseDate, todayStr } from '../../src/stats';
 import { colors, fontFamily, radius, spacing, white } from '../../src/theme';
-import { Entry, UNIT_LABELS } from '../../src/types';
+import { Entry } from '../../src/types';
 
 export default function GoalDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -48,7 +49,6 @@ export default function GoalDetailScreen() {
   const remaining = goal.targetValue - s.actual;
   const showAlmostThere = settings.almostThereNotifs && s.progress >= 0.9 && s.progress < 1;
 
-  const historyEntries = [...goal.entries].reverse().slice(0, 12);
   const todayEntry = goal.entries.find((e) => e.date === today);
 
   function openAddModal() {
@@ -124,43 +124,12 @@ export default function GoalDetailScreen() {
 
         <RecentSessionsCard entries={goal.entries} unit={goal.unit} today={today} />
 
-        <View style={[styles.card, styles.historyCard]}>
-          <Text style={[styles.label, styles.historyHeader]}>Historique</Text>
-          {historyEntries.map((entry, i) => {
-            const d = parseDate(entry.date);
-            const isToday = entry.date === today;
-            const entryAccessibilityLabel =
-              entry.value > 0
-                ? `${longDateLabel(d)}, ${fmt(entry.value, goal.unit)} ${UNIT_LABELS[goal.unit]}`
-                : `${longDateLabel(d)}, aucune entrée`;
-            return (
-              <Pressable
-                key={entry.date}
-                onPress={() => openEditModal(entry)}
-                style={[
-                  styles.historyRow,
-                  i < historyEntries.length - 1 && styles.historyRowBorder,
-                  isToday && styles.historyRowToday,
-                ]}
-                accessibilityRole="button"
-                accessibilityLabel={entryAccessibilityLabel}
-              >
-                <View style={styles.historyLeft}>
-                  <View style={[styles.historyDot, entry.value > 0 && styles.historyDotActive]} />
-                  <Text style={styles.historyDate}>
-                    {longDateLabel(d)}
-                    {isToday && <Text style={styles.historyToday}> (auj.)</Text>}
-                  </Text>
-                </View>
-                <Text style={styles.historyValue}>
-                  {entry.value > 0
-                    ? `${fmt(entry.value, goal.unit)} ${UNIT_LABELS[goal.unit]}`
-                    : '—'}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
+        <GoalHistoryList
+          entries={goal.entries}
+          unit={goal.unit}
+          today={today}
+          onEntryPress={openEditModal}
+        />
 
         <Pressable style={styles.deleteLink} onPress={handleDelete} accessibilityRole="button">
           <Text style={styles.deleteLinkText}>🗑 Supprimer l&apos;objectif</Text>
@@ -209,78 +178,6 @@ const styles = StyleSheet.create({
     padding: spacing.screenPadding,
     paddingBottom: 140,
     gap: spacing.gap,
-  },
-  card: {
-    backgroundColor: colors.card,
-    borderRadius: radius.card,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.cardPadding,
-  },
-  label: {
-    fontFamily: fontFamily.bodyRegular,
-    fontSize: 10,
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-    color: white(0.35),
-  },
-  cardSectionLabel: {
-    marginBottom: 20,
-  },
-  historyCard: {
-    padding: 0,
-    overflow: 'hidden',
-  },
-  historyHeader: {
-    paddingHorizontal: spacing.cardPadding,
-    paddingTop: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: white(0.05),
-  },
-  historyRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.cardPadding,
-    paddingVertical: 12,
-  },
-  historyRowBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: white(0.04),
-  },
-  historyRowToday: {
-    backgroundColor: 'rgba(255,107,0,0.05)',
-  },
-  historyLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    flexShrink: 1,
-  },
-  historyDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: white(0.15),
-  },
-  historyDotActive: {
-    backgroundColor: colors.brand,
-  },
-  historyDate: {
-    fontFamily: fontFamily.bodyRegular,
-    fontSize: 13,
-    color: white(0.8),
-    textTransform: 'capitalize',
-  },
-  historyToday: {
-    color: colors.brand,
-    fontSize: 11,
-  },
-  historyValue: {
-    fontFamily: fontFamily.displayBold,
-    fontSize: 14,
-    color: colors.fg,
   },
   deleteLink: {
     alignItems: 'center',
