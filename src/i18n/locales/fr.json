@@ -1,4 +1,9 @@
 {
+  "common": {
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "import": "Importer"
+  },
   "unit": {
     "reps": "répétitions",
     "km": "km",
