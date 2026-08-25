@@ -1,1 +1,16 @@
-{}
+{
+  "settings": {
+    "title": "Settings",
+    "appSection": "App",
+    "version": "Version",
+    "appName": "Objectif-sport",
+    "beta": "Beta",
+    "watermark": "NO PAIN\nNO GAIN"
+  },
+  "languageSection": {
+    "title": "Language",
+    "french": "Français",
+    "english": "English",
+    "system": "System"
+  }
+}

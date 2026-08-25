@@ -1,38 +1,42 @@
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BackButton } from '../src/components/ui';
-import { DataSection, NotificationsSection } from '../src/components/settings';
+import { DataSection, LanguageSection, NotificationsSection } from '../src/components/settings';
 import { settingsStyles } from '../src/components/settings/styles';
 import { colors, fontFamily, spacing, white } from '../src/theme';
 
 export default function SettingsScreen() {
+  const { t } = useTranslation();
+
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
       <View style={styles.header}>
         <BackButton onPress={() => router.back()} />
-        <Text style={styles.title}>Paramètres</Text>
+        <Text style={styles.title}>{t('settings.title')}</Text>
       </View>
 
       <View style={styles.content}>
         <NotificationsSection />
         <DataSection />
+        <LanguageSection />
 
         <Text style={[settingsStyles.sectionLabel, settingsStyles.sectionLabelSpaced]}>
-          Application
+          {t('settings.appSection')}
         </Text>
         <View style={settingsStyles.card}>
           <View style={[settingsStyles.row, settingsStyles.rowBorder]}>
-            <Text style={settingsStyles.rowTitlePlain}>Version</Text>
+            <Text style={settingsStyles.rowTitlePlain}>{t('settings.version')}</Text>
             <Text style={styles.versionValue}>1.0.0</Text>
           </View>
           <View style={settingsStyles.row}>
-            <Text style={settingsStyles.rowTitle}>Objectif-sport</Text>
-            <Text style={styles.betaValue}>Bêta</Text>
+            <Text style={settingsStyles.rowTitle}>{t('settings.appName')}</Text>
+            <Text style={styles.betaValue}>{t('settings.beta')}</Text>
           </View>
         </View>
 
-        <Text style={styles.watermark}>NO PAIN{'\n'}NO GAIN</Text>
+        <Text style={styles.watermark}>{t('settings.watermark')}</Text>
       </View>
     </SafeAreaView>
   );
