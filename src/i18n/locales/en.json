@@ -12,6 +12,38 @@
     "completed": "Completed ✓",
     "notStarted": "Not started"
   },
+  "dateLabels": {
+    "weekdayLong": ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+    "weekdayShort": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+    "monthLong": [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December"
+    ],
+    "monthShort": [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec"
+    ]
+  },
   "settings": {
     "title": "Settings",
     "appSection": "App",

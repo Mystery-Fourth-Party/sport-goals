@@ -1,52 +1,45 @@
-// Libellés de dates en français écrits à la main plutôt que via
-// `date.toLocaleDateString('fr-FR', ...)` : le support ICU/Intl complet
-// (locale fr-FR) n'est pas garanti sur Hermes (moteur JS natif de React
-// Native) selon la configuration de build, contrairement au navigateur.
-const WEEKDAY_LONG = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
-const WEEKDAY_SHORT = ['dim', 'lun', 'mar', 'mer', 'jeu', 'ven', 'sam'];
-const MONTH_LONG = [
-  'janvier',
-  'février',
-  'mars',
-  'avril',
-  'mai',
-  'juin',
-  'juillet',
-  'août',
-  'septembre',
-  'octobre',
-  'novembre',
-  'décembre',
-];
-const MONTH_SHORT = [
-  'janv.',
-  'févr.',
-  'mars',
-  'avr.',
-  'mai',
-  'juin',
-  'juil.',
-  'août',
-  'sept.',
-  'oct.',
-  'nov.',
-  'déc.',
-];
+// Libellés de dates écrits à la main (clés dateLabels.* — voir
+// src/i18n/locales/*.json) plutôt que via `date.toLocaleDateString(locale,
+// ...)` : le support ICU/Intl complet n'est pas garanti sur Hermes (moteur
+// JS natif de React Native) selon la configuration de build, contrairement
+// au navigateur. Fonctions pures hors composant : lisent directement
+// l'instance i18next (pas de Hook disponible ici), comme statusLabel dans
+// stats.ts.
+import i18n from './i18n';
+
+// { returnObjects: true } fait bien renvoyer le tableau JSON par i18next à
+// l'exécution — seul son typage (`$SpecialObject`, opaque) demande ce cast
+// explicite.
+function weekdayLongList(): string[] {
+  return i18n.t('dateLabels.weekdayLong', { returnObjects: true }) as unknown as string[];
+}
+
+function weekdayShortList(): string[] {
+  return i18n.t('dateLabels.weekdayShort', { returnObjects: true }) as unknown as string[];
+}
+
+function monthLongList(): string[] {
+  return i18n.t('dateLabels.monthLong', { returnObjects: true }) as unknown as string[];
+}
+
+function monthShortList(): string[] {
+  return i18n.t('dateLabels.monthShort', { returnObjects: true }) as unknown as string[];
+}
 
 export function weekdayLong(d: Date): string {
-  return WEEKDAY_LONG[d.getDay()];
+  return weekdayLongList()[d.getDay()];
 }
 
 export function weekdayShort(d: Date): string {
-  return WEEKDAY_SHORT[d.getDay()];
+  return weekdayShortList()[d.getDay()];
 }
 
 export function monthLong(d: Date): string {
-  return MONTH_LONG[d.getMonth()];
+  return monthLongList()[d.getMonth()];
 }
 
 export function monthShort(d: Date): string {
-  return MONTH_SHORT[d.getMonth()];
+  return monthShortList()[d.getMonth()];
 }
 
 // "vendredi 20 août" — utilisé pour l'historique de progression.
