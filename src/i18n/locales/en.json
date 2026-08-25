@@ -73,6 +73,21 @@
     "emptyTitle": "Nothing yet",
     "emptyText": "Completed goals will show up here as you go."
   },
+  "weekly": {
+    "title": "Week",
+    "activeDays": "Active days",
+    "sessions": "Sessions",
+    "thisWeek": "this week",
+    "sessionsPerDay": "Sessions per day",
+    "mostAdvanced": "Most advanced goal 🏆",
+    "mostLate": "Most behind goal ⚠️",
+    "leastAdvanced": "Least advanced goal",
+    "expectedActual": "Expected {{expected}}% · actual {{actual}}%",
+    "catchUpHint": "↑ {{value}}/day to catch up",
+    "allGoals": "All goals",
+    "weekTotal": "+{{value}} {{unit}}",
+    "empty": "No goals yet — create one to see your weekly summary."
+  },
   "settings": {
     "title": "Settings",
     "appSection": "App",

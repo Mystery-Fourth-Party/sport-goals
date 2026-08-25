@@ -73,6 +73,21 @@
     "emptyTitle": "Rien pour l'instant",
     "emptyText": "Les objectifs terminés apparaîtront ici au fur et à mesure."
   },
+  "weekly": {
+    "title": "Semaine",
+    "activeDays": "Jours actifs",
+    "sessions": "Séances",
+    "thisWeek": "cette semaine",
+    "sessionsPerDay": "Séances par jour",
+    "mostAdvanced": "Objectif le plus avancé 🏆",
+    "mostLate": "Objectif le plus en retard ⚠️",
+    "leastAdvanced": "Objectif le moins avancé",
+    "expectedActual": "Attendu {{expected}}% · actuel {{actual}}%",
+    "catchUpHint": "↑ {{value}}/jour pour rattraper",
+    "allGoals": "Tous les objectifs",
+    "weekTotal": "+{{value}} {{unit}}",
+    "empty": "Aucun objectif pour l'instant — crée-en un pour voir ton résumé de la semaine."
+  },
   "settings": {
     "title": "Paramètres",
     "appSection": "Application",
