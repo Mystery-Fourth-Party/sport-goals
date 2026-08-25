@@ -148,6 +148,14 @@
       "almostBannerSubtitle": "{{value}} {{unit}} left before the goal — keep going!"
     }
   },
+  "progressModal": {
+    "titleAdd": "Today",
+    "titleEdit": "Edit",
+    "alreadyLogged": "Already logged:",
+    "errorPositive": "Enter a value greater than 0.",
+    "save": "Save",
+    "deleteEntry": "🗑 Delete this entry"
+  },
   "settings": {
     "title": "Settings",
     "appSection": "App",

@@ -148,6 +148,14 @@
       "almostBannerSubtitle": "Plus que {{value}} {{unit}} avant l'objectif — continue !"
     }
   },
+  "progressModal": {
+    "titleAdd": "Aujourd'hui",
+    "titleEdit": "Modifier",
+    "alreadyLogged": "Déjà enregistré :",
+    "errorPositive": "Entre une valeur supérieure à 0.",
+    "save": "Enregistrer",
+    "deleteEntry": "🗑 Supprimer cette entrée"
+  },
   "settings": {
     "title": "Paramètres",
     "appSection": "Application",

@@ -63,12 +63,14 @@ export default function ProgressEntryModal({
         <Pressable style={styles.modalSheet} onPress={(e) => e.stopPropagation()}>
           <View style={styles.modalHandle} />
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>{mode === 'add' ? "Aujourd'hui" : 'Modifier'}</Text>
+            <Text style={styles.modalTitle}>
+              {mode === 'add' ? t('progressModal.titleAdd') : t('progressModal.titleEdit')}
+            </Text>
             <Text style={styles.modalDate}>{date && longDateLabel(parseDate(date))}</Text>
           </View>
           {mode === 'add' && todayEntry && todayEntry.value > 0 && (
             <Text style={styles.modalAlready}>
-              Déjà enregistré :{' '}
+              {t('progressModal.alreadyLogged')}{' '}
               <Text style={styles.modalAlreadyValue}>
                 {fmt(todayEntry.value, unit)} {unitLabel}
               </Text>
@@ -88,14 +90,14 @@ export default function ProgressEntryModal({
               <Text style={styles.modalUnitText}>{unitLabel}</Text>
             </View>
           </View>
-          {error && <Text style={styles.modalErrorText}>Entre une valeur supérieure à 0.</Text>}
+          {error && <Text style={styles.modalErrorText}>{t('progressModal.errorPositive')}</Text>}
           <View style={styles.modalActions}>
             <Pressable
               style={[styles.modalButton, styles.modalCancelButton]}
               onPress={onClose}
               accessibilityRole="button"
             >
-              <Text style={styles.modalCancelText}>Annuler</Text>
+              <Text style={styles.modalCancelText}>{t('common.cancel')}</Text>
             </Pressable>
             <Pressable
               style={[
@@ -106,12 +108,12 @@ export default function ProgressEntryModal({
               onPress={onSave}
               accessibilityRole="button"
             >
-              <Text style={styles.modalConfirmText}>Enregistrer</Text>
+              <Text style={styles.modalConfirmText}>{t('progressModal.save')}</Text>
             </Pressable>
           </View>
           {mode === 'edit' && (
             <Pressable style={styles.deleteLink} onPress={onDeleteEntry} accessibilityRole="button">
-              <Text style={styles.deleteLinkText}>🗑 Supprimer cette entrée</Text>
+              <Text style={styles.deleteLinkText}>{t('progressModal.deleteEntry')}</Text>
             </Pressable>
           )}
         </Pressable>
