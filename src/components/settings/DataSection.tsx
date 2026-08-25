@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Alert, Platform, Pressable, Text, View } from 'react-native';
+import { Platform, Pressable, Text, View } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { buildBackupPayload, parseBackupPayload } from '../../backup';
+import { confirmDestructive } from '../../confirm';
 import { useGoals } from '../../goals-context';
 import { useSettings } from '../../settings-context';
 import { todayStr } from '../../stats';
@@ -62,8 +63,8 @@ export default function DataSection() {
 
   // Commun aux deux plateformes une fois le contenu du fichier lu (voir
   // handleImport ci-dessous) : parse, valide, et ne remplace qu'après
-  // confirmation explicite — même pattern Alert.alert / window.confirm que
-  // handleDelete des écrans objectif (voir app/goal/[id].tsx).
+  // confirmation explicite — voir confirmDestructive (src/confirm.ts),
+  // partagé avec handleDelete/handleDeleteEntry (app/goal/[id].tsx).
   function confirmAndImport(text: string) {
     const result = parseBackupPayload(text);
     if (!result.ok) {
@@ -74,20 +75,15 @@ export default function DataSection() {
 
     const importedCount = result.goals.length;
     const currentCount = goals.length;
-    const message = `Ça va REMPLACER tes ${currentCount} objectif(s) actuel(s) par les ${importedCount} objectif(s) de ce fichier.`;
-    const confirmed = () => {
-      replaceAllGoals(result.goals);
-      if (result.settings) updateSettings(result.settings);
-    };
-
-    if (Platform.OS === 'web') {
-      if (window.confirm(`Importer ces données ?\n\n${message}`)) confirmed();
-      return;
-    }
-    Alert.alert('Importer ces données ?', message, [
-      { text: 'Annuler', style: 'cancel' },
-      { text: 'Importer', style: 'destructive', onPress: confirmed },
-    ]);
+    confirmDestructive({
+      title: 'Importer ces données ?',
+      message: `Ça va REMPLACER tes ${currentCount} objectif(s) actuel(s) par les ${importedCount} objectif(s) de ce fichier.`,
+      confirmLabel: 'Importer',
+      onConfirm: () => {
+        replaceAllGoals(result.goals);
+        if (result.settings) updateSettings(result.settings);
+      },
+    });
   }
 
   async function handleImport() {
