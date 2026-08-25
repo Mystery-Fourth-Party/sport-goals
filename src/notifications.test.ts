@@ -1,4 +1,5 @@
 import * as Notifications from 'expo-notifications';
+import i18n from './i18n';
 import {
   buildReminderContent,
   computeNextReminderDate,
@@ -8,6 +9,12 @@ import {
   rescheduleDailyReminder,
 } from './notifications';
 import { Goal } from './types';
+
+// buildReminderContent prend désormais `t` en paramètre (voir
+// notifications.ts) — langue fixée ici pour un test déterministe,
+// indépendant de la langue détectée par défaut dans l'environnement Jest
+// (même pattern que backup.test.ts).
+beforeAll(() => i18n.changeLanguage('fr'));
 
 // expo-notifications mocké pour la première couverture de
 // rescheduleDailyReminder (orchestration) ci-dessous — le reste de ce
@@ -142,12 +149,12 @@ describe('buildReminderContent', () => {
   const pending = [makeGoal({ id: '1', title: 'Pompes', entries: [] })];
 
   it('returns the generic message when streak alerts are disabled', () => {
-    const content = buildReminderContent(pending, today, false);
+    const content = buildReminderContent(pending, today, false, i18n.t);
     expect(content.body).toMatch(/pas encore ajouté/);
   });
 
   it('returns the generic message when no goal has an active streak', () => {
-    const content = buildReminderContent(pending, today, true);
+    const content = buildReminderContent(pending, today, true, i18n.t);
     expect(content.body).toMatch(/pas encore ajouté/);
   });
 
@@ -160,9 +167,9 @@ describe('buildReminderContent', () => {
         { date: '2026-08-20', value: 10 },
       ],
     });
-    const content = buildReminderContent([withStreak], today, true);
+    const content = buildReminderContent([withStreak], today, true, i18n.t);
     expect(content.body).toContain('Pompes');
-    expect(content.body).toContain('2 jour(s)');
+    expect(content.body).toContain('2 jours');
   });
 
   it('picks the goal with the highest streak when several qualify', () => {
@@ -180,9 +187,38 @@ describe('buildReminderContent', () => {
         { date: '2026-08-20', value: 1 },
       ],
     });
-    const content = buildReminderContent([shortStreak, longStreak], today, true);
+    const content = buildReminderContent([shortStreak, longStreak], today, true, i18n.t);
     expect(content.body).toContain('Long');
-    expect(content.body).toContain('3 jour(s)');
+    expect(content.body).toContain('3 jours');
+  });
+
+  // Vraie règle plurielle FR sur ce message précis (voir notif.streakDanger.body
+  // dans src/i18n/locales/fr.json) : 1 → singulier, 2+ → pluriel. Logique
+  // nouvelle (délégation à i18next/Intl.PluralRules pour 'fr'), donc testée.
+  describe('French pluralization of the streak count', () => {
+    it('uses the singular form for a streak of exactly 1 day', () => {
+      const goal = makeGoal({
+        id: '1',
+        title: 'Pompes',
+        entries: [{ date: '2026-08-20', value: 10 }],
+      });
+      const content = buildReminderContent([goal], today, true, i18n.t);
+      expect(content.body).toContain('1 jour ');
+      expect(content.body).not.toContain('1 jours');
+    });
+
+    it('uses the plural form for a streak of 2 or more days', () => {
+      const goal = makeGoal({
+        id: '1',
+        title: 'Pompes',
+        entries: [
+          { date: '2026-08-19', value: 10 },
+          { date: '2026-08-20', value: 10 },
+        ],
+      });
+      const content = buildReminderContent([goal], today, true, i18n.t);
+      expect(content.body).toContain('2 jours');
+    });
   });
 });
 
@@ -247,7 +283,7 @@ describe('rescheduleDailyReminder', () => {
     // (buildReminderContent, inchangée, appelée séparément par groupe).
     expect(defaultCall).toBeDefined();
     expect(streakCall).toBeDefined();
-    expect(streakCall?.content.body).toContain('2 jour(s)');
+    expect(streakCall?.content.body).toContain('2 jours');
 
     // Horaire par groupe : 20:00 n'est pas encore passé (now = 10:00) donc
     // reste aujourd'hui ; 07:00 est déjà passé donc bascule à demain.
