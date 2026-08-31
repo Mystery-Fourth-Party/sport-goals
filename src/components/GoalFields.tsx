@@ -137,10 +137,12 @@ export default function GoalFields({
             // Boutons de sélection (une seule unité active à la fois), pas
             // de simples boutons indépendants — accessibilityState.selected
             // et un libellé explicite plutôt que le glyphe seul ("REPS" ne
-            // veut rien dire lu tel quel).
+            // veut rien dire lu tel quel). unitSpoken et pas unit : ce
+            // libellé est lu, pas affiché — TalkBack épelle "K M" sur
+            // l'abréviation "km" (voir src/i18n/locales/*.json).
             accessibilityRole="button"
             accessibilityState={{ selected: unit === u }}
-            accessibilityLabel={t('goalFields.unitA11y', { unit: t(`unit.${u}`) })}
+            accessibilityLabel={t('goalFields.unitA11y', { unit: t(`unitSpoken.${u}`) })}
           >
             <Text style={[styles.chipText, unit === u && styles.chipTextSelected]}>
               {u.toUpperCase()}

@@ -26,6 +26,12 @@
     "min": "minutes",
     "h": "hours"
   },
+  "unitSpoken": {
+    "reps": "repetitions",
+    "km": "kilometers",
+    "min": "minutes",
+    "h": "hours"
+  },
   "status": {
     "ahead": "Ahead",
     "onTrack": "On track",

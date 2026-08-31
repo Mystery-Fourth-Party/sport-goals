@@ -18,6 +18,10 @@ interface Props {
 export default function GoalHistoryList({ entries, unit, today, onEntryPress }: Props) {
   const { t } = useTranslation();
   const unitLabel = t(`unit.${unit}`);
+  // Variante "parlée" de l'unité pour l'accessibilityLabel des lignes :
+  // TalkBack épelle "K M" sur l'abréviation "km" de unit.km. unitLabel
+  // (compact) reste utilisé pour la valeur affichée à droite de la ligne.
+  const unitSpokenLabel = t(`unitSpoken.${unit}`);
   const historyEntries = [...entries].reverse().slice(0, 12);
 
   return (
@@ -28,7 +32,7 @@ export default function GoalHistoryList({ entries, unit, today, onEntryPress }: 
         const isToday = entry.date === today;
         const entryAccessibilityLabel =
           entry.value > 0
-            ? `${longDateLabel(d)}, ${fmt(entry.value, unit)} ${unitLabel}`
+            ? `${longDateLabel(d)}, ${fmt(entry.value, unit)} ${unitSpokenLabel}`
             : `${longDateLabel(d)}, ${t('goalDetail.history.noEntry')}`;
         return (
           <Pressable

@@ -26,6 +26,12 @@
     "min": "minutes",
     "h": "heures"
   },
+  "unitSpoken": {
+    "reps": "répétitions",
+    "km": "kilomètres",
+    "min": "minutes",
+    "h": "heures"
+  },
   "status": {
     "ahead": "En avance",
     "onTrack": "Dans les temps",
