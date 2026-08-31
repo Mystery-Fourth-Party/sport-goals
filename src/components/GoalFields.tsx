@@ -120,8 +120,18 @@ export default function GoalFields({
         ))}
       </View>
 
+      {/* Le Toggle porte déjà le libellé de la ligne : on masque le Text au
+          lecteur d'écran pour n'avoir qu'un seul élément accessible par
+          ligne (même principe que GoalCard), TalkBack annonçant sinon le
+          libellé puis le Toggle comme 2 éléments séparés. */}
       <View style={styles.toggleRow}>
-        <Text style={styles.toggleLabel}>{t('goalFields.remindersEnabled')}</Text>
+        <Text
+          style={styles.toggleLabel}
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+        >
+          {t('goalFields.remindersEnabled')}
+        </Text>
         <Toggle
           value={reminderEnabled}
           onChange={onReminderEnabledChange}
@@ -131,7 +141,13 @@ export default function GoalFields({
 
       {reminderEnabled && (
         <View style={styles.toggleRow}>
-          <Text style={styles.toggleLabel}>{t('goalFields.customTime')}</Text>
+          <Text
+            style={styles.toggleLabel}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+          >
+            {t('goalFields.customTime')}
+          </Text>
           <Toggle
             value={reminderTime !== undefined}
             onChange={(v) => onReminderTimeChange(v ? '20:00' : undefined)}
