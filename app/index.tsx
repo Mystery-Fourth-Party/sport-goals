@@ -15,7 +15,7 @@ export default function GoalListScreen() {
   const { active, completed } = splitGoalsByStatus(goals, today);
 
   return (
-    <SafeAreaView style={styles.screen} edges={['top']}>
+    <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
       <FlatList
         style={styles.list}
         contentContainerStyle={styles.listContent}
