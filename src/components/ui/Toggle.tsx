@@ -44,6 +44,28 @@ export default function Toggle({ value, onChange, accessibilityLabel }: Props) {
   });
 
   return (
+    // TalkBack a annoncé "bouton" et non "interrupteur" en test sur Android
+    // 16 / One UI 8. Rien trouvé de concret à corriger côté RN 0.86 après
+    // vérification dans les sources (node_modules/react-native) :
+    //  - accessibilityRole="switch" est bien une valeur supportée
+    //    (ViewAccessibility.js) et Pressable la transmet telle quelle, en
+    //    reconstruisant accessibilityState.checked au passage (Pressable.js) ;
+    //  - côté Android, ReactAccessibilityDelegate.setRole() pose pour SWITCH
+    //    className = "android.widget.Switch", et isCheckable/isChecked
+    //    viennent uniquement de accessibilityState.checked — donc le noeud
+    //    d'accessibilité produit ici est déjà celui attendu ;
+    //  - migrer vers la prop unifiée `role="switch"` ne changerait rien :
+    //    fromRole(Role.SWITCH) retombe sur le même AccessibilityRole.SWITCH,
+    //    et accessibilityRole n'est pas marqué déprécié en 0.86 ;
+    //  - aucun ticket RN connu sur ce cas précis (#50123, qui liste les rôles
+    //    sans effet sur Android, ne mentionne pas "switch").
+    // À noter : le <Switch> de RN ne passe pas par ce chemin, il rend un vrai
+    // widget natif SwitchCompat — un Pressable ne peut que *déclarer* le
+    // className, c'est ensuite TalkBack qui décide de l'annonce. Piste à
+    // reprendre au prochain test terrain : vérifier si l'état
+    // ("activé"/"désactivé") est bien annoncé — si oui, checked passe et seul
+    // le mot du rôle diffère, ce qui pointe vers le TalkBack de l'appareil
+    // plutôt que vers l'app. À revérifier aussi sous iOS/VoiceOver.
     <Pressable
       onPress={() => onChange(!value)}
       hitSlop={8}
