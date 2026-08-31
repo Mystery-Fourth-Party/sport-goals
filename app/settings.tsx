@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BackButton } from '../src/components/ui';
 import { DataSection, LanguageSection, NotificationsSection } from '../src/components/settings';
@@ -17,7 +17,12 @@ export default function SettingsScreen() {
         <Text style={styles.title}>{t('settings.title')}</Text>
       </View>
 
-      <View style={styles.content}>
+      {/* ScrollView et pas une View : le contenu (4 sections + watermark)
+          dépasse un écran de téléphone, et tout ce qui débordait — dont les
+          options English/Système du sélecteur de langue — était à la fois
+          invisible et injoignable, y compris au geste de scroll de
+          TalkBack. Même pattern que app/goal/[id].tsx. */}
+      <ScrollView contentContainerStyle={styles.content}>
         <NotificationsSection />
         <DataSection />
         <LanguageSection />
@@ -37,7 +42,7 @@ export default function SettingsScreen() {
         </View>
 
         <Text style={styles.watermark}>{t('settings.watermark')}</Text>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -63,6 +68,7 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: spacing.screenPadding,
+    paddingBottom: 40,
   },
   versionValue: {
     fontFamily: fontFamily.bodyRegular,
