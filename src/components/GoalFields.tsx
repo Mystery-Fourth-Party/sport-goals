@@ -61,19 +61,40 @@ export default function GoalFields({
 
   return (
     <>
-      <Text style={styles.label}>{t('goalFields.name')}</Text>
+      {/* Le libellé est fusionné dans l'accessibilityLabel du champ (même
+          principe que les chips d'unité plus bas) et le Text est masqué au
+          lecteur d'écran. Indispensable pour les deux champs côte à côte
+          ci-dessous — l'algorithme de lecture linéaire d'Android parcourt
+          une grille à 2 colonnes ligne par ligne et annonçait "Valeur
+          cible, Durée, <champ>, <champ>". Appliqué aussi ici, où le champ
+          est pourtant seul sur sa ligne, pour que les 3 champs du
+          formulaire se comportent pareil. */}
+      <Text
+        style={styles.label}
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+      >
+        {t('goalFields.name')}
+      </Text>
       <TextInput
         style={styles.input}
         placeholder={t('goalFields.namePlaceholder')}
         placeholderTextColor={white(0.2)}
         value={title}
         onChangeText={onTitleChange}
+        accessibilityLabel={t('goalFields.name')}
       />
       {titleError && <Text style={styles.errorText}>{titleError}</Text>}
 
       <View style={styles.row}>
         <View style={styles.flex1}>
-          <Text style={styles.label}>{t('goalFields.targetValue')}</Text>
+          <Text
+            style={styles.label}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+          >
+            {t('goalFields.targetValue')}
+          </Text>
           <TextInput
             style={[styles.input, styles.inputDisplay]}
             placeholder="1000"
@@ -81,11 +102,18 @@ export default function GoalFields({
             keyboardType="numeric"
             value={targetValue}
             onChangeText={onTargetValueChange}
+            accessibilityLabel={t('goalFields.targetValue')}
           />
           {targetValueError && <Text style={styles.errorText}>{targetValueError}</Text>}
         </View>
         <View style={styles.flex1}>
-          <Text style={styles.label}>{durationLabel}</Text>
+          <Text
+            style={styles.label}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+          >
+            {durationLabel}
+          </Text>
           <TextInput
             style={[styles.input, styles.inputDisplay]}
             placeholder="30"
@@ -93,6 +121,7 @@ export default function GoalFields({
             keyboardType="numeric"
             value={duration}
             onChangeText={onDurationChange}
+            accessibilityLabel={durationLabel}
           />
           {durationError && <Text style={styles.errorText}>{durationError}</Text>}
         </View>
