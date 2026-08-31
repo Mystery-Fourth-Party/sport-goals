@@ -53,7 +53,7 @@ export default function GoalCard({ goal, onPress }: Props) {
             <Text style={styles.iconGlyph}>{UNIT_ICONS[goal.unit]}</Text>
           </View>
           <View style={styles.headerTexts}>
-            <Text style={styles.title} numberOfLines={1}>
+            <Text style={styles.title} numberOfLines={2}>
               {goal.title}
             </Text>
             <Text style={styles.remaining}>
@@ -100,15 +100,18 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     gap: 10,
   },
+  // alignItems 'flex-start' plutôt que 'center' : le titre peut occuper
+  // 2 lignes (voir numberOfLines ci-dessus), l'icône et le StatusBadge
+  // doivent rester calés en haut plutôt que de flotter au milieu.
   headerRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
     gap: 8,
   },
   headerLeft: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 12,
     flexShrink: 1,
   },

@@ -36,7 +36,7 @@ export default function GoalDetailHeader({
         <View style={styles.headerTexts}>
           <View style={styles.headerTitleRow}>
             <Text style={styles.headerIcon}>{UNIT_ICONS[goal.unit]}</Text>
-            <Text style={styles.headerTitle} numberOfLines={1}>
+            <Text style={styles.headerTitle} numberOfLines={2}>
               {goal.title}
             </Text>
           </View>
@@ -119,9 +119,12 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
     gap: 12,
   },
+  // alignItems 'flex-start' plutôt que 'center' : le titre peut occuper
+  // 2 lignes (voir numberOfLines ci-dessus), le bouton retour, le bouton
+  // d'édition et le StatusBadge doivent rester calés en haut.
   headerTop: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 12,
   },
   headerTexts: {
@@ -130,7 +133,7 @@ const styles = StyleSheet.create({
   },
   headerTitleRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 8,
   },
   headerIcon: {
