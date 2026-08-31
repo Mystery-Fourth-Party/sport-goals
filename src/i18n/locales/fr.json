@@ -67,6 +67,7 @@
   },
   "goalList": {
     "heading": "Mes\nObjectifs",
+    "headingA11y": "Mes objectifs",
     "weeklySummaryA11y": "Résumé hebdomadaire",
     "settingsA11y": "Réglages",
     "active": "En cours",

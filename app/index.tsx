@@ -30,7 +30,15 @@ export default function GoalListScreen() {
             <View style={styles.headerRow}>
               <View>
                 <Text style={styles.dateLabel}>{fullDateLabel(new Date())}</Text>
-                <Text style={styles.heading}>{t('goalList.heading')}</Text>
+                {/* Le titre est volontairement sur 2 lignes (le prototype
+                    écrit "Mes<br />Objectifs", comme le watermark "NO PAIN
+                    / NO GAIN" des Réglages) : on garde le saut de ligne
+                    visuel mais on donne au lecteur d'écran la phrase d'un
+                    seul tenant, sinon TalkBack marque une vraie pause au
+                    milieu du titre. */}
+                <Text style={styles.heading} accessibilityLabel={t('goalList.headingA11y')}>
+                  {t('goalList.heading')}
+                </Text>
               </View>
               <View style={styles.headerActions}>
                 <Pressable
