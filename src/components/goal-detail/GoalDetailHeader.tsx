@@ -28,6 +28,19 @@ export default function GoalDetailHeader({
 }: Props) {
   const { t } = useTranslation();
   const unitLabel = t(`unit.${goal.unit}`);
+  // Les sous-titres des bannières sont affichés ET lus tels quels : on
+  // garde l'unité compacte (unitLabel) à l'écran et on donne au lecteur
+  // d'écran une version parlée de la bannière entière — TalkBack épelle
+  // "K M" sur l'abréviation "km", et le titre + le sous-titre étaient par
+  // ailleurs annoncés comme 2 éléments séparés.
+  //
+  // Le sous-titre de la bannière "en retard" a en plus sa propre variante
+  // parlée (…SubtitleA11y) : il contient "/jour", que TalkBack lit "barre
+  // oblique jour". Les deux autres bannières n'ont pas ce motif et
+  // réutilisent donc directement leur clé d'affichage.
+  const unitSpokenLabel = t(`unitSpoken.${goal.unit}`);
+  const bannerA11yLabel = (titleKey: string, subtitleKey: string, value: number) =>
+    `${t(titleKey)}, ${t(subtitleKey, { value: fmt(value, goal.unit), unit: unitSpokenLabel })}`;
 
   return (
     <View style={styles.header}>
@@ -36,7 +49,7 @@ export default function GoalDetailHeader({
         <View style={styles.headerTexts}>
           <View style={styles.headerTitleRow}>
             <Text style={styles.headerIcon}>{UNIT_ICONS[goal.unit]}</Text>
-            <Text style={styles.headerTitle} numberOfLines={1}>
+            <Text style={styles.headerTitle} numberOfLines={2}>
               {goal.title}
             </Text>
           </View>
@@ -61,7 +74,15 @@ export default function GoalDetailHeader({
       </View>
 
       {s.status === 'late' && (
-        <View style={[styles.banner, styles.bannerLate]}>
+        <View
+          style={[styles.banner, styles.bannerLate]}
+          accessible
+          accessibilityLabel={bannerA11yLabel(
+            'goalDetail.header.lateBannerTitle',
+            'goalDetail.header.lateBannerSubtitleA11y',
+            s.dailyRequired,
+          )}
+        >
           <Text style={styles.bannerEmoji}>⚠️</Text>
           <View style={styles.bannerTexts}>
             <Text style={[styles.bannerTitle, { color: colors.late }]}>
@@ -77,7 +98,15 @@ export default function GoalDetailHeader({
         </View>
       )}
       {s.status === 'ahead' && !showAlmostThere && (
-        <View style={[styles.banner, styles.bannerAhead]}>
+        <View
+          style={[styles.banner, styles.bannerAhead]}
+          accessible
+          accessibilityLabel={bannerA11yLabel(
+            'goalDetail.header.aheadBannerTitle',
+            'goalDetail.header.aheadBannerSubtitle',
+            remaining,
+          )}
+        >
           <Text style={styles.bannerEmoji}>🔥</Text>
           <View style={styles.bannerTexts}>
             <Text style={[styles.bannerTitle, { color: colors.ahead }]}>
@@ -93,7 +122,15 @@ export default function GoalDetailHeader({
         </View>
       )}
       {showAlmostThere && (
-        <View style={[styles.banner, styles.bannerAlmost]}>
+        <View
+          style={[styles.banner, styles.bannerAlmost]}
+          accessible
+          accessibilityLabel={bannerA11yLabel(
+            'goalDetail.header.almostBannerTitle',
+            'goalDetail.header.almostBannerSubtitle',
+            remaining,
+          )}
+        >
           <Text style={styles.bannerEmoji}>🎯</Text>
           <View style={styles.bannerTexts}>
             <Text style={[styles.bannerTitle, { color: colors.almostThere }]}>
@@ -119,9 +156,12 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
     gap: 12,
   },
+  // alignItems 'flex-start' plutôt que 'center' : le titre peut occuper
+  // 2 lignes (voir numberOfLines ci-dessus), le bouton retour, le bouton
+  // d'édition et le StatusBadge doivent rester calés en haut.
   headerTop: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 12,
   },
   headerTexts: {
@@ -130,7 +170,7 @@ const styles = StyleSheet.create({
   },
   headerTitleRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 8,
   },
   headerIcon: {

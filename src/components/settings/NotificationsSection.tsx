@@ -63,20 +63,33 @@ export default function NotificationsSection() {
     updateSettings({ goalReachedNotifs: v });
   }
 
+  // Un seul élément accessible par ligne de toggle (même principe que
+  // GoalCard) : TalkBack annonçait sinon le titre, le sous-titre et le
+  // Toggle comme 3 éléments séparés. Le libellé composite va sur le Toggle,
+  // seul élément actionnable de la ligne, et les Text de la ligne sont
+  // masqués au lecteur d'écran. L'état activé/désactivé n'est pas concaténé
+  // ici : il vient déjà de accessibilityState.checked posé par Toggle.
+  const rowA11yLabel = (key: string) =>
+    `${t(`notifications.${key}`)}, ${t(`notifications.${key}Subtitle`)}`;
+
   return (
     <>
       <Text style={s.sectionLabel}>{t('notifications.sectionTitle')}</Text>
       {notifError && <Text style={s.errorText}>{notifError}</Text>}
       <View style={s.card}>
         <View style={[s.row, s.rowBorder]}>
-          <View style={s.rowTexts}>
+          <View
+            style={s.rowTexts}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+          >
             <Text style={s.rowTitle}>{t('notifications.dailyReminder')}</Text>
             <Text style={s.rowSubtitle}>{t('notifications.dailyReminderSubtitle')}</Text>
           </View>
           <Toggle
             value={settings.dailyReminder}
             onChange={handleDailyReminderToggle}
-            accessibilityLabel={t('notifications.dailyReminder')}
+            accessibilityLabel={rowA11yLabel('dailyReminder')}
           />
         </View>
 
@@ -99,38 +112,50 @@ export default function NotificationsSection() {
         )}
 
         <View style={[s.row, s.rowBorder]}>
-          <View style={s.rowTexts}>
+          <View
+            style={s.rowTexts}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+          >
             <Text style={s.rowTitle}>{t('notifications.goalReached')}</Text>
             <Text style={s.rowSubtitle}>{t('notifications.goalReachedSubtitle')}</Text>
           </View>
           <Toggle
             value={settings.goalReachedNotifs}
             onChange={handleGoalReachedToggle}
-            accessibilityLabel={t('notifications.goalReached')}
+            accessibilityLabel={rowA11yLabel('goalReached')}
           />
         </View>
 
         <View style={[s.row, s.rowBorder]}>
-          <View style={s.rowTexts}>
+          <View
+            style={s.rowTexts}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+          >
             <Text style={s.rowTitle}>{t('notifications.almostThere')}</Text>
             <Text style={s.rowSubtitle}>{t('notifications.almostThereSubtitle')}</Text>
           </View>
           <Toggle
             value={settings.almostThereNotifs}
             onChange={(v) => updateSettings({ almostThereNotifs: v })}
-            accessibilityLabel={t('notifications.almostThere')}
+            accessibilityLabel={rowA11yLabel('almostThere')}
           />
         </View>
 
         <View style={s.row}>
-          <View style={s.rowTexts}>
+          <View
+            style={s.rowTexts}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+          >
             <Text style={s.rowTitle}>{t('notifications.streakAlert')}</Text>
             <Text style={s.rowSubtitle}>{t('notifications.streakAlertSubtitle')}</Text>
           </View>
           <Toggle
             value={settings.streakAlert}
             onChange={(v) => updateSettings({ streakAlert: v })}
-            accessibilityLabel={t('notifications.streakAlert')}
+            accessibilityLabel={rowA11yLabel('streakAlert')}
           />
         </View>
       </View>

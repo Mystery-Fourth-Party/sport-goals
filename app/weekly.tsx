@@ -147,7 +147,10 @@ export default function WeeklyScreen() {
                       <Text style={styles.goalTitle}>{g.title}</Text>
                     </View>
                     <Text style={styles.goalBreakdownTotal}>
-                      {t('weekly.weekTotal', { value: fmt(weekTotal, g.unit), unit: g.unit })}
+                      {t('weekly.weekTotal', {
+                        value: fmt(weekTotal, g.unit),
+                        unit: t(`unit.${g.unit}`),
+                      })}
                     </Text>
                   </View>
                   <ProgressBar value={stats.progress} status={stats.status} />
@@ -329,7 +332,12 @@ const styles = StyleSheet.create({
   goalBreakdownIcon: {
     fontSize: 15,
   },
+  // flexShrink: 0 — le libellé d'unité traduit ("répétitions", "minutes")
+  // est bien plus long que la clé technique affichée jusqu'ici : sans ça,
+  // "+45 minutes" se coupait en deux face à un titre long. C'est le titre
+  // (goalRowLeft, flexShrink: 1) qui absorbe la contrainte.
   goalBreakdownTotal: {
+    flexShrink: 0,
     fontFamily: fontFamily.displayBold,
     fontSize: 14,
     color: white(0.6),

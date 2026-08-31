@@ -26,6 +26,12 @@
     "min": "minutes",
     "h": "hours"
   },
+  "unitSpoken": {
+    "reps": "repetitions",
+    "km": "kilometers",
+    "min": "minutes",
+    "h": "hours"
+  },
   "status": {
     "ahead": "Ahead",
     "onTrack": "On track",
@@ -67,6 +73,7 @@
   },
   "goalList": {
     "heading": "My\nGoals",
+    "headingA11y": "My goals",
     "weeklySummaryA11y": "Weekly summary",
     "settingsA11y": "Settings",
     "active": "Active",
@@ -163,6 +170,7 @@
       "editA11y": "Edit the goal",
       "lateBannerTitle": "You're behind schedule",
       "lateBannerSubtitle": "{{value}} {{unit}}/day to catch up",
+      "lateBannerSubtitleA11y": "{{value}} {{unit}} per day to catch up",
       "aheadBannerTitle": "Ahead of schedule!",
       "aheadBannerSubtitle": "{{value}} {{unit}} left to go",
       "almostBannerTitle": "Almost there!",

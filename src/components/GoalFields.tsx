@@ -61,19 +61,40 @@ export default function GoalFields({
 
   return (
     <>
-      <Text style={styles.label}>{t('goalFields.name')}</Text>
+      {/* Le libellé est fusionné dans l'accessibilityLabel du champ (même
+          principe que les chips d'unité plus bas) et le Text est masqué au
+          lecteur d'écran. Indispensable pour les deux champs côte à côte
+          ci-dessous — l'algorithme de lecture linéaire d'Android parcourt
+          une grille à 2 colonnes ligne par ligne et annonçait "Valeur
+          cible, Durée, <champ>, <champ>". Appliqué aussi ici, où le champ
+          est pourtant seul sur sa ligne, pour que les 3 champs du
+          formulaire se comportent pareil. */}
+      <Text
+        style={styles.label}
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+      >
+        {t('goalFields.name')}
+      </Text>
       <TextInput
         style={styles.input}
         placeholder={t('goalFields.namePlaceholder')}
         placeholderTextColor={white(0.2)}
         value={title}
         onChangeText={onTitleChange}
+        accessibilityLabel={t('goalFields.name')}
       />
       {titleError && <Text style={styles.errorText}>{titleError}</Text>}
 
       <View style={styles.row}>
         <View style={styles.flex1}>
-          <Text style={styles.label}>{t('goalFields.targetValue')}</Text>
+          <Text
+            style={styles.label}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+          >
+            {t('goalFields.targetValue')}
+          </Text>
           <TextInput
             style={[styles.input, styles.inputDisplay]}
             placeholder="1000"
@@ -81,11 +102,18 @@ export default function GoalFields({
             keyboardType="numeric"
             value={targetValue}
             onChangeText={onTargetValueChange}
+            accessibilityLabel={t('goalFields.targetValue')}
           />
           {targetValueError && <Text style={styles.errorText}>{targetValueError}</Text>}
         </View>
         <View style={styles.flex1}>
-          <Text style={styles.label}>{durationLabel}</Text>
+          <Text
+            style={styles.label}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+          >
+            {durationLabel}
+          </Text>
           <TextInput
             style={[styles.input, styles.inputDisplay]}
             placeholder="30"
@@ -93,6 +121,7 @@ export default function GoalFields({
             keyboardType="numeric"
             value={duration}
             onChangeText={onDurationChange}
+            accessibilityLabel={durationLabel}
           />
           {durationError && <Text style={styles.errorText}>{durationError}</Text>}
         </View>
@@ -108,10 +137,12 @@ export default function GoalFields({
             // Boutons de sélection (une seule unité active à la fois), pas
             // de simples boutons indépendants — accessibilityState.selected
             // et un libellé explicite plutôt que le glyphe seul ("REPS" ne
-            // veut rien dire lu tel quel).
+            // veut rien dire lu tel quel). unitSpoken et pas unit : ce
+            // libellé est lu, pas affiché — TalkBack épelle "K M" sur
+            // l'abréviation "km" (voir src/i18n/locales/*.json).
             accessibilityRole="button"
             accessibilityState={{ selected: unit === u }}
-            accessibilityLabel={t('goalFields.unitA11y', { unit: t(`unit.${u}`) })}
+            accessibilityLabel={t('goalFields.unitA11y', { unit: t(`unitSpoken.${u}`) })}
           >
             <Text style={[styles.chipText, unit === u && styles.chipTextSelected]}>
               {u.toUpperCase()}
@@ -120,8 +151,18 @@ export default function GoalFields({
         ))}
       </View>
 
+      {/* Le Toggle porte déjà le libellé de la ligne : on masque le Text au
+          lecteur d'écran pour n'avoir qu'un seul élément accessible par
+          ligne (même principe que GoalCard), TalkBack annonçant sinon le
+          libellé puis le Toggle comme 2 éléments séparés. */}
       <View style={styles.toggleRow}>
-        <Text style={styles.toggleLabel}>{t('goalFields.remindersEnabled')}</Text>
+        <Text
+          style={styles.toggleLabel}
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+        >
+          {t('goalFields.remindersEnabled')}
+        </Text>
         <Toggle
           value={reminderEnabled}
           onChange={onReminderEnabledChange}
@@ -131,7 +172,13 @@ export default function GoalFields({
 
       {reminderEnabled && (
         <View style={styles.toggleRow}>
-          <Text style={styles.toggleLabel}>{t('goalFields.customTime')}</Text>
+          <Text
+            style={styles.toggleLabel}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+          >
+            {t('goalFields.customTime')}
+          </Text>
           <Toggle
             value={reminderTime !== undefined}
             onChange={(v) => onReminderTimeChange(v ? '20:00' : undefined)}
