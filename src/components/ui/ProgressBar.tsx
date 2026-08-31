@@ -25,7 +25,14 @@ export default function ProgressBar({ value, status, thick }: Props) {
       // texte séparé à chaque endroit où ProgressBar est utilisé (GoalCard,
       // goal/[id].tsx, weekly.tsx) — le rôle progressbar suffit à donner du
       // sens à cet élément.
-      accessibilityValue={{ min: 0, max: 100, now: Math.round(clampedValue * 100) }}
+      // `text` en plus de min/max/now : sans lui, TalkBack annonce le
+      // nombre brut ("15") sans son unité — avec, il lit "15 %".
+      accessibilityValue={{
+        min: 0,
+        max: 100,
+        now: Math.round(clampedValue * 100),
+        text: `${Math.round(clampedValue * 100)}%`,
+      }}
     >
       <View style={[styles.fill, { width: widthPct, backgroundColor: palette.bar }]} />
     </View>
