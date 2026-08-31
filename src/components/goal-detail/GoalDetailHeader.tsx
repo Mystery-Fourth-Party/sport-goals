@@ -33,6 +33,11 @@ export default function GoalDetailHeader({
   // d'écran une version parlée de la bannière entière — TalkBack épelle
   // "K M" sur l'abréviation "km", et le titre + le sous-titre étaient par
   // ailleurs annoncés comme 2 éléments séparés.
+  //
+  // Le sous-titre de la bannière "en retard" a en plus sa propre variante
+  // parlée (…SubtitleA11y) : il contient "/jour", que TalkBack lit "barre
+  // oblique jour". Les deux autres bannières n'ont pas ce motif et
+  // réutilisent donc directement leur clé d'affichage.
   const unitSpokenLabel = t(`unitSpoken.${goal.unit}`);
   const bannerA11yLabel = (titleKey: string, subtitleKey: string, value: number) =>
     `${t(titleKey)}, ${t(subtitleKey, { value: fmt(value, goal.unit), unit: unitSpokenLabel })}`;
@@ -74,7 +79,7 @@ export default function GoalDetailHeader({
           accessible
           accessibilityLabel={bannerA11yLabel(
             'goalDetail.header.lateBannerTitle',
-            'goalDetail.header.lateBannerSubtitle',
+            'goalDetail.header.lateBannerSubtitleA11y',
             s.dailyRequired,
           )}
         >

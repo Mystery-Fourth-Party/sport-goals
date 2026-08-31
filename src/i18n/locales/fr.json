@@ -170,6 +170,7 @@
       "editA11y": "Modifier l'objectif",
       "lateBannerTitle": "Tu es en retard sur le rythme",
       "lateBannerSubtitle": "{{value}} {{unit}}/jour pour rattraper le retard",
+      "lateBannerSubtitleA11y": "{{value}} {{unit}} par jour pour rattraper le retard",
       "aheadBannerTitle": "En avance sur le planning !",
       "aheadBannerSubtitle": "Plus que {{value}} {{unit}} à accomplir",
       "almostBannerTitle": "Presque là !",

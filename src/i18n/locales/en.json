@@ -170,6 +170,7 @@
       "editA11y": "Edit the goal",
       "lateBannerTitle": "You're behind schedule",
       "lateBannerSubtitle": "{{value}} {{unit}}/day to catch up",
+      "lateBannerSubtitleA11y": "{{value}} {{unit}} per day to catch up",
       "aheadBannerTitle": "Ahead of schedule!",
       "aheadBannerSubtitle": "{{value}} {{unit}} left to go",
       "almostBannerTitle": "Almost there!",
