@@ -95,14 +95,22 @@ export default function ProgressEntryModal({
               </Text>
             )}
             <View style={styles.modalInputRow}>
+              {/* Pas de placeholder, même raison que les champs numériques
+                  de GoalFields : sur Android TalkBack lit le hint d'un champ
+                  éditable et ignore le accessibilityLabel, le champ
+                  s'annonçait donc "0". L'unité est dans le libellé lu parce
+                  qu'elle n'est affichée qu'à côté du champ, dans un encart
+                  séparé. unitSpoken et pas unit : "km" est épelé "K M"
+                  (voir GoalCard). */}
               <TextInput
                 style={styles.modalInput}
-                placeholder="0"
-                placeholderTextColor={white(0.2)}
                 keyboardType="numeric"
                 autoFocus
                 value={value}
                 onChangeText={onChangeValue}
+                accessibilityLabel={t('progressModal.valueA11y', {
+                  unit: t(`unitSpoken.${unit}`),
+                })}
               />
               <View style={styles.modalUnitBox}>
                 <Text style={styles.modalUnitText}>{unitLabel}</Text>
