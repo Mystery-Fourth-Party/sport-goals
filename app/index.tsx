@@ -62,7 +62,17 @@ export default function GoalListScreen() {
 
             {goals.length > 0 && (
               <View style={styles.statsRow}>
-                <View style={[styles.statCard, styles.statCardActive]}>
+                {/* accessible + libellé explicite, comme la carte
+                    "Terminés" ci-dessous : sans ça le lecteur d'écran entre
+                    dans les enfants et annonce le libellé puis le nombre en
+                    deux éléments séparés. Un View n'est pas accessible par
+                    défaut, contrairement au Pressable de la carte voisine
+                    (voir GoalCard) — d'où le accessible={true} ici. */}
+                <View
+                  style={[styles.statCard, styles.statCardActive]}
+                  accessible
+                  accessibilityLabel={t('goalList.activeA11y', { count: active.length })}
+                >
                   <Text style={[styles.statLabel, { color: colors.brand }]}>
                     {t('goalList.active')}
                   </Text>
@@ -85,7 +95,12 @@ export default function GoalListScreen() {
                   </View>
                   <Text style={styles.statValue}>{completed.length}</Text>
                 </Pressable>
-                <View style={styles.statCard}>
+                {/* Même traitement que la carte "En cours" ci-dessus. */}
+                <View
+                  style={styles.statCard}
+                  accessible
+                  accessibilityLabel={t('goalList.totalA11y', { count: goals.length })}
+                >
                   <Text style={styles.statLabelMuted}>{t('goalList.total')}</Text>
                   <Text style={styles.statValue}>{goals.length}</Text>
                 </View>

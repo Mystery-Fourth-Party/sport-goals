@@ -21,8 +21,19 @@ export default function RecentSessionsCard({ entries, unit, today }: Props) {
   const recentEntries = entries.filter((e) => e.value > 0).slice(-7);
   if (recentEntries.length === 0) return null;
 
+  // Carte entière masquée au lecteur d'écran : le graphique n'apporte rien
+  // que la liste d'historique juste en dessous ne donne déjà, et il se lit
+  // mal (barres annoncées une à une, hors contexte — constaté au test du
+  // 02/09). Le titre "Dernières séances" est masqué avec, sinon TalkBack
+  // annonce une section dont le contenu est introuvable. Même paire
+  // d'attributs que les libellés fusionnés de GoalFields : accessibilityElementsHidden
+  // pour iOS, importantForAccessibility pour Android.
   return (
-    <View style={styles.card}>
+    <View
+      style={styles.card}
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+    >
       <Text style={[styles.label, styles.cardSectionLabel]}>
         {t('goalDetail.recentSessions.title')}
       </Text>

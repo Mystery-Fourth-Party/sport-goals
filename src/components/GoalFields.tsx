@@ -95,10 +95,15 @@ export default function GoalFields({
           >
             {t('goalFields.targetValue')}
           </Text>
+          {/* Pas de placeholder sur les deux champs numériques : sur
+              Android, TalkBack lit le hint d'un champ éditable (c'est ce
+              que devient `placeholder`) et laisse de côté le
+              accessibilityLabel, donc le champ s'annonçait "1000" au lieu
+              de "Valeur cible" (constaté au test du 02/09, l'attribut
+              était bien présent). Le libellé visible juste au-dessus rend
+              l'exemple chiffré redondant à l'écran. */}
           <TextInput
             style={[styles.input, styles.inputDisplay]}
-            placeholder="1000"
-            placeholderTextColor={white(0.2)}
             keyboardType="numeric"
             value={targetValue}
             onChangeText={onTargetValueChange}
@@ -114,10 +119,9 @@ export default function GoalFields({
           >
             {durationLabel}
           </Text>
+          {/* Même raison que le champ Valeur cible ci-dessus. */}
           <TextInput
             style={[styles.input, styles.inputDisplay]}
-            placeholder="30"
-            placeholderTextColor={white(0.2)}
             keyboardType="numeric"
             value={duration}
             onChangeText={onDurationChange}
