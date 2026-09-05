@@ -88,7 +88,12 @@ export function getGoalStats(goal: Goal, today: string): GoalStats {
   // (largeur à l'écran), pas dans ce calcul.
   const progress = goal.targetValue > 0 ? actual / goal.targetValue : 0;
   const expectedProgress = totalDays > 0 ? elapsedDays / totalDays : 0;
-  const dailyRequired = remainingDays > 0 ? (goal.targetValue - actual) / remainingDays : 0;
+  // Plancher à 0 : au-delà de la cible (ou sur une cible nulle) la
+  // soustraction devient négative, ce qui n'a pas de sens comme "rythme
+  // restant à tenir" et se retrouverait tel quel dans l'UI et le libellé lu
+  // de la carte (voir GoalCard, goalCard.lateRequiredA11y).
+  const dailyRequired =
+    remainingDays > 0 ? Math.max(0, (goal.targetValue - actual) / remainingDays) : 0;
   const dailyAvg = totalDays > 0 ? goal.targetValue / totalDays : 0;
 
   let status: Status;
@@ -97,7 +102,14 @@ export function getGoalStats(goal: Goal, today: string): GoalStats {
   } else if (elapsedDays === 0 && actual === 0) {
     status = 'not-started';
   } else {
-    const diff = progress - expectedProgress;
+    // Arrondi avant comparaison : une progression pile sur un seuil produit
+    // une différence flottante décalée d'un epsilon (0,05 devient
+    // 0.050000000000000044, -0,1 devient -0.09999999999999998), ce qui
+    // faisait basculer le statut sans que rien ne change à l'écran, où la
+    // progression est affichée au point de pourcentage près. 6 décimales :
+    // très en dessous de ce que l'utilisateur peut voir, très au-dessus de
+    // l'erreur d'arrondi binaire.
+    const diff = Math.round((progress - expectedProgress) * 1e6) / 1e6;
     if (diff > 0.05) status = 'ahead';
     else if (diff > -0.1) status = 'on-track';
     else status = 'late';
