@@ -76,9 +76,16 @@ export default function GoalFields({
       >
         {t('goalFields.name')}
       </Text>
+      {/* Placeholder posé seulement quand le champ est vide. Sur Android il
+          devient le hint de l'EditText, que TalkBack annonce même sur un
+          champ déjà rempli : à l'Édition, le titre existant était suivi de
+          l'exemple "ex : 1000 pompes en 30 jours" (constaté au retest du
+          05/09, écran Édition seulement — à la Création le champ est vide,
+          où lire l'exemple est justement ce qu'on veut). Les deux champs
+          numériques n'ont plus de placeholder du tout depuis la PR #18. */}
       <TextInput
         style={styles.input}
-        placeholder={t('goalFields.namePlaceholder')}
+        placeholder={title === '' ? t('goalFields.namePlaceholder') : undefined}
         placeholderTextColor={white(0.2)}
         value={title}
         onChangeText={onTitleChange}
