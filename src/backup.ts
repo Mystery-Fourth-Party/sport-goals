@@ -42,6 +42,28 @@ export interface BackupPayload {
   settings: Settings;
 }
 
+// L'instantané de stats n'est jamais réimporté (voir parseBackupPayload),
+// mais le fichier est destiné à être ouvert et exploité tel quel — une somme
+// de décimales accumulée en flottant s'y écrivait brute
+// ("actual": 12.399999999999999 pour 5.3 + 4.1 + 3, constaté sur un export
+// réel). Arrondi ici seulement, pas dans stats.ts : le calcul interne doit
+// rester exact. 4 décimales, assez pour rester fidèle aux ratios (progress,
+// expectedProgress) sans laisser d'artefact binaire.
+function roundStat(value: number): number {
+  return Math.round(value * 1e4) / 1e4;
+}
+
+function roundGoalStats(stats: GoalStats): GoalStats {
+  return {
+    ...stats,
+    actual: roundStat(stats.actual),
+    progress: roundStat(stats.progress),
+    expectedProgress: roundStat(stats.expectedProgress),
+    dailyRequired: roundStat(stats.dailyRequired),
+    dailyAvg: roundStat(stats.dailyAvg),
+  };
+}
+
 export function buildBackupPayload(
   goals: Goal[],
   settings: Settings,
@@ -65,7 +87,7 @@ export function buildBackupPayload(
       })),
       ...(goal.reminderTime !== undefined ? { reminderTime: goal.reminderTime } : {}),
       ...(goal.reminderEnabled !== undefined ? { reminderEnabled: goal.reminderEnabled } : {}),
-      stats: getGoalStats(goal, today),
+      stats: roundGoalStats(getGoalStats(goal, today)),
     })),
     settings,
   };

@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import GoalFields from '../../../src/components/GoalFields';
 import { BackButton } from '../../../src/components/ui';
 import { useGoals } from '../../../src/goals-context';
+import { parseDurationDays } from '../../../src/goalValidation';
 import { fmt, getGoalStats, todayStr } from '../../../src/stats';
 import { colors, fontFamily, radius, spacing, statusColors, white } from '../../../src/theme';
 import { Unit } from '../../../src/types';
@@ -51,8 +52,12 @@ export default function EditGoalScreen() {
         ? t('editGoal.targetTooLow', { value: fmt(s.actual, unit), unit: t(`unit.${unit}`) })
         : undefined
       : t('editGoal.targetPositive');
-  const daysNum = Number(days);
-  const daysError = daysNum > 0 ? undefined : t('editGoal.daysPositive');
+  // Même règle partagée qu'à la création (voir src/goalValidation.ts) :
+  // refuse aussi les durées fractionnaires, qui donnaient une échéance le
+  // jour même une fois tronquées par setDate.
+  const daysValue = parseDurationDays(days);
+  const daysNum = daysValue ?? 0;
+  const daysError = daysValue === null ? t('editGoal.daysPositive') : undefined;
   const canSave = !titleError && !targetError && !daysError;
 
   // Recalcul en direct du nouveau rythme quotidien requis, comme le calcul

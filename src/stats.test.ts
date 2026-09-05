@@ -175,3 +175,74 @@ describe('date helpers', () => {
     expect(dateStr(parseDate('2026-08-20'))).toBe('2026-08-20');
   });
 });
+
+// ─── Régressions du retest terrain du 05/09 ─────────────────────────────
+
+describe('getGoalStats — seuils de statut et rythme requis', () => {
+  // La différence progress - expectedProgress vaut ici 0,05 pile sur le
+  // papier, mais 0.050000000000000044 en flottant : le seuil `> 0.05`
+  // basculait le statut sur une poussière invisible à l'utilisateur, qui
+  // voit 55 % contre 50 % attendu.
+  it('does not flip to ahead on a floating-point crumb at the +0.05 threshold', () => {
+    const goal: Goal = {
+      id: 'boundary-ahead',
+      title: 'Frontière avance',
+      targetValue: 100,
+      unit: 'reps',
+      createdAt: '2026-08-01T12:00:00.000Z',
+      deadline: '2026-09-10T12:00:00.000Z',
+      entries: [{ date: '2026-08-15', value: 55 }],
+    };
+    const s = getGoalStats(goal, '2026-08-21');
+
+    expect(s.progress).toBe(0.55);
+    expect(s.expectedProgress).toBe(0.5);
+    expect(s.status).toBe('on-track');
+  });
+
+  it('does not stay on-track on a floating-point crumb at the -0.1 threshold', () => {
+    const goal: Goal = {
+      id: 'boundary-late',
+      title: 'Frontière retard',
+      targetValue: 100,
+      unit: 'reps',
+      createdAt: '2026-08-01T12:00:00.000Z',
+      deadline: '2026-09-10T12:00:00.000Z',
+      entries: [{ date: '2026-08-15', value: 40 }],
+    };
+    const s = getGoalStats(goal, '2026-08-21');
+
+    expect(s.progress).toBe(0.4);
+    expect(s.expectedProgress).toBe(0.5);
+    expect(s.status).toBe('late');
+  });
+
+  it('never reports a negative daily requirement when the target is already exceeded', () => {
+    const goal: Goal = {
+      id: 'overshot',
+      title: 'Dépassé',
+      targetValue: 50,
+      unit: 'km',
+      createdAt: '2026-08-01T12:00:00.000Z',
+      deadline: '2026-09-10T12:00:00.000Z',
+      entries: [{ date: '2026-08-15', value: 75 }],
+    };
+    expect(getGoalStats(goal, '2026-08-21').dailyRequired).toBe(0);
+  });
+
+  it('never reports a negative daily requirement when the target is zero', () => {
+    const goal: Goal = {
+      id: 'zero-target',
+      title: 'Cible nulle',
+      targetValue: 0,
+      unit: 'reps',
+      createdAt: '2026-08-01T12:00:00.000Z',
+      deadline: '2026-09-10T12:00:00.000Z',
+      entries: [{ date: '2026-08-15', value: 30 }],
+    };
+    const s = getGoalStats(goal, '2026-08-21');
+
+    expect(s.progress).toBe(0);
+    expect(s.dailyRequired).toBe(0);
+  });
+});

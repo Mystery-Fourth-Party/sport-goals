@@ -235,3 +235,50 @@ describe('parseBackupPayload', () => {
     expect(result.ok).toBe(false);
   });
 });
+
+// ─── Régression du retest terrain du 05/09 ──────────────────────────────
+
+describe('buildBackupPayload — instantané de stats lisible', () => {
+  // Confirmé sur un export réel : "actual": 12.399999999999999 pour
+  // 5.3 + 4.1 + 3. Le bloc stats n'est jamais réimporté (voir
+  // parseBackupPayload), mais le fichier est ouvrable par l'utilisateur.
+  const decimalGoal: Goal = {
+    id: 'g-km',
+    title: 'Course',
+    targetValue: 42.2,
+    unit: 'km',
+    createdAt: '2026-08-01T12:00:00.000Z',
+    deadline: '2026-09-10T12:00:00.000Z',
+    entries: [
+      { date: '2026-08-19', value: 5.3 },
+      { date: '2026-08-20', value: 4.1 },
+      { date: '2026-08-15', value: 3 },
+    ],
+  };
+
+  it('rounds the accumulated float so the artifact never reaches the file', () => {
+    const payload = buildBackupPayload([decimalGoal], settings, '2026-08-21');
+    const stats = payload.goals[0].stats;
+
+    expect(stats.actual).toBe(12.4);
+    expect(JSON.stringify(stats)).not.toContain('12.39999');
+  });
+
+  it('rounds the derived rates too, and leaves whole-number fields untouched', () => {
+    const stats = buildBackupPayload([decimalGoal], settings, '2026-08-21').goals[0].stats;
+
+    for (const value of [
+      stats.progress,
+      stats.expectedProgress,
+      stats.dailyRequired,
+      stats.dailyAvg,
+    ]) {
+      expect(Number.isFinite(value)).toBe(true);
+      // Au plus 4 décimales : suffisant pour rester fidèle, assez court
+      // pour qu'aucun artefact binaire ne subsiste.
+      expect(String(value).replace(/^-?\d+\.?/, '').length).toBeLessThanOrEqual(4);
+    }
+    expect(stats.totalDays).toBe(40);
+    expect(stats.elapsedDays).toBe(20);
+  });
+});
