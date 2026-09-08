@@ -24,18 +24,25 @@ export function detectDeviceLanguage(): SupportedLanguage {
   return isSupportedLanguage(code) ? code : 'fr';
 }
 
-i18n.use(initReactI18next).init({
-  resources: {
-    fr: { translation: fr },
-    en: { translation: en },
-  },
-  lng: detectDeviceLanguage(),
-  fallbackLng: 'fr',
-  interpolation: {
-    // React échappe déjà le texte affiché — un double échappement casserait
-    // les caractères accentués/apostrophes dans les valeurs interpolées.
-    escapeValue: false,
-  },
-});
+i18n
+  .use(initReactI18next)
+  .init({
+    resources: {
+      fr: { translation: fr },
+      en: { translation: en },
+    },
+    lng: detectDeviceLanguage(),
+    fallbackLng: 'fr',
+    interpolation: {
+      // React échappe déjà le texte affiché — un double échappement casserait
+      // les caractères accentués/apostrophes dans les valeurs interpolées.
+      escapeValue: false,
+    },
+    // Initialisation au niveau module, donc pas d'await possible. init()
+    // applique déjà les ressources de façon synchrone ici (aucun backend de
+    // chargement distant) : l'échec ignoré ne peut venir que d'i18next
+    // lui-même, cas où l'app afficherait les clés brutes.
+  })
+  .catch(() => {});
 
 export default i18n;

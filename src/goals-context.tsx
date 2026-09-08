@@ -70,16 +70,24 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
     if (pendingGoalReachedTitle.current) {
       const title = pendingGoalReachedTitle.current;
       pendingGoalReachedTitle.current = null;
-      sendGoalReachedNotification(title);
+      // Comportement inchangé : l'échec d'envoi était déjà silencieux.
+      // notifications.ts ne rattrape rien en interne, donc ce .catch() peut
+      // masquer un vrai rejet — signalé dans le corps de la PR d'outillage.
+      sendGoalReachedNotification(title).catch(() => {});
     }
   });
 
   // Chargement initial depuis AsyncStorage (équivalent d'un fetch au mount).
   useEffect(() => {
-    loadGoals().then((g) => {
-      setGoals(g);
-      setLoaded(true);
-    });
+    // loadGoals/saveGoals rattrapent déjà tout en interne (voir storage.ts :
+    // repli sur [] à la lecture, booléen à l'écriture) et ne rejettent donc
+    // jamais — ces .catch() sont formels, exigés par no-floating-promises.
+    loadGoals()
+      .then((g) => {
+        setGoals(g);
+        setLoaded(true);
+      })
+      .catch(() => {});
   }, []);
 
   // Sauvegarde automatique à chaque changement de goals, une fois le
@@ -90,7 +98,7 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
       skipNextSave.current = false;
       return;
     }
-    saveGoals(goals);
+    saveGoals(goals).catch(() => {});
   }, [goals, loaded]);
 
   function createGoal(goal: Goal) {

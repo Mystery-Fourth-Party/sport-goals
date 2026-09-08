@@ -43,7 +43,8 @@
     "jest-expo": "~57.0.5",
     "prettier": "^3.9.6",
     "react-test-renderer": "19.2.3",
-    "typescript": "~6.0.3"
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.70.0"
   },
   "scripts": {
     "start": "expo start",
@@ -54,12 +55,21 @@
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "jest"
+    "test": "jest --coverage"
   },
   "jest": {
     "preset": "jest-expo",
     "setupFiles": [
       "<rootDir>/jest.setup.js"
+    ],
+    "collectCoverageFrom": [
+      "src/stats.ts",
+      "src/backup.ts",
+      "src/dateLabels.ts",
+      "src/goalValidation.ts"
+    ],
+    "coverageReporters": [
+      "text"
     ]
   },
   "private": true

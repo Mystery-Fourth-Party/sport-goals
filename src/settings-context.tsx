@@ -24,10 +24,16 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const skipNextSave = useRef(true);
 
   useEffect(() => {
-    loadSettings().then((s) => {
-      setSettings(s);
-      setLoaded(true);
-    });
+    // loadSettings/saveSettings rattrapent déjà tout en interne (voir
+    // settingsStorage.ts : repli sur DEFAULT_SETTINGS, booléen à l'écriture)
+    // et ne rejettent jamais — .catch() formels, exigés par la règle
+    // no-floating-promises.
+    loadSettings()
+      .then((s) => {
+        setSettings(s);
+        setLoaded(true);
+      })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -36,7 +42,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       skipNextSave.current = false;
       return;
     }
-    saveSettings(settings);
+    saveSettings(settings).catch(() => {});
   }, [settings, loaded]);
 
   function updateSettings(updates: Partial<Settings>) {
