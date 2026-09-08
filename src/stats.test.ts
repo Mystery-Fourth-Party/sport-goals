@@ -1,3 +1,4 @@
+import i18n from './i18n';
 import { Goal } from './types';
 import {
   calcStreak,
@@ -7,6 +8,7 @@ import {
   getWeeklyStats,
   parseDate,
   splitGoalsByStatus,
+  statusLabel,
 } from './stats';
 
 // Objectif "1000 Pompes" du prototype Figma Make (design-reference/figma-make-source.tsx,
@@ -244,5 +246,80 @@ describe('getGoalStats — seuils de statut et rythme requis', () => {
 
     expect(s.progress).toBe(0);
     expect(s.dailyRequired).toBe(0);
+  });
+});
+
+// ─── Branches restées non couvertes (PR B du harnais) ───────────────────
+// Repérées via le branchMap d'istanbul (coverage-final.json) : la colonne
+// "Uncovered Line #s" du rapport texte ne montre pas les branches partielles
+// sur une ligne par ailleurs exécutée.
+
+describe('getGoalStats — durée nulle', () => {
+  // createdAt === deadline : totalDays vaut 0, donc les deux divisions par
+  // totalDays retombent sur leur garde. Atteignable par import (cas C4 du
+  // jeu de test) ; plus depuis les formulaires depuis la PR #19.
+  it('forces expectedProgress and dailyAvg to 0 instead of dividing by zero', () => {
+    const goal: Goal = {
+      id: 'zero-duration',
+      title: 'Créé et échu le même jour',
+      targetValue: 50,
+      unit: 'reps',
+      createdAt: '2026-08-21T12:00:00.000Z',
+      deadline: '2026-08-21T12:00:00.000Z',
+      entries: [{ date: '2026-08-21', value: 10 }],
+    };
+    const s = getGoalStats(goal, '2026-08-21');
+
+    expect(s.totalDays).toBe(0);
+    expect(s.expectedProgress).toBe(0);
+    expect(s.dailyAvg).toBe(0);
+    expect(Number.isFinite(s.expectedProgress)).toBe(true);
+    expect(Number.isFinite(s.dailyAvg)).toBe(true);
+  });
+});
+
+describe('getWeeklyStats — objectif sans historique', () => {
+  // Même repli que getGoalStats ci-dessus : un objectif enregistré avant
+  // l'ajout du champ entries ne doit pas faire planter le résumé.
+  it('treats a goal whose entries field is missing as a goal with no session', () => {
+    const legacy = { ...pompes, id: 'legacy' } as Goal;
+    delete (legacy as { entries?: unknown }).entries;
+
+    const w = getWeeklyStats([legacy], TODAY);
+
+    expect(w.sessionsPerDay.every((d) => d.count === 0)).toBe(true);
+    expect(w.activeDays).toBe(0);
+    expect(w.totalSessions).toBe(0);
+  });
+});
+
+describe('fmt', () => {
+  // Seule unité à garder une décimale : une distance de 12,4 km ne doit pas
+  // s'afficher "12".
+  it('keeps one decimal for km', () => {
+    expect(fmt(12.44, 'km')).toBe('12.4');
+    expect(fmt(12, 'km')).toBe('12.0');
+  });
+
+  it('rounds to the nearest integer for every other unit', () => {
+    expect(fmt(12.4, 'reps')).toBe('12');
+    expect(fmt(12.6, 'min')).toBe('13');
+    expect(fmt(5.25, 'h')).toBe('5');
+  });
+});
+
+describe('statusLabel', () => {
+  it('translates every status, and follows a language change', async () => {
+    await i18n.changeLanguage('fr');
+    expect(statusLabel('ahead')).toBe('En avance');
+    expect(statusLabel('on-track')).toBe('Dans les temps');
+    expect(statusLabel('late')).toBe('En retard');
+    expect(statusLabel('completed')).toBe('Terminé ✓');
+    expect(statusLabel('not-started')).toBe('Pas commencé');
+
+    await i18n.changeLanguage('en');
+    expect(statusLabel('ahead')).toBe('Ahead');
+
+    await i18n.changeLanguage('fr');
   });
 });

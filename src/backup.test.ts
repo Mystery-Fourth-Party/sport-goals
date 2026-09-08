@@ -282,3 +282,52 @@ describe('buildBackupPayload — instantané de stats lisible', () => {
     expect(stats.elapsedDays).toBe(20);
   });
 });
+
+// ─── Branches de validation restées non couvertes (PR B du harnais) ─────
+// isValidEntry/isValidGoal rejetaient déjà ces formes, mais aucune n'était
+// exercée : seules les erreurs de plus haut niveau (fichier, version, unité)
+// avaient un test.
+
+describe('parseBackupPayload — formes malformées dans le tableau goals', () => {
+  function rejectsGoals(goals: unknown) {
+    const payload = buildBackupPayload([goal], settings, '2026-08-20');
+    const result = parseBackupPayload(JSON.stringify({ ...payload, goals }));
+    expect(result.ok).toBe(false);
+  }
+
+  it('rejects a goal that is not an object', () => {
+    rejectsGoals([42]);
+  });
+
+  it('rejects a goal that is null', () => {
+    rejectsGoals([null]);
+  });
+
+  it('rejects an entry that is not an object', () => {
+    const payload = buildBackupPayload([goal], settings, '2026-08-20');
+    const goals = JSON.parse(JSON.stringify(payload.goals)) as Record<string, unknown>[];
+    goals[0].entries = ['2026-08-01'];
+    rejectsGoals(goals);
+  });
+
+  it('rejects an entry whose date is not a string', () => {
+    const payload = buildBackupPayload([goal], settings, '2026-08-20');
+    const goals = JSON.parse(JSON.stringify(payload.goals)) as Record<string, unknown>[];
+    goals[0].entries = [{ date: 20260801, value: 40 }];
+    rejectsGoals(goals);
+  });
+
+  it('rejects an entry whose value is not a number', () => {
+    const payload = buildBackupPayload([goal], settings, '2026-08-20');
+    const goals = JSON.parse(JSON.stringify(payload.goals)) as Record<string, unknown>[];
+    goals[0].entries = [{ date: '2026-08-01', value: '40' }];
+    rejectsGoals(goals);
+  });
+
+  it('rejects an entry whose recordedAt is present but not a string', () => {
+    const payload = buildBackupPayload([goal], settings, '2026-08-20');
+    const goals = JSON.parse(JSON.stringify(payload.goals)) as Record<string, unknown>[];
+    goals[0].entries = [{ date: '2026-08-01', value: 40, recordedAt: 1754000000000 }];
+    rejectsGoals(goals);
+  });
+});

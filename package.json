@@ -70,7 +70,21 @@
     ],
     "coverageReporters": [
       "text"
-    ]
+    ],
+    "coverageThreshold": {
+      "./src/stats.ts": {
+        "branches": 95
+      },
+      "./src/backup.ts": {
+        "branches": 95
+      },
+      "./src/dateLabels.ts": {
+        "branches": 95
+      },
+      "./src/goalValidation.ts": {
+        "branches": 95
+      }
+    }
   },
   "private": true
 }
