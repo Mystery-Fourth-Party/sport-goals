@@ -27,7 +27,7 @@ jest.mock('expo-notifications', () => ({
   scheduleNotificationAsync: jest.fn(),
   cancelAllScheduledNotificationsAsync: jest.fn(),
   AndroidImportance: { HIGH: 4 },
-  SchedulableTriggerInputTypes: { DATE: 'date' },
+  SchedulableTriggerInputTypes: { DATE: 'date', DAILY: 'daily' },
 }));
 
 const mockedGetPermissions = Notifications.getPermissionsAsync as jest.Mock;
@@ -307,5 +307,125 @@ describe('rescheduleDailyReminder', () => {
 
     expect(result).toEqual({ ok: false, error: expect.any(String) });
     expect(mockedSchedule).not.toHaveBeenCalled();
+  });
+});
+
+// ─── Reproduction des findings L1-03, L1-06, L2-01, L2-04 ───────────────
+// Écrits avant les correctifs, rouges sur le code d'avant (voir AGENTS.md,
+// « Test rouge avant tout correctif »).
+
+describe('rescheduleDailyReminder — cycle de vie du rappel', () => {
+  const today = '2026-08-21';
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date(2026, 7, 21, 10, 0, 0));
+    mockedGetPermissions.mockResolvedValue({ granted: true, canAskAgain: true });
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  // L1-03 — le rappel « quotidien » était un trigger DATE à un seul tir :
+  // il arrivait une fois, puis plus rien tant que l'app n'était pas rouverte.
+  it('schedules a natively repeating DAILY trigger, not a one-shot DATE', async () => {
+    const goal = makeGoal({ id: '1', entries: [] });
+
+    await rescheduleDailyReminder([goal], today, '20:00', false);
+
+    expect(mockedSchedule).toHaveBeenCalledTimes(1);
+    const trigger = mockedSchedule.mock.calls[0][0].trigger;
+    expect(trigger.type).toBe('daily');
+    expect(trigger.hour).toBe(20);
+    expect(trigger.minute).toBe(0);
+    // Un trigger DAILY n'a pas de date cible : il se répète sur l'heure.
+    expect(trigger.date).toBeUndefined();
+  });
+
+  // L2-01 — l'utilisateur qui logge sa progression sur tous ses objectifs
+  // désarmait son propre rappel : annulation puis retour anticipé sans rien
+  // reprogrammer. Avec un trigger DAILY c'est pire encore, puisque le
+  // trigger annulé aurait tenu tout seul les jours suivants.
+  it('never cancels without rescheduling, even when no goal needs a reminder today', async () => {
+    const doneToday = makeGoal({
+      id: '1',
+      entries: [{ date: today, value: 20 }],
+    });
+
+    const result = await rescheduleDailyReminder([doneToday], today, '20:00', false);
+
+    expect(result).toEqual({ ok: true });
+    expect(mockedSchedule).toHaveBeenCalledTimes(1);
+    expect(mockedSchedule.mock.calls[0][0].trigger.type).toBe('daily');
+  });
+
+  // L1-06 — l'annulation s'exécutait en toute première instruction, donc un
+  // horaire invalide ou une permission révoquée détruisait un rappel valide
+  // déjà programmé sans rien mettre à la place.
+  it('does not cancel anything when the reminder time is malformed', async () => {
+    const goal = makeGoal({ id: '1', entries: [] });
+
+    const result = await rescheduleDailyReminder([goal], today, 'pas-une-heure', false);
+
+    expect(result.ok).toBe(false);
+    expect(mockedCancelAll).not.toHaveBeenCalled();
+    expect(mockedSchedule).not.toHaveBeenCalled();
+  });
+
+  it('does not cancel anything when the permission is denied', async () => {
+    mockedGetPermissions.mockResolvedValue({ granted: false, canAskAgain: false });
+    const goal = makeGoal({ id: '1', entries: [] });
+
+    const result = await rescheduleDailyReminder([goal], today, '20:00', false);
+
+    expect(result.ok).toBe(false);
+    expect(mockedCancelAll).not.toHaveBeenCalled();
+    expect(mockedSchedule).not.toHaveBeenCalled();
+  });
+
+  // L2-04 — la garde runId de ReminderScheduler ne filtrait que l'affichage
+  // du statut : une exécution obsolète menait quand même son cycle
+  // annulation + programmation jusqu'au bout, par-dessus une exécution plus
+  // récente.
+  it('aborts before cancelling when the run is already stale', async () => {
+    const goal = makeGoal({ id: '1', entries: [] });
+
+    const result = await rescheduleDailyReminder([goal], today, '20:00', false, {
+      isStale: () => true,
+    });
+
+    expect(result).toEqual({ ok: true });
+    expect(mockedCancelAll).not.toHaveBeenCalled();
+    expect(mockedSchedule).not.toHaveBeenCalled();
+  });
+
+  it('goes through when the run is still current', async () => {
+    const goal = makeGoal({ id: '1', entries: [] });
+
+    await rescheduleDailyReminder([goal], today, '20:00', false, { isStale: () => false });
+
+    expect(mockedCancelAll).toHaveBeenCalledTimes(1);
+    expect(mockedSchedule).toHaveBeenCalledTimes(1);
+  });
+
+  // Option B retenue : un seul envoi, dont le contenu est régénéré à chaque
+  // reprogrammation. Pas de seconde notification dédiée au streak.
+  it('carries the streak wording in the single recurring reminder, without a second notification', async () => {
+    const withStreak = makeGoal({
+      id: '1',
+      title: 'Pompes',
+      entries: [
+        { date: '2026-08-19', value: 20 },
+        { date: '2026-08-20', value: 20 },
+      ],
+    });
+
+    await rescheduleDailyReminder([withStreak], today, '20:00', true);
+
+    expect(mockedSchedule).toHaveBeenCalledTimes(1);
+    const content = mockedSchedule.mock.calls[0][0].content;
+    expect(content.body).toContain('Pompes');
   });
 });
