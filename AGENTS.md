@@ -52,3 +52,15 @@ existe déjà avant d'en proposer une nouvelle : le système est organisé par
 domaine, avec suivi par cases à cocher.
 
 Ne pas recopier de lien Notion en clair ici — ce dépôt peut devenir public.
+
+## Test rouge avant tout correctif
+
+Tout correctif de bug commence par un test qui reproduit le défaut, vu
+rouge sur le code d'avant puis vert après la correction. L'ordre compte :
+un test écrit après coup valide le correctif tel qu'il a été fait, pas le
+comportement attendu — il passe aussi bien si le correctif est incomplet.
+
+Ce test est commité **séparément** du correctif, et avant lui. Fusionnés
+dans un même commit, rien ne permet de vérifier dans l'historique de la PR
+que le test échouait vraiment, et la revue doit croire sur parole que
+l'ordre a été respecté.
