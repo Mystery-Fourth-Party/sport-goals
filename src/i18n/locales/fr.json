@@ -131,7 +131,7 @@
   "goalForm": {
     "titleRequired": "Le titre de l'objectif est requis.",
     "targetPositive": "La valeur cible doit être un nombre positif.",
-    "durationPositive": "La durée doit être un nombre de jours positif.",
+    "durationPositive": "La durée doit être un nombre entier de jours, supérieur à 0.",
     "durationLabel": "Durée (jours)",
     "dailyAvgRequired": "Rythme quotidien requis",
     "perDay": "{{unit}} par jour",
@@ -198,7 +198,7 @@
     "titleRequired": "Le titre de l'objectif est requis.",
     "targetTooLow": "La cible doit être ≥ à ce qui est déjà accompli ({{value}} {{unit}}).",
     "targetPositive": "La valeur cible doit être un nombre positif.",
-    "daysPositive": "Les jours restants doivent être un nombre positif.",
+    "daysPositive": "Les jours restants doivent être un nombre entier, supérieur à 0.",
     "newPace": "Nouveau rythme quotidien",
     "remainingToComplete": "{{unit}}/jour · encore {{value}} {{unitLabel}} à accomplir",
     "save": "Enregistrer les modifications"

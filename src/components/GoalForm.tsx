@@ -3,6 +3,7 @@ import * as Crypto from 'expo-crypto';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Goal, Unit } from '../types';
+import { parseDurationDays } from '../goalValidation';
 import { fmt } from '../stats';
 import { colors, fontFamily, radius, spacing } from '../theme';
 import GoalFields from './GoalFields';
@@ -30,13 +31,17 @@ export default function GoalForm({ onCreate }: Props) {
 
   const titleError = title.trim() === '' ? t('goalForm.titleRequired') : undefined;
   const targetValueError = Number(targetValue) > 0 ? undefined : t('goalForm.targetPositive');
-  const durationError = Number(durationDays) > 0 ? undefined : t('goalForm.durationPositive');
+  // parseDurationDays plutôt qu'un `> 0` inline : la règle est partagée avec
+  // l'écran Édition et refuse aussi les durées fractionnaires, qui
+  // produisaient une échéance le jour même (voir src/goalValidation.ts).
+  const durationDaysValue = parseDurationDays(durationDays);
+  const durationError = durationDaysValue === null ? t('goalForm.durationPositive') : undefined;
   const canSubmit = !titleError && !targetValueError && !durationError;
 
   // Rythme quotidien requis affiché en direct dès que les 3 champs sont
   // valides (voir design-tokens.md § Création : "calcule les dates").
   const targetNum = Number(targetValue) || 0;
-  const daysNum = Number(durationDays) || 0;
+  const daysNum = durationDaysValue ?? 0;
   const dailyAvg = canSubmit ? targetNum / daysNum : 0;
 
   function handleSubmit() {

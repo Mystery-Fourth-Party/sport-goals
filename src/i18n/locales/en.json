@@ -131,7 +131,7 @@
   "goalForm": {
     "titleRequired": "The goal title is required.",
     "targetPositive": "The target value must be a positive number.",
-    "durationPositive": "The duration must be a positive number of days.",
+    "durationPositive": "The duration must be a whole number of days, greater than 0.",
     "durationLabel": "Duration (days)",
     "dailyAvgRequired": "Required daily pace",
     "perDay": "{{unit}} per day",
@@ -198,7 +198,7 @@
     "titleRequired": "The goal title is required.",
     "targetTooLow": "The target must be ≥ what's already done ({{value}} {{unit}}).",
     "targetPositive": "The target value must be a positive number.",
-    "daysPositive": "The days left must be a positive number.",
+    "daysPositive": "The days left must be a whole number, greater than 0.",
     "newPace": "New daily pace",
     "remainingToComplete": "{{unit}}/day · {{value}} {{unitLabel}} left to complete",
     "save": "Save changes"
