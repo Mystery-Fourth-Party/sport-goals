@@ -12,8 +12,11 @@ import { colors, useAppFonts } from '../src/theme';
 
 // Empêche le splash natif de se cacher tout seul le temps que les polices
 // (Barlow Condensed/Outfit) soient chargées — évite un flash avec les
-// polices système. Doit être appelé au niveau module, avant le rendu.
-SplashScreen.preventAutoHideAsync();
+// polices système. Doit être appelé au niveau module, avant le rendu, donc
+// impossible à await : l'échec est explicitement ignoré (le splash se
+// cachera de lui-même, seul le flash de polices revient) plutôt que laissé
+// flottant.
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 // Applique settings.language (voir settingsStorage.ts) une fois les réglages
 // chargés, et réagit à un changement en cours de session (sélecteur de
@@ -25,7 +28,9 @@ function LanguageSync() {
 
   useEffect(() => {
     if (!loaded) return;
-    i18n.changeLanguage(settings.language ?? detectDeviceLanguage());
+    // Échec ignoré : la langue précédente reste affichée, il n'y a pas
+    // d'action utilisateur à proposer dans ce cas.
+    i18n.changeLanguage(settings.language ?? detectDeviceLanguage()).catch(() => {});
   }, [settings.language, loaded]);
 
   return null;
@@ -43,7 +48,9 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (fontsLoaded || fontError) {
-      SplashScreen.hideAsync();
+      // Même raison qu'au niveau module ci-dessus : rien à faire d'un échec,
+      // le splash finit par se cacher seul.
+      SplashScreen.hideAsync().catch(() => {});
     }
   }, [fontsLoaded, fontError]);
 

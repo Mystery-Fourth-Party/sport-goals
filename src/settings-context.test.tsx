@@ -26,6 +26,11 @@ function wrapper({ children }: { children: ReactNode }) {
 beforeEach(() => {
   mockedLoadSettings.mockReset();
   mockedSaveSettings.mockReset();
+  // saveSettings est async : le provider chaîne un .catch() dessus depuis
+  // l'activation de no-floating-promises. mockReset() efface toute
+  // implémentation, il faut donc reposer une promesse ici, sinon le mock
+  // renvoie undefined et le provider plante au lieu de sauvegarder.
+  mockedSaveSettings.mockResolvedValue(true);
 });
 
 describe('SettingsProvider', () => {

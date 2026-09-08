@@ -14,7 +14,10 @@ import { Goal } from './types';
 // jest.mock calls are hoisted above imports by babel-jest, so this is safe
 // even though it reads as coming "after" the import above.
 jest.mock('./notifications', () => ({
-  sendGoalReachedNotification: jest.fn(),
+  // Résout : la vraie fonction est async et le contexte chaîne un .catch()
+  // dessus depuis l'activation de no-floating-promises. Un jest.fn() nu
+  // renverrait undefined et ferait planter l'effet.
+  sendGoalReachedNotification: jest.fn().mockResolvedValue(undefined),
 }));
 
 const mockedSendGoalReachedNotification = sendGoalReachedNotification as jest.Mock;

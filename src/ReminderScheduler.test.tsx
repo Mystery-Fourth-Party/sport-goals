@@ -13,7 +13,12 @@ import { Goal } from './types';
 // imports par babel-jest, donc sûr même si ça se lit comme venant "après"
 // l'import ci-dessus.
 jest.mock('./notifications', () => ({
-  cancelDailyReminder: jest.fn(),
+  // Résout : les vraies fonctions sont async et le composant chaîne un
+  // .catch() dessus depuis l'activation de no-floating-promises. Un
+  // jest.fn() nu renverrait undefined et ferait planter l'effet.
+  // rescheduleDailyReminder reçoit sa valeur par test (mockResolvedValue),
+  // cancelDailyReminder garde ce défaut (mockClear ne l'efface pas).
+  cancelDailyReminder: jest.fn().mockResolvedValue(undefined),
   rescheduleDailyReminder: jest.fn(),
 }));
 

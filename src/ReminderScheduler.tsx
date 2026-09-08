@@ -48,17 +48,26 @@ export default function ReminderScheduler() {
     const thisRun = ++runId.current;
 
     if (!settings.dailyReminder) {
-      cancelDailyReminder();
+      // .catch() explicite plutôt qu'une promesse flottante : comportement
+      // inchangé (l'échec d'annulation était déjà silencieux). Faire
+      // remonter cet échec dans le statut reste à trancher, voir le corps de
+      // la PR d'outillage.
+      cancelDailyReminder().catch(() => {});
       setError(undefined);
       return;
     }
 
-    rescheduleDailyReminder(goals, todayStr(), settings.reminderTime, settings.streakAlert).then(
-      (result) => {
+    rescheduleDailyReminder(goals, todayStr(), settings.reminderTime, settings.streakAlert)
+      .then((result) => {
         if (runId.current !== thisRun) return; // réponse obsolète, ignorée.
         setError(result.ok ? undefined : result.error);
-      },
-    );
+      })
+      // Les échecs prévus sont déjà rendus par RescheduleResult.ok/error ;
+      // ce .catch() ne couvre qu'un rejet imprévu de expo-notifications, que
+      // notifications.ts ne rattrape pas (aucun try/catch dans ce module).
+      // Le rendre visible dans le statut demanderait un message dédié :
+      // signalé dans le corps de la PR, pas improvisé ici.
+      .catch(() => {});
   }, [
     goals,
     settings.dailyReminder,
