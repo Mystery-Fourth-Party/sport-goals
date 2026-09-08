@@ -2,7 +2,6 @@ import * as Notifications from 'expo-notifications';
 import i18n from './i18n';
 import {
   buildReminderContent,
-  computeNextReminderDate,
   groupPendingGoalsByReminderTime,
   ongoingGoalsWithoutTodayEntry,
   parseReminderTime,
@@ -56,26 +55,6 @@ describe('parseReminderTime', () => {
 
   it('extracts the correct hour/minute', () => {
     expect(parseReminderTime('20:05')).toEqual({ hour: 20, minute: 5 });
-  });
-});
-
-describe('computeNextReminderDate', () => {
-  it('targets today when the time has not passed yet', () => {
-    const now = new Date(2026, 7, 21, 14, 0, 0); // 21 août 2026, 14:00
-    const result = computeNextReminderDate(now, 20, 0);
-    expect(result).toEqual(new Date(2026, 7, 21, 20, 0, 0));
-  });
-
-  it('rolls over to tomorrow when the time has already passed today', () => {
-    const now = new Date(2026, 7, 21, 21, 0, 0); // 21:00, past the 20:00 target
-    const result = computeNextReminderDate(now, 20, 0);
-    expect(result).toEqual(new Date(2026, 7, 22, 20, 0, 0));
-  });
-
-  it('rolls over to tomorrow when now is exactly the target time', () => {
-    const now = new Date(2026, 7, 21, 20, 0, 0);
-    const result = computeNextReminderDate(now, 20, 0);
-    expect(result).toEqual(new Date(2026, 7, 22, 20, 0, 0));
   });
 });
 
@@ -239,7 +218,12 @@ describe('rescheduleDailyReminder', () => {
     jest.useRealTimers();
   });
 
-  it('cancels once and does not schedule anything when nothing is pending', async () => {
+  // Ce test affirmait l'inverse (« ne programme rien quand rien n'est en
+  // attente ») : il encodait L2-01. Correct avec un trigger DATE, où il
+  // fallait de toute façon reprogrammer à la prochaine occasion utile ;
+  // faux avec DAILY, qui tire tous les jours — ce que tout est loggé
+  // aujourd'hui ne dit rien de demain.
+  it('still schedules a generic recurring reminder when nothing is pending today', async () => {
     const completed = makeGoal({
       id: '1',
       targetValue: 10,
@@ -249,7 +233,8 @@ describe('rescheduleDailyReminder', () => {
 
     expect(result).toEqual({ ok: true });
     expect(mockedCancelAll).toHaveBeenCalledTimes(1);
-    expect(mockedSchedule).not.toHaveBeenCalled();
+    expect(mockedSchedule).toHaveBeenCalledTimes(1);
+    expect(mockedSchedule.mock.calls[0][0].content.body).toContain('pas encore ajouté');
   });
 
   it('schedules one notification per distinct reminder-time group, with the right content and target time per group', async () => {
@@ -285,10 +270,23 @@ describe('rescheduleDailyReminder', () => {
     expect(streakCall).toBeDefined();
     expect(streakCall?.content.body).toContain('2 jours');
 
-    // Horaire par groupe : 20:00 n'est pas encore passé (now = 10:00) donc
-    // reste aujourd'hui ; 07:00 est déjà passé donc bascule à demain.
-    expect(defaultCall?.trigger.date).toEqual(new Date(2026, 7, 21, 20, 0, 0));
-    expect(streakCall?.trigger.date).toEqual(new Date(2026, 7, 22, 7, 0, 0));
+    // Horaire par groupe. Un trigger DAILY porte l'heure, pas une date
+    // cible : la notion de « aujourd'hui ou demain » disparaît, puisqu'il
+    // tire à cette heure-là tous les jours. Ce test attendait auparavant
+    // deux Date calculées par computeNextReminderDate, fonction supprimée
+    // avec le passage à DAILY.
+    expect(defaultCall?.trigger).toEqual({
+      type: 'daily',
+      hour: 20,
+      minute: 0,
+      channelId: 'reminders',
+    });
+    expect(streakCall?.trigger).toEqual({
+      type: 'daily',
+      hour: 7,
+      minute: 0,
+      channelId: 'reminders',
+    });
   });
 
   it('rejects a malformed global reminder time without scheduling anything', async () => {

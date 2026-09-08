@@ -10,7 +10,7 @@
 // web, est un stub vide) — l'appeler y lève une UnavailabilityError. Donc
 // rien de ce qui programme/déclenche une notification n'est vérifiable
 // depuis l'aperçu navigateur de ce projet ; seule la logique pure ci-dessous
-// (parseReminderTime, computeNextReminderDate, ongoingGoalsWithoutTodayEntry,
+// (parseReminderTime, ongoingGoalsWithoutTodayEntry,
 // buildReminderContent) est testée (voir notifications.test.ts). Le reste
 // n'a été vérifié que par lecture du code source du SDK, pas par exécution
 // réelle sur appareil/simulateur — à tester sur un vrai build avant mise en prod.
@@ -71,16 +71,6 @@ export function parseReminderTime(time: string): { hour: number; minute: number 
   const match = /^([01]?\d|2[0-3]):([0-5]\d)$/.exec(time.trim());
   if (!match) return null;
   return { hour: Number(match[1]), minute: Number(match[2]) };
-}
-
-// Prochaine occurrence de hour:minute strictement après `now` — aujourd'hui
-// si pas encore passée, sinon demain.
-export function computeNextReminderDate(now: Date, hour: number, minute: number): Date {
-  const target = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour, minute, 0, 0);
-  if (target.getTime() <= now.getTime()) {
-    target.setDate(target.getDate() + 1);
-  }
-  return target;
 }
 
 // Objectifs "en cours" (ni terminés), n'ayant reçu aucune entrée aujourd'hui,
@@ -176,21 +166,52 @@ export interface RescheduleResult {
   error?: string;
 }
 
+export interface RescheduleOptions {
+  // Consultée juste avant d'annuler puis avant chaque programmation : rend
+  // `true` si une exécution plus récente a été déclenchée depuis. Sans elle,
+  // la garde `runId` de ReminderScheduler ne filtrait que l'affichage du
+  // statut, et une exécution obsolète menait quand même son cycle
+  // annulation + programmation jusqu'au bout, par-dessus une exécution plus
+  // récente (L2-04).
+  isStale?: () => boolean;
+}
+
+// Reprogramme le rappel quotidien à partir de l'état courant.
+//
+// Trigger DAILY, pas DATE : DAILY se répète nativement côté OS, sans que
+// l'app ait besoin de tourner. Avec DATE, le rappel n'arrivait qu'une seule
+// fois puis plus rien tant que l'app n'était pas rouverte — c'est-à-dire
+// jamais, pour l'utilisateur que le rappel est justement censé ramener.
+//
+// Le contenu, lui, reste calculé à la programmation : le payload d'un
+// trigger DAILY est figé, la variante « série en danger » ne peut donc pas
+// se recalculer toute seule d'un jour sur l'autre. Elle est régénérée à
+// chaque appel de cette fonction, c'est-à-dire à chaque fois que l'app
+// tourne (voir ReminderScheduler). Un seul envoi porte les deux messages,
+// générique et personnalisé — pas de seconde notification dédiée au streak,
+// qui ferait arriver deux notifications au même horaire précisément le jour
+// où une série est en jeu.
+//
+// Ordre des étapes : toute validation susceptible d'échouer passe AVANT
+// l'annulation. Annuler d'abord, comme avant, détruisait un rappel valide
+// déjà programmé quand la reprogrammation échouait ensuite — horaire mal
+// formé, permission révoquée en arrière-plan (L1-06). Et l'annulation n'a
+// jamais lieu sans reprogrammation immédiate derrière : avec un trigger
+// DAILY, annuler sans réarmer supprime aussi tous les jours suivants
+// (L2-01).
+//
+// Limite connue, hors scope de ce correctif : une notification programmée
+// peut ne pas survivre à un redémarrage de l'appareil sur Android, le
+// comportement variant selon les fabricants. C'est hors du contrôle
+// d'expo-notifications ; l'app la reprogramme de toute façon à sa
+// prochaine ouverture.
 export async function rescheduleDailyReminder(
   goals: Goal[],
   today: string,
   reminderTime: string,
   streakAlertEnabled: boolean,
+  options: RescheduleOptions = {},
 ): Promise<RescheduleResult> {
-  await cancelDailyReminder();
-
-  const pending = ongoingGoalsWithoutTodayEntry(goals, today);
-  if (pending.length === 0) {
-    // Rien à rappeler : soit déjà loggé aujourd'hui sur tous les objectifs
-    // en cours, soit aucun objectif en cours du tout.
-    return { ok: true };
-  }
-
   if (!notificationsSupported()) {
     return { ok: true }; // Pas une erreur utilisateur : juste indisponible sur cette plateforme.
   }
@@ -210,23 +231,32 @@ export async function rescheduleDailyReminder(
     return { ok: false, error: i18n.t('notifications.rescheduleDenied') };
   }
 
-  const now = new Date();
-  // Un cancelDailyReminder() unique en entrée suffit (cancelAll reste
-  // correct, pas besoin de suivre des identifiants individuels) ; ensuite,
-  // une notification par horaire distinct plutôt qu'une seule pour tous les
-  // objectifs en attente — buildReminderContent (inchangée) appelée par
-  // groupe, message mécaniquement plus pertinent puisqu'il ne porte que sur
-  // les objectifs de ce groupe.
+  // Les objectifs sans entrée du jour déterminent le CONTENU (et les
+  // horaires personnalisés à couvrir), plus la décision de programmer ou
+  // non : un trigger DAILY tire tous les jours, et savoir qu'aujourd'hui
+  // tout est loggé ne dit rien de demain. Quand plus rien n'est en attente,
+  // on reprogramme donc quand même, avec le message générique.
+  const pending = ongoingGoalsWithoutTodayEntry(goals, today);
   const groups = groupPendingGoalsByReminderTime(pending, reminderTime);
-  for (const [time, goalsInGroup] of groups) {
+  const scheduled: { time: string; goalsInGroup: Goal[] }[] =
+    groups.size > 0
+      ? [...groups].map(([time, goalsInGroup]) => ({ time, goalsInGroup }))
+      : [{ time: reminderTime, goalsInGroup: [] }];
+
+  if (options.isStale?.()) return { ok: true };
+
+  await cancelDailyReminder();
+
+  for (const { time, goalsInGroup } of scheduled) {
+    if (options.isStale?.()) return { ok: true };
     const parsedTime = parseReminderTime(time) ?? parsedDefault;
-    const target = computeNextReminderDate(now, parsedTime.hour, parsedTime.minute);
     const content = buildReminderContent(goalsInGroup, today, streakAlertEnabled, i18n.t);
     await Notifications.scheduleNotificationAsync({
       content,
       trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.DATE,
-        date: target,
+        type: Notifications.SchedulableTriggerInputTypes.DAILY,
+        hour: parsedTime.hour,
+        minute: parsedTime.minute,
         channelId: CHANNEL_ID,
       },
     });
