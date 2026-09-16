@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import type { LoadResult } from './storage';
 
 export interface Settings {
   dailyReminder: boolean;
@@ -37,19 +38,22 @@ export const DEFAULT_SETTINGS: Settings = {
 
 const SETTINGS_KEY = 'settings';
 
-// Même pattern défensif que storage.ts (loadGoals/saveGoals) : JSON
-// corrompu ou lecture en échec retombent sur les valeurs par défaut
-// plutôt que de faire planter l'app.
-export async function loadSettings(): Promise<Settings> {
+// Même pattern défensif que storage.ts (loadGoals/saveGoals), dont ce
+// module reprend aussi le type de retour : JSON corrompu ou lecture en
+// échec retombent sur les valeurs par défaut plutôt que de faire planter
+// l'app, mais avec `ok: false` — sans quoi ce repli est indistinguable
+// d'un premier lancement, et les vrais réglages de l'utilisateur se font
+// écraser au premier toggle touché.
+export async function loadSettings(): Promise<LoadResult<Settings>> {
   try {
     const raw = await AsyncStorage.getItem(SETTINGS_KEY);
-    if (!raw) return DEFAULT_SETTINGS;
+    if (!raw) return { value: DEFAULT_SETTINGS, ok: true };
     // Fusionné avec DEFAULT_SETTINGS : un réglage ajouté après coup (comme
     // entries pour Goal) doit avoir une valeur plutôt que undefined.
-    return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
+    return { value: { ...DEFAULT_SETTINGS, ...JSON.parse(raw) }, ok: true };
   } catch (error) {
     console.error('loadSettings: échec du chargement, retour aux valeurs par défaut.', error);
-    return DEFAULT_SETTINGS;
+    return { value: DEFAULT_SETTINGS, ok: false };
   }
 }
 

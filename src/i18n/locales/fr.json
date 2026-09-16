@@ -258,5 +258,9 @@
     "french": "Français",
     "english": "English",
     "system": "Système"
+  },
+  "storage": {
+    "loadFailed": "Impossible de lire tes données. Elles sont peut-être intactes sur l'appareil : rien ne sera enregistré tant que tu n'auras pas fermé et rouvert l'app.",
+    "saveFailed": "Ta dernière modification n'a pas pu être enregistrée sur l'appareil."
   }
 }

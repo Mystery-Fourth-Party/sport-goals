@@ -258,5 +258,9 @@
     "french": "Français",
     "english": "English",
     "system": "System"
+  },
+  "storage": {
+    "loadFailed": "Your data could not be read. It may still be intact on this device: nothing will be saved until you close and reopen the app.",
+    "saveFailed": "Your last change could not be saved to this device."
   }
 }

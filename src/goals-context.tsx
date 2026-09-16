@@ -5,6 +5,7 @@ import { createContext, ReactNode, useContext, useEffect, useRef, useState } fro
 import { sendGoalReachedNotification } from './notifications';
 import { useSettings } from './settings-context';
 import { loadGoals, saveGoals } from './storage';
+import { useStorageStatus } from './storage-status';
 import { getGoalStats, todayStr } from './stats';
 import { Goal } from './types';
 
@@ -49,8 +50,15 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
   // Rendu à l'intérieur de SettingsProvider (voir app/_layout.tsx) : lit le
   // toggle "objectif atteint" pour savoir si addProgress doit notifier.
   const { settings } = useSettings();
+  // Statut de persistance, dans son propre contexte non persisté (voir
+  // storage-status.tsx et AGENTS.md) : lu par StorageStatusBanner.
+  const { reportLoadResult, reportSaveResult } = useStorageStatus();
   const [goals, setGoals] = useState<Goal[]>([]);
   const [loaded, setLoaded] = useState(false);
+  // true quand loadGoals n'a pas pu lire le stockage (à ne pas confondre
+  // avec « rien de stocké ») : bloque la sauvegarde automatique, voir
+  // l'effet plus bas.
+  const [readFailed, setReadFailed] = useState(false);
   // true tant qu'on n'a pas encore ignoré le premier passage de l'effet de
   // sauvegarde suivant le chargement (ce passage sauvegarderait des données
   // identiques à ce qui vient d'être lu, donc redondant).
@@ -80,26 +88,38 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
   // Chargement initial depuis AsyncStorage (équivalent d'un fetch au mount).
   useEffect(() => {
     // loadGoals/saveGoals rattrapent déjà tout en interne (voir storage.ts :
-    // repli sur [] à la lecture, booléen à l'écriture) et ne rejettent donc
+    // LoadResult à la lecture, booléen à l'écriture) et ne rejettent donc
     // jamais — ces .catch() sont formels, exigés par no-floating-promises.
     loadGoals()
-      .then((g) => {
-        setGoals(g);
+      .then(({ value, ok }) => {
+        setGoals(value);
+        setReadFailed(!ok);
         setLoaded(true);
+        reportLoadResult('goals', ok);
       })
       .catch(() => {});
-  }, []);
+  }, [reportLoadResult]);
 
   // Sauvegarde automatique à chaque changement de goals, une fois le
   // chargement initial terminé (sinon on écraserait avec [] avant loadGoals).
   useEffect(() => {
     if (!loaded) return;
+    // La lecture initiale a échoué : le disque contient peut-être encore
+    // les objectifs de l'utilisateur, illisibles mais intacts. Sauvegarder
+    // l'état courant par-dessus les détruirait pour de bon — c'est
+    // exactement le scénario de L2-02, où la première action de
+    // l'utilisateur (croyant avoir tout perdu) écrase ce qui restait. On
+    // n'écrit plus rien jusqu'au prochain démarrage ; le bandeau posé par
+    // reportLoadResult ci-dessus le dit à l'utilisateur.
+    if (readFailed) return;
     if (skipNextSave.current) {
       skipNextSave.current = false;
       return;
     }
-    saveGoals(goals).catch(() => {});
-  }, [goals, loaded]);
+    saveGoals(goals)
+      .then((ok) => reportSaveResult('goals', ok))
+      .catch(() => {});
+  }, [goals, loaded, readFailed, reportSaveResult]);
 
   function createGoal(goal: Goal) {
     setGoals((prev) => [goal, ...prev]);
