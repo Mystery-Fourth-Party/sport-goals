@@ -2,6 +2,8 @@ import { ReactNode } from 'react';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import { SettingsProvider, useSettings } from './settings-context';
 import { DEFAULT_SETTINGS, loadSettings, saveSettings, Settings } from './settingsStorage';
+import { LoadResult } from './storage';
+import { StorageStatusProvider, useStorageStatus } from './storage-status';
 
 // loadSettings/saveSettings mockées directement (plutôt que le mock
 // AsyncStorage sous-jacent, voir goals-context.test.tsx) pour garder le
@@ -20,7 +22,18 @@ const mockedLoadSettings = loadSettings as jest.Mock;
 const mockedSaveSettings = saveSettings as jest.Mock;
 
 function wrapper({ children }: { children: ReactNode }) {
-  return <SettingsProvider>{children}</SettingsProvider>;
+  return (
+    <StorageStatusProvider>
+      <SettingsProvider>{children}</SettingsProvider>
+    </StorageStatusProvider>
+  );
+}
+
+// Réglages et statut de persistance depuis le même rendu : les tests
+// d'échec doivent pouvoir déclencher un updateSettings puis lire le drapeau
+// que le provider a posé (voir storage-status.tsx).
+function useHarness() {
+  return { settings: useSettings(), status: useStorageStatus() };
 }
 
 beforeEach(() => {
@@ -37,7 +50,7 @@ describe('SettingsProvider', () => {
   it('exposes DEFAULT_SETTINGS and loaded: false before loadSettings resolves', () => {
     // Promesse jamais résolue dans ce test : on observe uniquement l'état
     // affiché avant toute résolution, pas ce qui se passe après.
-    mockedLoadSettings.mockReturnValue(new Promise<Settings>(() => {}));
+    mockedLoadSettings.mockReturnValue(new Promise<LoadResult<Settings>>(() => {}));
 
     const { result } = renderHook(() => useSettings(), { wrapper });
 
@@ -47,7 +60,7 @@ describe('SettingsProvider', () => {
 
   it('exposes loaded: true and the loaded settings once loadSettings resolves', async () => {
     const loaded: Settings = { ...DEFAULT_SETTINGS, dailyReminder: true, reminderTime: '07:30' };
-    mockedLoadSettings.mockResolvedValue(loaded);
+    mockedLoadSettings.mockResolvedValue({ value: loaded, ok: true });
 
     const { result } = renderHook(() => useSettings(), { wrapper });
     await waitFor(() => expect(result.current.loaded).toBe(true));
@@ -56,7 +69,7 @@ describe('SettingsProvider', () => {
   });
 
   it('updateSettings merges partially instead of replacing', async () => {
-    mockedLoadSettings.mockResolvedValue(DEFAULT_SETTINGS);
+    mockedLoadSettings.mockResolvedValue({ value: DEFAULT_SETTINGS, ok: true });
     const { result } = renderHook(() => useSettings(), { wrapper });
     await waitFor(() => expect(result.current.loaded).toBe(true));
 
@@ -66,7 +79,7 @@ describe('SettingsProvider', () => {
   });
 
   it('calls saveSettings with the merged result after a post-load change, but not on the load itself', async () => {
-    mockedLoadSettings.mockResolvedValue(DEFAULT_SETTINGS);
+    mockedLoadSettings.mockResolvedValue({ value: DEFAULT_SETTINGS, ok: true });
     const { result } = renderHook(() => useSettings(), { wrapper });
     await waitFor(() => expect(result.current.loaded).toBe(true));
 
@@ -79,5 +92,43 @@ describe('SettingsProvider', () => {
 
     await waitFor(() => expect(mockedSaveSettings).toHaveBeenCalledTimes(1));
     expect(mockedSaveSettings).toHaveBeenCalledWith({ ...DEFAULT_SETTINGS, streakAlert: false });
+  });
+});
+
+// L2-06 (lecture) et L2-05 (écriture) côté réglages — même famille que les
+// tests de goals-context.test.tsx, conséquences différentes : ici un repli
+// silencieux sur DEFAULT_SETTINGS rebascule la langue, éteint le rappel
+// quotidien et remet l'heure à 20:00, puis écrase la vraie configuration au
+// premier réglage touché.
+describe('échecs de persistance', () => {
+  it('does not write over the stored settings after a failed initial read (L2-06)', async () => {
+    mockedLoadSettings.mockResolvedValue({ value: DEFAULT_SETTINGS, ok: false });
+    const { result } = renderHook(() => useHarness(), { wrapper });
+    await waitFor(() => expect(result.current.settings.loaded).toBe(true));
+
+    act(() => result.current.settings.updateSettings({ dailyReminder: true }));
+    // Laisse passer l'effet de sauvegarde avant d'affirmer qu'il n'a rien écrit.
+    await act(async () => {});
+
+    expect(mockedSaveSettings).not.toHaveBeenCalled();
+  });
+
+  it('surfaces a failed initial read through the storage status context (L2-06)', async () => {
+    mockedLoadSettings.mockResolvedValue({ value: DEFAULT_SETTINGS, ok: false });
+
+    const { result } = renderHook(() => useHarness(), { wrapper });
+
+    await waitFor(() => expect(result.current.status.loadFailed).toBe(true));
+  });
+
+  it('surfaces a failed write through the storage status context (L2-05)', async () => {
+    mockedLoadSettings.mockResolvedValue({ value: DEFAULT_SETTINGS, ok: true });
+    mockedSaveSettings.mockResolvedValue(false);
+    const { result } = renderHook(() => useHarness(), { wrapper });
+    await waitFor(() => expect(result.current.settings.loaded).toBe(true));
+
+    act(() => result.current.settings.updateSettings({ streakAlert: false }));
+
+    await waitFor(() => expect(result.current.status.saveFailed).toBe(true));
   });
 });

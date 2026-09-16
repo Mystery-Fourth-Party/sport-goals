@@ -20,35 +20,39 @@ beforeEach(async () => {
 });
 
 describe('loadGoals', () => {
-  it('returns an empty array when nothing is stored', async () => {
-    await expect(loadGoals()).resolves.toEqual([]);
+  // `ok` est ce qui sépare les deux replis sur [] : « rien de stocké », qui
+  // est une réponse légitime, et « lecture impossible », où le disque
+  // contient peut-être encore les objectifs de l'utilisateur. Les deux
+  // renvoyaient la même valeur nue, indistinguables pour l'appelant.
+  it('returns an empty array with ok: true when nothing is stored', async () => {
+    await expect(loadGoals()).resolves.toEqual({ value: [], ok: true });
   });
 
-  it('returns the goals previously saved', async () => {
+  it('returns the goals previously saved with ok: true', async () => {
     await AsyncStorage.setItem(GOALS_KEY, JSON.stringify([goal]));
 
-    await expect(loadGoals()).resolves.toEqual([goal]);
+    await expect(loadGoals()).resolves.toEqual({ value: [goal], ok: true });
   });
 
-  it('falls back to an empty array when the stored JSON is corrupted', async () => {
+  it('reports ok: false when the stored JSON is corrupted', async () => {
     await AsyncStorage.setItem(GOALS_KEY, '{not valid json');
 
-    await expect(loadGoals()).resolves.toEqual([]);
+    await expect(loadGoals()).resolves.toEqual({ value: [], ok: false });
   });
 
-  it('falls back to an empty array when reading from storage fails', async () => {
+  it('reports ok: false when reading from storage fails', async () => {
     jest.spyOn(AsyncStorage, 'getItem').mockRejectedValueOnce(new Error('read failed'));
 
-    await expect(loadGoals()).resolves.toEqual([]);
+    await expect(loadGoals()).resolves.toEqual({ value: [], ok: false });
   });
 
   it('defaults entries to [] for legacy goals saved without that field', async () => {
     const { entries, ...legacyGoal } = goal;
     await AsyncStorage.setItem(GOALS_KEY, JSON.stringify([legacyGoal]));
 
-    const loaded = await loadGoals();
+    const { value } = await loadGoals();
 
-    expect(loaded).toEqual([{ ...legacyGoal, entries: [] }]);
+    expect(value).toEqual([{ ...legacyGoal, entries: [] }]);
   });
 });
 
