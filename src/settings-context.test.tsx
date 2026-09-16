@@ -132,3 +132,92 @@ describe('échecs de persistance', () => {
     await waitFor(() => expect(result.current.status.saveFailed).toBe(true));
   });
 });
+
+// Pendant côté réglages de la porte de sortie de l'import (voir
+// describe('replaceAllGoals — import explicite') dans goals-context.test.tsx).
+// importSettings est une fonction distincte d'updateSettings, et pas un
+// paramètre de cette dernière : l'import réutilisait updateSettings, qui est
+// aussi la fonction appelée par tous les toggles de NotificationsSection et
+// LanguageSection — la faire passer outre readFailed rouvrirait L2-06 pour
+// n'importe quel réglage touché après un échec de lecture.
+describe('importSettings', () => {
+  const imported: Settings = {
+    ...DEFAULT_SETTINGS,
+    dailyReminder: true,
+    reminderTime: '07:00',
+    language: 'en',
+  };
+
+  function renderHarnessWith(loadOk: boolean) {
+    mockedLoadSettings.mockResolvedValue({ value: DEFAULT_SETTINGS, ok: loadOk });
+    return renderHook(() => useHarness(), { wrapper });
+  }
+
+  // Chemin courant, sans échec de lecture : l'import écrit désormais
+  // lui-même au lieu de laisser faire l'effet, donc ce cas change aussi.
+  it('persists an ordinary import exactly once', async () => {
+    const { result } = renderHarnessWith(true);
+    await waitFor(() => expect(result.current.settings.loaded).toBe(true));
+
+    act(() => result.current.settings.importSettings(imported));
+    await act(async () => {});
+
+    expect(mockedSaveSettings).toHaveBeenCalledTimes(1);
+    expect(mockedSaveSettings).toHaveBeenCalledWith(imported);
+  });
+
+  it('writes imported settings even though the initial read failed', async () => {
+    const { result } = renderHarnessWith(false);
+    await waitFor(() => expect(result.current.settings.loaded).toBe(true));
+
+    act(() => result.current.settings.importSettings(imported));
+    await act(async () => {});
+
+    expect(mockedSaveSettings).toHaveBeenCalledTimes(1);
+    expect(mockedSaveSettings).toHaveBeenCalledWith(imported);
+  });
+
+  it('clears the read failure once the explicit write succeeds', async () => {
+    const { result } = renderHarnessWith(false);
+    await waitFor(() => expect(result.current.status.loadFailed).toBe(true));
+
+    act(() => result.current.settings.importSettings(imported));
+
+    await waitFor(() => expect(result.current.status.loadFailed).toBe(false));
+  });
+
+  it('resumes automatic saves once the explicit write succeeds', async () => {
+    const { result } = renderHarnessWith(false);
+    await waitFor(() => expect(result.current.status.loadFailed).toBe(true));
+
+    act(() => result.current.settings.importSettings(imported));
+    await waitFor(() => expect(result.current.status.loadFailed).toBe(false));
+    expect(mockedSaveSettings).toHaveBeenCalledTimes(1);
+
+    act(() => result.current.settings.updateSettings({ streakAlert: false }));
+
+    await waitFor(() => expect(mockedSaveSettings).toHaveBeenCalledTimes(2));
+  });
+
+  it('reports a failed import write and keeps the read failure', async () => {
+    const { result } = renderHarnessWith(false);
+    await waitFor(() => expect(result.current.settings.loaded).toBe(true));
+    mockedSaveSettings.mockResolvedValue(false);
+
+    act(() => result.current.settings.importSettings(imported));
+
+    await waitFor(() => expect(result.current.status.saveFailed).toBe(true));
+    expect(result.current.status.loadFailed).toBe(true);
+  });
+
+  // Le garde-fou de L2-06 : la porte de sortie est réservée à l'import.
+  it('leaves updateSettings blocked after a failed read', async () => {
+    const { result } = renderHarnessWith(false);
+    await waitFor(() => expect(result.current.settings.loaded).toBe(true));
+
+    act(() => result.current.settings.updateSettings({ dailyReminder: true }));
+    await act(async () => {});
+
+    expect(mockedSaveSettings).not.toHaveBeenCalled();
+  });
+});
