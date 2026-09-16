@@ -218,7 +218,8 @@
     "streakAlert": "Streak en danger 🔥",
     "streakAlertSubtitle": "Si tu n'as pas encore entré ta progression",
     "rescheduleInvalidTime": "Heure invalide — utilise le format HH:mm (ex : 20:00).",
-    "rescheduleDenied": "Notifications non autorisées."
+    "rescheduleDenied": "Notifications non autorisées.",
+    "rescheduleFailed": "La programmation du rappel a échoué — réessaie plus tard."
   },
   "data": {
     "sectionTitle": "Données",

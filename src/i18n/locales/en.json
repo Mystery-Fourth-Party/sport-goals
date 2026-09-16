@@ -218,7 +218,8 @@
     "streakAlert": "Streak at risk 🔥",
     "streakAlertSubtitle": "If you haven't logged your progress yet",
     "rescheduleInvalidTime": "Invalid time — use the HH:mm format (e.g. 20:00).",
-    "rescheduleDenied": "Notifications not authorized."
+    "rescheduleDenied": "Notifications not authorized.",
+    "rescheduleFailed": "Scheduling the reminder failed — try again later."
   },
   "data": {
     "sectionTitle": "Data",

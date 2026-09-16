@@ -48,26 +48,40 @@ export default function ReminderScheduler() {
     const thisRun = ++runId.current;
 
     if (!settings.dailyReminder) {
-      // .catch() explicite plutôt qu'une promesse flottante : comportement
-      // inchangé (l'échec d'annulation était déjà silencieux). Faire
-      // remonter cet échec dans le statut reste à trancher, voir le corps de
-      // la PR d'outillage.
-      cancelDailyReminder().catch(() => {});
+      // Échec d'annulation laissé silencieux côté UI, décision de la PR du
+      // chantier « rappel quotidien » : seul rescheduleDailyReminder remonte
+      // ses rejets dans ReminderStatusProvider. console.error pour la parité
+      // avec storage.ts/settingsStorage.ts, qui tracent leurs échecs.
+      cancelDailyReminder().catch((error) => {
+        console.error('cancelDailyReminder: échec de l’annulation du rappel.', error);
+      });
       setError(undefined);
       return;
     }
 
-    rescheduleDailyReminder(goals, todayStr(), settings.reminderTime, settings.streakAlert)
+    rescheduleDailyReminder(goals, todayStr(), settings.reminderTime, settings.streakAlert, {
+      // La garde ne sert plus seulement à filtrer l'affichage du statut :
+      // elle est consultée à l'intérieur, avant l'annulation et avant chaque
+      // programmation, pour qu'une exécution obsolète n'aille pas défaire ou
+      // doubler ce qu'une exécution plus récente vient de poser (L2-04).
+      isStale: () => runId.current !== thisRun,
+    })
       .then((result) => {
         if (runId.current !== thisRun) return; // réponse obsolète, ignorée.
         setError(result.ok ? undefined : result.error);
       })
-      // Les échecs prévus sont déjà rendus par RescheduleResult.ok/error ;
-      // ce .catch() ne couvre qu'un rejet imprévu de expo-notifications, que
-      // notifications.ts ne rattrape pas (aucun try/catch dans ce module).
-      // Le rendre visible dans le statut demanderait un message dédié :
-      // signalé dans le corps de la PR, pas improvisé ici.
-      .catch(() => {});
+      // Rejet imprévu d'expo-notifications : notifications.ts ne rattrape
+      // rien en interne. Remonté dans le statut comme un échec de
+      // reprogrammation ordinaire — c'est le seul des trois appels de
+      // notification à avoir une UI pour le dire (câblée depuis la PR #10).
+      .catch((error) => {
+        console.error('rescheduleDailyReminder: rejet inattendu.', error);
+        if (runId.current !== thisRun) return;
+        // i18n.t plutôt que le `t` d'un Hook : c'est déjà ainsi que
+        // notifications.ts produit rescheduleInvalidTime/rescheduleDenied,
+        // et ça évite d'ajouter une dépendance à l'effet.
+        setError(i18n.t('notifications.rescheduleFailed'));
+      });
   }, [
     goals,
     settings.dailyReminder,
@@ -76,6 +90,12 @@ export default function ReminderScheduler() {
     goalsLoaded,
     settingsLoaded,
     setError,
+    // `i18n` est une référence stable (react-i18next) : la lister ne
+    // provoque aucune exécution supplémentaire, elle est requise depuis que
+    // l'effet appelle i18n.t pour le message d'échec. `i18n.language` reste
+    // listée explicitement, c'est elle qui porte l'intention de rejouer la
+    // reprogrammation à chaque changement de langue.
+    i18n,
     i18n.language,
   ]);
 

@@ -123,3 +123,41 @@ it('applies the result of the most recently triggered run, not the most recently
   });
   expect(result.current.error).toBe('erreur de la 2e exécution');
 });
+
+// ─── Reproduction du finding L2-04 ──────────────────────────────────────
+// La garde runId ne filtrait que l'affichage du statut : rien n'empêchait
+// une exécution obsolète de mener son cycle annulation + programmation
+// jusqu'au bout, par-dessus une exécution plus récente.
+
+it('hands rescheduleDailyReminder a staleness probe so an outdated run can abort', () => {
+  mockSettings = { ...DEFAULT_SETTINGS, dailyReminder: true };
+  mockedReschedule.mockResolvedValue({ ok: true });
+
+  renderStatus();
+
+  expect(mockedReschedule).toHaveBeenCalledTimes(1);
+  const options = mockedReschedule.mock.calls[0][4];
+  expect(typeof options?.isStale).toBe('function');
+  // Aucune exécution plus récente n'a eu lieu : la sonde doit dire "encore
+  // valide", sans quoi la reprogrammation légitime s'interromprait.
+  expect(options.isStale()).toBe(false);
+});
+
+it('reports the run as stale once a newer run has started', async () => {
+  mockSettings = { ...DEFAULT_SETTINGS, dailyReminder: true };
+  mockedReschedule.mockResolvedValue({ ok: true });
+
+  const { rerender } = renderStatus();
+  const firstProbe = mockedReschedule.mock.calls[0][4].isStale;
+
+  // Un changement d'horaire relance l'effet : la sonde de la PREMIÈRE
+  // exécution doit désormais se déclarer obsolète.
+  mockSettings = { ...DEFAULT_SETTINGS, dailyReminder: true, reminderTime: '07:30' };
+  await act(async () => {
+    rerender(undefined);
+  });
+
+  expect(mockedReschedule).toHaveBeenCalledTimes(2);
+  expect(firstProbe()).toBe(true);
+  expect(mockedReschedule.mock.calls[1][4].isStale()).toBe(false);
+});
