@@ -52,7 +52,7 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
   const { settings } = useSettings();
   // Statut de persistance, dans son propre contexte non persisté (voir
   // storage-status.tsx et AGENTS.md) : lu par StorageStatusBanner.
-  const { reportLoadResult, reportSaveResult } = useStorageStatus();
+  const { reportLoadResult, reportSaveResult, clearLoadFailure } = useStorageStatus();
   const [goals, setGoals] = useState<Goal[]>([]);
   const [loaded, setLoaded] = useState(false);
   // true quand loadGoals n'a pas pu lire le stockage (à ne pas confondre
@@ -62,6 +62,10 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
   // true tant qu'on n'a pas encore ignoré le premier passage de l'effet de
   // sauvegarde suivant le chargement (ce passage sauvegarderait des données
   // identiques à ce qui vient d'être lu, donc redondant).
+  // Sert aussi à l'import (voir replaceAllGoals) : celui-ci écrit lui-même,
+  // et arme ce drapeau pour que l'effet ne réécrive pas la même valeur
+  // derrière lui. Double usage assumé, c'est la même question dans les deux
+  // cas — « cette valeur est déjà sur le disque, ne la réécris pas ».
   const skipNextSave = useRef(true);
   // Titre de l'objectif à notifier, posé depuis l'intérieur du updater de
   // setGoals dans addProgress (voir ce commentaire pour le pourquoi) et
@@ -111,6 +115,12 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
     // l'utilisateur (croyant avoir tout perdu) écrase ce qui restait. On
     // n'écrit plus rien jusqu'au prochain démarrage ; le bandeau posé par
     // reportLoadResult ci-dessus le dit à l'utilisateur.
+    // L'ordre de ces deux gardes est porteur : readFailed doit être testé
+    // AVANT skipNextSave, sinon l'import (qui arme le drapeau puis, une
+    // fois son écriture réussie, repasse readFailed à false) verrait le
+    // drapeau consommé au premier passage et provoquerait une seconde
+    // écriture au second. Épinglé par le test « persists an ordinary import
+    // exactly once » de goals-context.test.tsx.
     if (readFailed) return;
     if (skipNextSave.current) {
       skipNextSave.current = false;
@@ -213,8 +223,33 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
     setGoals((prev) => prev.filter((g) => g.id !== goalId));
   }
 
+  // Écrit elle-même plutôt que de laisser faire l'effet de sauvegarde, et
+  // passe outre readFailed : ce blocage protège contre les écritures
+  // *automatiques* de l'app par-dessus des données illisibles mais peut-être
+  // intactes (L2-02). Une restauration de sauvegarde est l'inverse — une
+  // écriture volontaire, confirmée par l'utilisateur dans un dialogue (voir
+  // confirmDestructive dans DataSection.tsx), et dont le contenu vient de
+  // lui. La laisser bloquée revenait à l'afficher à l'écran sans jamais
+  // l'écrire, et à la perdre au redémarrage.
   function replaceAllGoals(newGoals: Goal[]) {
+    // Armé avant setGoals : l'effet, réveillé par ce changement d'état, doit
+    // sauter ce passage — l'écriture ci-dessous s'en charge déjà.
+    skipNextSave.current = true;
     setGoals(newGoals);
+    saveGoals(newGoals)
+      .then((ok) => {
+        reportSaveResult('goals', ok);
+        // Une écriture réussie prouve que le stockage répond de nouveau, et
+        // ce qu'il contient est désormais ce que l'utilisateur a choisi :
+        // plus rien à protéger, les sauvegardes automatiques peuvent
+        // reprendre sans attendre un redémarrage. Sur échec, on ne touche à
+        // rien et reportSaveResult ci-dessus allume le bandeau.
+        if (ok) {
+          setReadFailed(false);
+          clearLoadFailure('goals');
+        }
+      })
+      .catch(() => {});
   }
 
   return (

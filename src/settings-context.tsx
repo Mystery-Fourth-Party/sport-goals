@@ -11,6 +11,10 @@ interface SettingsContextValue {
   settings: Settings;
   loaded: boolean;
   updateSettings: (updates: Partial<Settings>) => void;
+  // Remplace tous les réglages d'un coup, réservé à la restauration d'une
+  // sauvegarde — voir le commentaire sur l'implémentation pour la raison
+  // d'être d'une fonction séparée d'updateSettings.
+  importSettings: (imported: Settings) => void;
 }
 
 const SettingsContext = createContext<SettingsContextValue | null>(null);
@@ -18,7 +22,7 @@ const SettingsContext = createContext<SettingsContextValue | null>(null);
 export function SettingsProvider({ children }: { children: ReactNode }) {
   // Contexte de statut séparé, non persisté — AGENTS.md interdit de loger
   // un état transitoire dans Settings, qui le réécrirait sur le disque.
-  const { reportLoadResult, reportSaveResult } = useStorageStatus();
+  const { reportLoadResult, reportSaveResult, clearLoadFailure } = useStorageStatus();
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [loaded, setLoaded] = useState(false);
   // Voir goals-context.tsx : distingue « lecture impossible » de « rien de
@@ -28,6 +32,10 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   // sauvegarde suivant le chargement (voir goals-context.tsx pour le même
   // souci : ce passage sauvegarderait des données identiques à ce qui vient
   // d'être lu, donc redondant).
+  // Sert aussi à l'import (voir importSettings) : celui-ci écrit lui-même et
+  // arme ce drapeau pour que l'effet ne réécrive pas la même valeur derrière
+  // lui. Double usage assumé — c'est la même question dans les deux cas,
+  // « cette valeur est déjà sur le disque, ne la réécris pas ».
   const skipNextSave = useRef(true);
 
   useEffect(() => {
@@ -53,6 +61,13 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     // l'appareil — par des valeurs par défaut qu'il n'a jamais choisies
     // (scénario de L2-06 : langue, heure du rappel et toggles perdus au
     // premier réglage touché).
+    // L'ordre de ces deux gardes est porteur : readFailed doit être testé
+    // AVANT skipNextSave, sinon l'import (voir importSettings, qui arme le
+    // drapeau puis repasse readFailed à false une fois son écriture
+    // réussie) verrait le drapeau consommé au premier passage et
+    // provoquerait une seconde écriture au second. Épinglé par le test
+    // « persists an ordinary import exactly once » de
+    // settings-context.test.tsx.
     if (readFailed) return;
     if (skipNextSave.current) {
       skipNextSave.current = false;
@@ -67,8 +82,35 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     setSettings((prev) => ({ ...prev, ...updates }));
   }
 
+  // Restauration d'une sauvegarde (voir DataSection.tsx, seul appelant).
+  // Fonction distincte d'updateSettings, et non un paramètre de celle-ci :
+  // updateSettings est appelée par tous les toggles de NotificationsSection
+  // et LanguageSection, et lui faire passer readFailed rouvrirait L2-06 pour
+  // n'importe quel réglage touché après un échec de lecture. Ici l'écriture
+  // est volontaire et confirmée, et son contenu vient de l'utilisateur —
+  // même raisonnement que replaceAllGoals dans goals-context.tsx.
+  //
+  // Remplace au lieu de fusionner : parseBackupPayload rend déjà un Settings
+  // complet, fusionné avec DEFAULT_SETTINGS (voir backup.ts). Pas de
+  // changement observable par rapport à l'updateSettings qu'elle remplace,
+  // mais le remplacement dit ce qu'un import fait.
+  function importSettings(imported: Settings) {
+    // Armé avant setSettings, même raison que dans replaceAllGoals.
+    skipNextSave.current = true;
+    setSettings(imported);
+    saveSettings(imported)
+      .then((ok) => {
+        reportSaveResult('settings', ok);
+        if (ok) {
+          setReadFailed(false);
+          clearLoadFailure('settings');
+        }
+      })
+      .catch(() => {});
+  }
+
   return (
-    <SettingsContext.Provider value={{ settings, loaded, updateSettings }}>
+    <SettingsContext.Provider value={{ settings, loaded, updateSettings, importSettings }}>
       {children}
     </SettingsContext.Provider>
   );

@@ -28,6 +28,13 @@ interface StorageStatusContextValue {
   // état courant, pas un journal d'incidents.
   saveFailed: boolean;
   reportLoadResult: (area: StorageArea, ok: boolean) => void;
+  // Éteint le drapeau de lecture d'une zone sans passer par un résultat de
+  // lecture. Une écriture explicite réussie — la restauration d'une
+  // sauvegarde, voir replaceAllGoals/importSettings — prouve que le stockage
+  // répond de nouveau, et le bandeau ne doit plus annoncer que rien ne sera
+  // enregistré. Fonction dédiée plutôt qu'un reportLoadResult(area, true) :
+  // rien n'a été relu, et le nom doit le dire.
+  clearLoadFailure: (area: StorageArea) => void;
   reportSaveResult: (area: StorageArea, ok: boolean) => void;
 }
 
@@ -53,6 +60,10 @@ export function StorageStatusProvider({ children }: { children: ReactNode }) {
     setSaveFailures((prev) => (prev[area] === !ok ? prev : { ...prev, [area]: !ok }));
   }, []);
 
+  const clearLoadFailure = useCallback((area: StorageArea) => {
+    setLoadFailures((prev) => (prev[area] ? { ...prev, [area]: false } : prev));
+  }, []);
+
   return (
     <StorageStatusContext.Provider
       value={{
@@ -60,6 +71,7 @@ export function StorageStatusProvider({ children }: { children: ReactNode }) {
         saveFailed: saveFailures.goals || saveFailures.settings,
         reportLoadResult,
         reportSaveResult,
+        clearLoadFailure,
       }}
     >
       {children}
