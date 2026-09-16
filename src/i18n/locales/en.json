@@ -69,7 +69,8 @@
       "Oct",
       "Nov",
       "Dec"
-    ]
+    ],
+    "invalidDate": "Unknown date"
   },
   "goalList": {
     "heading": "My\nGoals",

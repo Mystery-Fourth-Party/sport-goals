@@ -42,10 +42,16 @@ export interface WeeklyStats {
 
 // ─── Dates ──────────────────────────────────────────────────────────────
 
-// Ne garde que la partie "YYYY-MM-DD" d'une chaîne ISO complète
-// (createdAt/deadline) — c'est le format attendu par parseDate/dateStr.
+// Jour calendaire *local* de l'instant. createdAt/deadline sont des chaînes
+// ISO écrites par toISOString(), donc en UTC : en trancher les 10 premiers
+// caractères donnait le jour UTC, alors que todayStr() lit le calendrier
+// local. getGoalStats comparait ainsi deux bases différentes, décalant d'un
+// jour la durée, les jours restants et le statut d'un objectif créé ou
+// échéant près de minuit (L1-01). Le format stocké ne change pas — seule
+// son interprétation, qui rejoint désormais le jour que l'utilisateur avait
+// sous les yeux au moment de la saisie.
 function toDayStr(iso: string): string {
-  return iso.slice(0, 10);
+  return dateStr(new Date(iso));
 }
 
 export function parseDate(s: string): Date {
@@ -87,14 +93,27 @@ export function getGoalStats(goal: Goal, today: string): GoalStats {
   // Le plafonnement visuel de la barre de progression vit dans ProgressBar
   // (largeur à l'écran), pas dans ce calcul.
   const progress = goal.targetValue > 0 ? actual / goal.targetValue : 0;
-  const expectedProgress = totalDays > 0 ? elapsedDays / totalDays : 0;
+  // Sur une durée nulle (createdAt === deadline, atteignable par import),
+  // la fenêtre tient dans une seule journée : elle est entièrement écoulée
+  // dès que ce jour est arrivé, donc 100 % est attendu. Le repli à 0
+  // rendait le statut "late" inatteignable quelle que soit la progression
+  // réelle (L1-10).
+  const expectedProgress =
+    totalDays > 0 ? elapsedDays / totalDays : diffDays(start, todayDate) >= 0 ? 1 : 0;
   // Plancher à 0 : au-delà de la cible (ou sur une cible nulle) la
-  // soustraction devient négative, ce qui n'a pas de sens comme "rythme
-  // restant à tenir" et se retrouverait tel quel dans l'UI et le libellé lu
+  // soustraction devient négative, ce qui n'a pas de sens comme rythme
+  // restant à tenir et se retrouverait tel quel dans l'UI et le libellé lu
   // de la carte (voir GoalCard, goalCard.lateRequiredA11y).
-  const dailyRequired =
-    remainingDays > 0 ? Math.max(0, (goal.targetValue - actual) / remainingDays) : 0;
-  const dailyAvg = totalDays > 0 ? goal.targetValue / totalDays : 0;
+  //
+  // Diviseur planché à 1 : à partir du jour de l'échéance, remainingDays
+  // vaut 0 et le rythme de rattrapage retombait à 0 avec lui — un objectif
+  // en retard annonçait 0 par jour au lieu de ce qu'il restait réellement à
+  // faire (L1-02). Échéance atteinte ou dépassée, tout le reste est dû dans
+  // la journée.
+  const dailyRequired = Math.max(0, (goal.targetValue - actual) / Math.max(1, remainingDays));
+  // Même raison que expectedProgress ci-dessus : sur une durée nulle, la
+  // cible entière est due dans la seule journée disponible.
+  const dailyAvg = totalDays > 0 ? goal.targetValue / totalDays : goal.targetValue;
 
   let status: Status;
   if (progress >= 1) {

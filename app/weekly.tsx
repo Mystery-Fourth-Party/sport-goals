@@ -5,7 +5,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BackButton, BarChart, ProgressBar, StatusBadge } from '../src/components/ui';
 import { weekdayShort, weekRangeLabel } from '../src/dateLabels';
 import { useGoals } from '../src/goals-context';
-import { fmt, getGoalStats, getWeeklyStats, parseDate, todayStr } from '../src/stats';
+import { fmt, getGoalStats, getWeeklyStats, parseDate } from '../src/stats';
+import { useToday } from '../src/useToday';
 import { colors, fontFamily, radius, spacing, white } from '../src/theme';
 import { Goal, UNIT_ICONS } from '../src/types';
 
@@ -17,7 +18,7 @@ function weekTotalFor(goal: Goal, weekDates: string[]): number {
 export default function WeeklyScreen() {
   const { t } = useTranslation();
   const { goals } = useGoals();
-  const today = todayStr();
+  const today = useToday();
   const { weekDates, sessionsPerDay, activeDays, totalSessions, mostAdvanced, mostBehind } =
     getWeeklyStats(goals, today);
 

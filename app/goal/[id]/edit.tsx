@@ -7,9 +7,10 @@ import GoalFields from '../../../src/components/GoalFields';
 import { BackButton } from '../../../src/components/ui';
 import { useGoals } from '../../../src/goals-context';
 import { parseDurationDays } from '../../../src/goalValidation';
-import { fmt, getGoalStats, todayStr } from '../../../src/stats';
+import { fmt, getGoalStats } from '../../../src/stats';
 import { colors, fontFamily, radius, spacing, statusColors, white } from '../../../src/theme';
 import { Goal, Unit } from '../../../src/types';
+import { useToday } from '../../../src/useToday';
 
 // Route : résout l'objectif et décide seulement s'il y a de quoi monter le
 // formulaire. Tout l'état de saisie vit dans EditGoalForm plus bas, qui
@@ -58,7 +59,15 @@ function EditGoalForm({ goal }: { goal: Goal }) {
   const { t } = useTranslation();
   const { updateGoal } = useGoals();
 
-  const s = getGoalStats(goal, todayStr());
+  // useToday et non todayStr() : la carte de résumé se remet à jour au
+  // retour de l'arrière-plan (L1-08). Le champ « Jours restants » ne suit
+  // pas — il est initialisé une seule fois au montage, par construction
+  // (voir le commentaire de ce composant) : un passage de minuit pendant
+  // que l'écran est ouvert laisse donc l'écran afficher une progression
+  // recalculée à côté d'une durée saisie qui ne l'est pas. Écart assumé,
+  // l'alternative étant d'écraser une saisie en cours.
+  const today = useToday();
+  const s = getGoalStats(goal, today);
   const [title, setTitle] = useState(goal.title);
   const [target, setTarget] = useState(String(goal.targetValue));
   const [unit, setUnit] = useState<Unit>(goal.unit);

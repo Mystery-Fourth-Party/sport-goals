@@ -5,13 +5,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import GoalCard from '../src/components/GoalCard';
 import { fullDateLabel } from '../src/dateLabels';
 import { useGoals } from '../src/goals-context';
-import { splitGoalsByStatus, todayStr } from '../src/stats';
+import { splitGoalsByStatus } from '../src/stats';
+import { useToday } from '../src/useToday';
 import { colors, fontFamily, radius, size, spacing, white } from '../src/theme';
 
 export default function GoalListScreen() {
   const { t } = useTranslation();
   const { goals, loaded } = useGoals();
-  const today = todayStr();
+  const today = useToday();
   const { active, completed } = splitGoalsByStatus(goals, today);
 
   return (
