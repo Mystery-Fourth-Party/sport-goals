@@ -9,40 +9,66 @@ import { useGoals } from '../../../src/goals-context';
 import { parseDurationDays } from '../../../src/goalValidation';
 import { fmt, getGoalStats, todayStr } from '../../../src/stats';
 import { colors, fontFamily, radius, spacing, statusColors, white } from '../../../src/theme';
-import { Unit } from '../../../src/types';
+import { Goal, Unit } from '../../../src/types';
 
+// Route : résout l'objectif et décide seulement s'il y a de quoi monter le
+// formulaire. Tout l'état de saisie vit dans EditGoalForm plus bas, qui
+// n'est monté qu'une fois cet objectif disponible.
 export default function EditGoalScreen() {
   const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { goals, updateGoal } = useGoals();
+  const { goals, loaded } = useGoals();
   const goal = goals.find((g) => g.id === id);
 
-  // Toujours appelés dans le même ordre, même si `goal` finit par être
-  // undefined (voir garde ci-dessous) : les Hooks ne peuvent pas être
-  // conditionnels. Les valeurs par défaut ne sont utilisées que le temps du
-  // rendu qui précède le retour anticipé.
-  const s = goal ? getGoalStats(goal, todayStr()) : null;
-  const [title, setTitle] = useState(goal?.title ?? '');
-  const [target, setTarget] = useState(String(goal?.targetValue ?? ''));
-  const [unit, setUnit] = useState<Unit>(goal?.unit ?? 'reps');
-  const [days, setDays] = useState(String(Math.max(1, s?.remainingDays ?? 1)));
-  const [saveAttempted, setSaveAttempted] = useState(false);
-  // absent = true (voir types.ts) — reflété tel quel plutôt que normalisé,
-  // pour ne pas introduire de valeur inventée pour un objectif qui n'avait
-  // jamais explicitement ce champ.
-  const [reminderEnabled, setReminderEnabled] = useState(goal?.reminderEnabled ?? true);
-  const [reminderTime, setReminderTime] = useState<string | undefined>(goal?.reminderTime);
-
-  if (!goal || !s) {
+  if (!loaded || !goal) {
     return (
       <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
         <View style={styles.header}>
           <BackButton onPress={() => router.back()} />
         </View>
-        <Text style={styles.notFound}>{t('goalDetail.notFound')}</Text>
+        {/* Le message n'apparaît qu'une fois le chargement terminé : avant,
+            on ne sait pas encore si l'objectif existe, et l'annoncer
+            introuvable serait une affirmation gratuite — c'est pourtant ce
+            que faisait l'écran à chaque démarrage à froid sur cette route.
+            L'en-tête est rendu dans les deux cas, pour que le bouton retour
+            existe aussi pendant l'attente. */}
+        {loaded && <Text style={styles.notFound}>{t('goalDetail.notFound')}</Text>}
       </SafeAreaView>
     );
   }
+
+  // key : deux objectifs différents ne doivent pas se partager un état de
+  // saisie, changer d'id remonte donc le formulaire au lieu de lui laisser
+  // les valeurs du précédent. Un import qui remplace les objectifs sans
+  // changer l'id ne remonte rien, en revanche : ce que l'utilisateur est en
+  // train de taper n'a pas à être écrasé sous ses doigts.
+  return <EditGoalForm key={goal.id} goal={goal} />;
+}
+
+// Composant séparé, et non un bloc de plus dans la route : ses six champs
+// sont initialisés par des initialiseurs useState lisant `goal`, or un
+// initialiseur ne s'évalue qu'au premier rendu du composant. Tant que
+// l'écran était un composant unique monté dès l'arrivée sur la route, ce
+// premier rendu précédait la résolution de loadGoals et l'état restait figé
+// sur '' / 'reps' / '1' pour toute la vie de l'écran — un enregistrement
+// écrasait alors targetValue, unit et deadline (L3-01). Ici `goal` est
+// présent parce que la route ne monte pas ce composant autrement, et le
+// type le dit plutôt que de le laisser à une convention.
+function EditGoalForm({ goal }: { goal: Goal }) {
+  const { t } = useTranslation();
+  const { updateGoal } = useGoals();
+
+  const s = getGoalStats(goal, todayStr());
+  const [title, setTitle] = useState(goal.title);
+  const [target, setTarget] = useState(String(goal.targetValue));
+  const [unit, setUnit] = useState<Unit>(goal.unit);
+  const [days, setDays] = useState(String(Math.max(1, s.remainingDays)));
+  const [saveAttempted, setSaveAttempted] = useState(false);
+  // absent = true (voir types.ts) — reflété tel quel plutôt que normalisé,
+  // pour ne pas introduire de valeur inventée pour un objectif qui n'avait
+  // jamais explicitement ce champ.
+  const [reminderEnabled, setReminderEnabled] = useState(goal.reminderEnabled ?? true);
+  const [reminderTime, setReminderTime] = useState<string | undefined>(goal.reminderTime);
 
   const titleError = title.trim() === '' ? t('editGoal.titleRequired') : undefined;
   const targetNum = Number(target);
@@ -73,7 +99,7 @@ export default function EditGoalScreen() {
     }
     const deadline = new Date();
     deadline.setDate(deadline.getDate() + daysNum);
-    updateGoal(goal!.id, {
+    updateGoal(goal.id, {
       title: title.trim(),
       targetValue: targetNum,
       unit,
