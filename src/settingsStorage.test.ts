@@ -20,34 +20,38 @@ describe('DEFAULT_SETTINGS', () => {
 });
 
 describe('loadSettings', () => {
-  it('returns the defaults when nothing is stored', async () => {
-    await expect(loadSettings()).resolves.toEqual(DEFAULT_SETTINGS);
+  // Même distinction que pour loadGoals (voir storage.test.ts) : un repli
+  // sur DEFAULT_SETTINGS parce que rien n'est stocké n'a rien à voir avec
+  // un repli parce que la lecture a échoué, où la configuration réelle de
+  // l'utilisateur est peut-être intacte sur l'appareil.
+  it('returns the defaults with ok: true when nothing is stored', async () => {
+    await expect(loadSettings()).resolves.toEqual({ value: DEFAULT_SETTINGS, ok: true });
   });
 
-  it('returns the settings previously saved', async () => {
+  it('returns the settings previously saved with ok: true', async () => {
     const custom = { ...DEFAULT_SETTINGS, dailyReminder: true, reminderTime: '07:30' };
     await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(custom));
 
-    await expect(loadSettings()).resolves.toEqual(custom);
+    await expect(loadSettings()).resolves.toEqual({ value: custom, ok: true });
   });
 
-  it('falls back to the defaults when the stored JSON is corrupted', async () => {
+  it('reports ok: false when the stored JSON is corrupted', async () => {
     await AsyncStorage.setItem(SETTINGS_KEY, '{not valid json');
 
-    await expect(loadSettings()).resolves.toEqual(DEFAULT_SETTINGS);
+    await expect(loadSettings()).resolves.toEqual({ value: DEFAULT_SETTINGS, ok: false });
   });
 
-  it('falls back to the defaults when reading from storage fails', async () => {
+  it('reports ok: false when reading from storage fails', async () => {
     jest.spyOn(AsyncStorage, 'getItem').mockRejectedValueOnce(new Error('read failed'));
 
-    await expect(loadSettings()).resolves.toEqual(DEFAULT_SETTINGS);
+    await expect(loadSettings()).resolves.toEqual({ value: DEFAULT_SETTINGS, ok: false });
   });
 
   it('fills in a setting added after the fact with its default', async () => {
     const { streakAlert, ...legacy } = DEFAULT_SETTINGS;
     await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(legacy));
 
-    await expect(loadSettings()).resolves.toEqual(DEFAULT_SETTINGS);
+    await expect(loadSettings()).resolves.toEqual({ value: DEFAULT_SETTINGS, ok: true });
   });
 });
 

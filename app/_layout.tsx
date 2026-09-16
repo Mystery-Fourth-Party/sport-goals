@@ -1,13 +1,16 @@
 import { useEffect } from 'react';
 import { Stack } from 'expo-router';
+import { StyleSheet, View } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useTranslation } from 'react-i18next';
+import StorageStatusBanner from '../src/components/StorageStatusBanner';
 import { GoalsProvider } from '../src/goals-context';
 import i18n, { detectDeviceLanguage } from '../src/i18n';
 import { ReminderStatusProvider } from '../src/reminder-status';
 import ReminderScheduler from '../src/ReminderScheduler';
 import { SettingsProvider, useSettings } from '../src/settings-context';
+import { StorageStatusProvider } from '../src/storage-status';
 import { colors, useAppFonts } from '../src/theme';
 
 // Empêche le splash natif de se cacher tout seul le temps que les polices
@@ -57,23 +60,41 @@ export default function RootLayout() {
   if (!fontsLoaded && !fontError) return null;
 
   return (
-    <SettingsProvider>
-      <GoalsProvider>
-        <ReminderStatusProvider>
-          <LanguageSync />
-          <ReminderScheduler />
-          {/* headerShown: false — chaque écran dessine son propre en-tête
-              (BackButton + titre Barlow Condensed), comme dans le prototype. */}
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              contentStyle: { backgroundColor: colors.appBg },
-              animation: 'slide_from_right',
-            }}
-          />
-          <StatusBar style="light" />
-        </ReminderStatusProvider>
-      </GoalsProvider>
-    </SettingsProvider>
+    // StorageStatusProvider enveloppe les deux providers de données : ce
+    // sont eux qui y écrivent le résultat de chaque lecture/écriture (voir
+    // storage-status.tsx), ils doivent donc être rendus à l'intérieur.
+    <StorageStatusProvider>
+      <SettingsProvider>
+        <GoalsProvider>
+          <ReminderStatusProvider>
+            <LanguageSync />
+            <ReminderScheduler />
+            {/* Conteneur explicite plutôt que deux frères nus : le bandeau
+                prend sa hauteur de contenu en haut de l'écran et le Stack
+                (flex: 1) occupe tout le reste. Quand le bandeau n'a rien à
+                dire il ne rend rien, et la mise en page est celle d'avant. */}
+            <View style={styles.root}>
+              <StorageStatusBanner />
+              {/* headerShown: false — chaque écran dessine son propre en-tête
+                  (BackButton + titre Barlow Condensed), comme dans le prototype. */}
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  contentStyle: { backgroundColor: colors.appBg },
+                  animation: 'slide_from_right',
+                }}
+              />
+            </View>
+            <StatusBar style="light" />
+          </ReminderStatusProvider>
+        </GoalsProvider>
+      </SettingsProvider>
+    </StorageStatusProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
+});

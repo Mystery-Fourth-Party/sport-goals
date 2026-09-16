@@ -23,7 +23,7 @@ function backupFilename(): string {
 // — voir aussi NotificationsSection pour la carte "Notifications".
 export default function DataSection() {
   const { t } = useTranslation();
-  const { settings, updateSettings } = useSettings();
+  const { settings, importSettings } = useSettings();
   const { goals, replaceAllGoals } = useGoals();
   // Même pattern que notifError (NotificationsSection).
   const [dataError, setDataError] = useState<string | undefined>();
@@ -85,8 +85,13 @@ export default function DataSection() {
       }),
       confirmLabel: t('common.import'),
       onConfirm: () => {
+        // importSettings et non updateSettings : les deux écrivent, mais
+        // seule la première passe outre le blocage posé sur les écritures
+        // automatiques après un échec de lecture (voir settings-context.tsx).
+        // Un import confirmé par l'utilisateur doit atteindre le disque ;
+        // un toggle touché dans le même état, non.
         replaceAllGoals(result.goals);
-        if (result.settings) updateSettings(result.settings);
+        if (result.settings) importSettings(result.settings);
       },
     });
   }

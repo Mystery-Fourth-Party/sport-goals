@@ -4,7 +4,10 @@ import { act, renderHook, waitFor } from '@testing-library/react-native';
 import { GoalsProvider, useGoals } from './goals-context';
 import { sendGoalReachedNotification } from './notifications';
 import { SettingsProvider, useSettings } from './settings-context';
+import { DEFAULT_SETTINGS, loadSettings, saveSettings } from './settingsStorage';
 import { todayStr } from './stats';
+import { loadGoals, saveGoals } from './storage';
+import { StorageStatusProvider, useStorageStatus } from './storage-status';
 import { Goal } from './types';
 
 // sendGoalReachedNotification touches expo-notifications' native module, which
@@ -22,18 +25,58 @@ jest.mock('./notifications', () => ({
 
 const mockedSendGoalReachedNotification = sendGoalReachedNotification as jest.Mock;
 
+// loadGoals/saveGoals passent par un mock qui délègue à l'implémentation
+// réelle (reposée dans le beforeEach ci-dessous) : les tests existants
+// gardent donc le comportement AsyncStorage de bout en bout, et seuls les
+// tests d'échec de persistance remplacent la valeur de retour. Mocker le
+// module ici plutôt que d'espionner AsyncStorage est délibéré — voir le
+// commentaire de describe('échecs de persistance') en fin de fichier.
+jest.mock('./storage', () => {
+  const actual = jest.requireActual('./storage');
+  return {
+    ...actual,
+    loadGoals: jest.fn(),
+    saveGoals: jest.fn(),
+  };
+});
+
+const actualStorage = jest.requireActual<typeof import('./storage')>('./storage');
+const mockedLoadGoals = loadGoals as jest.Mock;
+const mockedSaveGoals = saveGoals as jest.Mock;
+
+// Même dispositif pour ./settingsStorage : nécessaire au test d'import
+// partiel plus bas, qui doit faire échouer la lecture des *deux* zones pour
+// montrer qu'un import de goals seuls ne débloque pas celle des settings.
+jest.mock('./settingsStorage', () => {
+  const actual = jest.requireActual('./settingsStorage');
+  return {
+    ...actual,
+    loadSettings: jest.fn(),
+    saveSettings: jest.fn(),
+  };
+});
+
+const actualSettingsStorage =
+  jest.requireActual<typeof import('./settingsStorage')>('./settingsStorage');
+const mockedLoadSettings = loadSettings as jest.Mock;
+const mockedSaveSettings = saveSettings as jest.Mock;
+
 function wrapper({ children }: { children: ReactNode }) {
   return (
-    <SettingsProvider>
-      <GoalsProvider>{children}</GoalsProvider>
-    </SettingsProvider>
+    <StorageStatusProvider>
+      <SettingsProvider>
+        <GoalsProvider>{children}</GoalsProvider>
+      </SettingsProvider>
+    </StorageStatusProvider>
   );
 }
 
-// Expose both contexts from one hook so a test can flip a setting
-// (goalReachedNotifs) and then drive goals from the same render.
+// Expose les trois contextes depuis un seul hook : un test peut ainsi
+// basculer un réglage (goalReachedNotifs) puis piloter les objectifs depuis
+// le même rendu, et lire le statut de persistance que les deux providers y
+// écrivent (voir storage-status.tsx).
 function useHarness() {
-  return { goals: useGoals(), settings: useSettings() };
+  return { goals: useGoals(), settings: useSettings(), status: useStorageStatus() };
 }
 
 // Attend le chargement des *deux* providers avant de rendre la main à un
@@ -67,6 +110,13 @@ const baseGoal: Goal = {
 // (module-level) : sans le vider, un test qui persiste des goals/settings
 // pollue le chargement initial du suivant.
 beforeEach(async () => {
+  jest.restoreAllMocks();
+  // Les mocks issus d'une factory jest.mock ne sont pas touchés par
+  // restoreAllMocks : on leur repose explicitement l'implémentation réelle.
+  mockedLoadGoals.mockReset().mockImplementation(actualStorage.loadGoals);
+  mockedSaveGoals.mockReset().mockImplementation(actualStorage.saveGoals);
+  mockedLoadSettings.mockReset().mockImplementation(actualSettingsStorage.loadSettings);
+  mockedSaveSettings.mockReset().mockImplementation(actualSettingsStorage.saveSettings);
   await AsyncStorage.clear();
   mockedSendGoalReachedNotification.mockClear();
 });
@@ -333,5 +383,163 @@ describe('recordedAt', () => {
     const entry = result.current.goals.goals[0].entries.find((e) => e.date === '2026-08-10');
     expect(entry?.value).toBe(55);
     expect(entry?.recordedAt).toBe('2026-08-23T09:15:00.000Z');
+  });
+});
+
+// L2-02 et L2-05 : jusqu'ici un échec de lecture ou d'écriture du stockage
+// ne se distinguait de rien du tout. Deux conséquences observables ici :
+// l'app ne doit pas réécrire par-dessus des données qu'elle n'a pas réussi
+// à lire, et un échec doit ressortir quelque part plutôt que de rester dans
+// la console.
+//
+// Ces tests passent par les mocks de ./storage (voir le jest.mock en tête de
+// fichier) plutôt que par AsyncStorage : AsyncStorage est déjà un mock
+// fourni par le paquet, sur lequel jest.spyOn renvoie ce mock existant au
+// lieu d'en créer un nouveau — ni jest.restoreAllMocks() ni mockRestore() ne
+// lui rendent alors son implémentation d'origine, et un détournement fuit
+// sur tous les tests suivants du fichier.
+describe('échecs de persistance', () => {
+  it('does not save over the stored goals after a failed initial read (L2-02)', async () => {
+    // Lecture en échec alors que le disque contient encore les objectifs de
+    // l'utilisateur : le scénario de L2-02, où l'app affiche « aucun
+    // objectif » par-dessus des données intactes.
+    mockedLoadGoals.mockResolvedValue({ value: [], ok: false });
+
+    const { result } = await renderHarness();
+    expect(result.current.goals.goals).toEqual([]);
+
+    // La première action de l'utilisateur — c'est elle qui écrasait tout.
+    act(() => result.current.goals.createGoal(baseGoal));
+    // Laisse passer l'effet de sauvegarde et sa microtâche avant d'affirmer
+    // qu'aucune écriture n'a eu lieu.
+    await act(async () => {});
+
+    expect(mockedSaveGoals).not.toHaveBeenCalled();
+  });
+
+  it('surfaces a failed initial read through the storage status context (L2-02)', async () => {
+    mockedLoadGoals.mockResolvedValue({ value: [], ok: false });
+
+    const { result } = await renderHarness();
+
+    expect(result.current.status.loadFailed).toBe(true);
+  });
+
+  it('surfaces a failed write through the storage status context (L2-05)', async () => {
+    const { result } = await renderHarness();
+    mockedSaveGoals.mockResolvedValue(false);
+
+    act(() => result.current.goals.createGoal(baseGoal));
+
+    await waitFor(() => expect(result.current.status.saveFailed).toBe(true));
+  });
+
+  it('clears the write failure flag once a later write succeeds', async () => {
+    const { result } = await renderHarness();
+    mockedSaveGoals.mockResolvedValue(false);
+    act(() => result.current.goals.createGoal(baseGoal));
+    await waitFor(() => expect(result.current.status.saveFailed).toBe(true));
+
+    mockedSaveGoals.mockResolvedValue(true);
+    act(() => result.current.goals.createGoal({ ...baseGoal, id: 'g-bis' }));
+
+    await waitFor(() => expect(result.current.status.saveFailed).toBe(false));
+  });
+});
+
+// Porte de sortie de l'import, ajoutée après la revue de PR #24 : le blocage
+// posé par readFailed visait les écritures *automatiques* de l'app, pas une
+// restauration de sauvegarde que l'utilisateur a explicitement confirmée
+// (voir le dialogue de confirmDestructive dans DataSection.tsx). Sans cette
+// porte, un import après un échec de lecture s'affichait à l'écran et
+// disparaissait au redémarrage, sans que rien ne le dise.
+describe('replaceAllGoals — import explicite', () => {
+  // Chemin courant, sans échec de lecture : jusqu'ici aucun test ne
+  // vérifiait que replaceAllGoals persiste quoi que ce soit (les deux tests
+  // de describe('replaceAllGoals') n'observent que l'état en mémoire). Comme
+  // l'import écrit désormais lui-même au lieu de laisser faire l'effet, ce
+  // cas change aussi : il lui faut son filet.
+  it('persists an ordinary import exactly once', async () => {
+    const { result } = await renderHarness();
+    const restored: Goal[] = [{ ...baseGoal, id: 'restored-1' }];
+
+    act(() => result.current.goals.replaceAllGoals(restored));
+    await act(async () => {});
+
+    expect(mockedSaveGoals).toHaveBeenCalledTimes(1);
+    expect(mockedSaveGoals).toHaveBeenCalledWith(restored);
+  });
+
+  it('writes an imported list even though the initial read failed', async () => {
+    mockedLoadGoals.mockResolvedValue({ value: [], ok: false });
+    const { result } = await renderHarness();
+    const restored: Goal[] = [{ ...baseGoal, id: 'restored-1' }];
+
+    act(() => result.current.goals.replaceAllGoals(restored));
+    await act(async () => {});
+
+    expect(mockedSaveGoals).toHaveBeenCalledTimes(1);
+    expect(mockedSaveGoals).toHaveBeenCalledWith(restored);
+  });
+
+  it('clears the read failure once the explicit write succeeds', async () => {
+    mockedLoadGoals.mockResolvedValue({ value: [], ok: false });
+    const { result } = await renderHarness();
+    expect(result.current.status.loadFailed).toBe(true);
+
+    act(() => result.current.goals.replaceAllGoals([{ ...baseGoal, id: 'restored-1' }]));
+
+    await waitFor(() => expect(result.current.status.loadFailed).toBe(false));
+  });
+
+  // Une écriture réussie prouve que le stockage répond de nouveau : les
+  // sauvegardes automatiques normales doivent repartir sans attendre un
+  // redémarrage.
+  it('resumes automatic saves once the explicit write succeeds', async () => {
+    mockedLoadGoals.mockResolvedValue({ value: [], ok: false });
+    const { result } = await renderHarness();
+
+    act(() => result.current.goals.replaceAllGoals([{ ...baseGoal, id: 'restored-1' }]));
+    await waitFor(() => expect(result.current.status.loadFailed).toBe(false));
+    expect(mockedSaveGoals).toHaveBeenCalledTimes(1);
+
+    act(() => result.current.goals.createGoal({ ...baseGoal, id: 'apres-import' }));
+
+    await waitFor(() => expect(mockedSaveGoals).toHaveBeenCalledTimes(2));
+  });
+
+  it('reports a failed import write and keeps the read failure', async () => {
+    mockedLoadGoals.mockResolvedValue({ value: [], ok: false });
+    const { result } = await renderHarness();
+    mockedSaveGoals.mockResolvedValue(false);
+
+    act(() => result.current.goals.replaceAllGoals([{ ...baseGoal, id: 'restored-1' }]));
+
+    await waitFor(() => expect(result.current.status.saveFailed).toBe(true));
+    // L'écriture a échoué : rien ne prouve que le stockage soit revenu, le
+    // blocage des sauvegardes automatiques reste en place.
+    expect(result.current.status.loadFailed).toBe(true);
+  });
+
+  // Les deux zones sont suivies séparément (voir storage-status.tsx). Un
+  // fichier de sauvegarde sans bloc `settings` ne fait appeler que
+  // replaceAllGoals (voir le `if (result.settings)` de DataSection.tsx) :
+  // la zone settings doit rester bloquée telle quelle.
+  it('leaves the settings area blocked when the import carries no settings', async () => {
+    mockedLoadGoals.mockResolvedValue({ value: [], ok: false });
+    mockedLoadSettings.mockResolvedValue({ value: DEFAULT_SETTINGS, ok: false });
+    const { result } = await renderHarness();
+
+    act(() => result.current.goals.replaceAllGoals([{ ...baseGoal, id: 'restored-1' }]));
+    await act(async () => {});
+
+    // Le bandeau reste allumé : la zone settings, elle, n'a pas été réparée.
+    expect(result.current.status.loadFailed).toBe(true);
+
+    // Et les réglages restent protégés : un toggle n'écrit toujours rien.
+    act(() => result.current.settings.updateSettings({ streakAlert: false }));
+    await act(async () => {});
+
+    expect(mockedSaveSettings).not.toHaveBeenCalled();
   });
 });
