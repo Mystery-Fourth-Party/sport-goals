@@ -132,3 +132,10 @@ mesure la solidité des assertions existantes, pas l'imagination qui a
 présidé au choix des cas. R2-02 (lot 2) en est l'illustration : le test
 « persists an ordinary import exactly once » est solide — `C1` et `C2` sont
 tués — et il passe pourtant à côté du cas qui perd une écriture.
+
+---
+
+Addendum : le script `revue/lot-5-mutations.sh` porte depuis le lot 6 deux
+mutations supplémentaires (`N2`, `N3`, sur la création du channel Android),
+ce qui porte son total à 39 mutations et 7 survivants. Les chiffres de ce
+document restent ceux des 37 mutations du lot 5.

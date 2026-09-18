@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 #
-# REVUE — LOT 5 (suite de tests). Outil de mesure, pas un test.
+# REVUE — LOTS 5 et 6. Outil de mesure, pas un test.
+#
+# Écrit pour le lot 5 (suite de tests) ; deux mutations du lot 6
+# (outillage) sont ajoutées en fin de fichier.
 #
 # Les lots 1 à 4 prouvaient un défaut par un test rouge. Ce lot-ci porte sur
 # la suite elle-même : la question n'est plus « ce code est-il juste ? »
@@ -157,6 +160,16 @@ mut "I1  Accueil : la liste affiche les objectifs terminés" app/index.tsx \
   "        data={active}" "        data={completed}"
 mut "I2  Accueil : libellé d'accessibilité du titre supprimé" app/index.tsx \
   "accessibilityLabel={t('goalList.headingA11y')}" "accessibilityLabel={undefined}"
+
+# ─── Ajouts du lot 6 (outillage) ──────────────────────────────────────────
+# Conséquence de `Platform.OS === 'ios'` sous jest-expo : la création du
+# channel Android, sans laquelle aucune notification ne s'affiche sur
+# Android 8+, ne peut pas être atteinte par la suite.
+mut "N2  le channel Android n'est plus créé" src/notifications.ts \
+  "if (granted) await setupAndroidChannel();" "if (false) await setupAndroidChannel();"
+mut "N3  channelId retiré du rappel quotidien" src/notifications.ts \
+  "        channelId: CHANNEL_ID,
+" ""
 
 echo
 echo "$survivants survivant(s) sur $total mutation(s)."
