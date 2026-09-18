@@ -10,7 +10,7 @@ import EditGoalScreen from '../app/goal/[id]/edit';
 import { GoalsProvider } from '../src/goals-context';
 import i18n from '../src/i18n';
 import { SettingsProvider } from '../src/settings-context';
-import { getGoalStats, todayStr } from '../src/stats';
+import { fmt, getGoalStats, todayStr } from '../src/stats';
 import { loadGoals, LoadResult, saveGoals } from '../src/storage';
 import { StorageStatusProvider } from '../src/storage-status';
 import { Goal } from '../src/types';
@@ -190,5 +190,40 @@ describe('EditGoalScreen monté avant le chargement des objectifs', () => {
 
     expect(fieldValue(NAME)).toBe(goal.title);
     expect(fieldValue(TARGET)).toBe('100');
+  });
+});
+
+// L4-01 — t('editGoal.remainingToComplete', ...) mélangeait dans le même
+// appel un `unit` brut (non traduit) et un `unitLabel` correctement traduit,
+// pour une clé qui vaut « {{unit}}/jour · encore {{value}} {{unitLabel}} à
+// accomplir ». Rendu : « reps/jour · encore 5 répétitions à accomplir ».
+//
+// L'unité du fixture est volontairement 'min' : c'est, avec 'h', la seule
+// dont le libellé diffère de sa clé technique dans les *deux* langues
+// ('minutes' en fr comme en en). 'km' vaut « km » partout, et 'reps' vaut
+// « reps » en anglais — or ce fichier ne force pas la langue, il tourne donc
+// dans celle que jest détecte. Sur ces unités-là le défaut est invisible.
+describe('EditGoalScreen — libellé du rythme restant', () => {
+  it('spells out the unit rather than mixing its technical key into the sentence', async () => {
+    const goal: Goal = { ...makeGoal(), unit: 'min' };
+    mockedLoadGoals.mockResolvedValue({ value: [goal], ok: true });
+    render(<Tree show />);
+    await flush();
+
+    // La carte « nouveau rythme » n'apparaît que sur un formulaire valide.
+    const remaining = goal.targetValue - 12;
+    const expected = i18n.t('editGoal.remainingToComplete', {
+      unit: i18n.t('unit.min'),
+      value: fmt(remaining, 'min'),
+      unitLabel: i18n.t('unit.min'),
+    });
+    const withRawKey = i18n.t('editGoal.remainingToComplete', {
+      unit: 'min',
+      value: fmt(remaining, 'min'),
+      unitLabel: i18n.t('unit.min'),
+    });
+
+    expect(screen.queryByText(withRawKey)).toBeNull();
+    expect(screen.getByText(expected)).toBeTruthy();
   });
 });

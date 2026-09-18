@@ -395,3 +395,81 @@ describe('getGoalStats — rythme de rattrapage après échéance', () => {
     expect(getGoalStats(atteint, '2026-09-05').dailyRequired).toBe(0);
   });
 });
+
+// L1-07 — mostAdvanced et mostBehind sortaient de deux tris indépendants sur
+// la même liste, sans exclusion mutuelle. app/weekly.tsx rend les deux cartes
+// séparément, donc le même objectif pouvait s'afficher deux fois de suite
+// sous deux titres contradictoires.
+describe('getWeeklyStats — le plus avancé et le plus en retard', () => {
+  // Cet objectif gagne les deux tris à la fois : meilleure progression brute
+  // du lot (90 %), et pourtant le plus en retard sur son propre rythme
+  // attendu (90 % réalisés contre 100 % attendus, soit un écart de -0,1,
+  // inférieur au +0,05 de l'autre).
+  const presqueFini: Goal = {
+    ...pompes,
+    id: 'presque-fini',
+    title: 'Presque fini mais en retard',
+    targetValue: 100,
+    createdAt: '2026-07-21T12:00:00.000Z',
+    deadline: '2026-08-20T12:00:00.000Z',
+    entries: [{ date: '2026-08-01', value: 90 }],
+  };
+
+  const justeCommence: Goal = {
+    ...pompes,
+    id: 'juste-commence',
+    title: 'À peine commencé mais dans les temps',
+    targetValue: 100,
+    createdAt: '2026-08-17T12:00:00.000Z',
+    deadline: '2026-09-16T12:00:00.000Z',
+    entries: [{ date: '2026-08-18', value: 20 }],
+  };
+
+  it('never returns the same goal in both slots', () => {
+    const w = getWeeklyStats([presqueFini, justeCommence], TODAY);
+
+    expect(w.mostAdvanced?.goal.id).toBe('presque-fini');
+    expect(w.mostBehind?.goal.id).not.toBe(w.mostAdvanced?.goal.id);
+  });
+
+  // Avec un seul objectif il n'y a rien à comparer : « le moins avancé » d'un
+  // ensemble d'un seul élément ne veut rien dire. L'exclusion ne laisse aucun
+  // candidat, et la garde {mostBehind && ...} déjà présente dans weekly.tsx
+  // fait disparaître la carte — aucun cas particulier à écrire.
+  it('leaves mostBehind undefined when there is nothing to compare against', () => {
+    const w = getWeeklyStats([presqueFini], TODAY);
+
+    expect(w.mostAdvanced?.goal.id).toBe('presque-fini');
+    expect(w.mostBehind).toBeUndefined();
+  });
+
+  // Trois objectifs : l'exclusion en retire un, il en reste deux à départager,
+  // donc le comparateur de tri de mostBehind s'exécute réellement. À deux
+  // objectifs il ne tournait plus du tout — le tableau filtré n'ayant qu'un
+  // élément, Array.prototype.sort n'appelle pas le comparateur. C'est la
+  // couverture qui l'a signalé après le correctif.
+  it('still ranks the remaining goals once the most advanced is set aside', () => {
+    const tresEnRetard: Goal = {
+      ...pompes,
+      id: 'tres-en-retard',
+      title: 'Très en retard',
+      targetValue: 100,
+      createdAt: '2026-07-31T12:00:00.000Z',
+      deadline: '2026-09-09T12:00:00.000Z',
+      entries: [{ date: '2026-08-01', value: 10 }],
+    };
+
+    const w = getWeeklyStats([presqueFini, justeCommence, tresEnRetard], TODAY);
+
+    expect(w.mostAdvanced?.goal.id).toBe('presque-fini');
+    // 10 % réalisés contre 50 % attendus, soit -0,4 : plus bas que le +0,1 de
+    // justeCommence, et presqueFini n'est plus candidat.
+    expect(w.mostBehind?.goal.id).toBe('tres-en-retard');
+  });
+  it('leaves both undefined when there is no goal at all', () => {
+    const w = getWeeklyStats([], TODAY);
+
+    expect(w.mostAdvanced).toBeUndefined();
+    expect(w.mostBehind).toBeUndefined();
+  });
+});
