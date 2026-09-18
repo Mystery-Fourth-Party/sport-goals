@@ -244,7 +244,13 @@
     "invalidFileFormat": "Format de fichier invalide.",
     "unsupportedVersion": "Version de fichier non prise en charge ({{version}}).",
     "missingGoals": "Liste des objectifs manquante ou mal formée dans le fichier.",
-    "invalidSettings": "Réglages mal formés dans le fichier."
+    "invalidSettings": "Réglages mal formés dans le fichier.",
+    "invalidGoalDates": "Un objectif a une date de création ou d'échéance illisible.",
+    "deadlineNotAfterCreatedAt": "Un objectif a une échéance antérieure ou égale à sa date de création.",
+    "invalidTargetValue": "Un objectif a une valeur cible invalide : elle doit être un nombre strictement positif.",
+    "invalidEntryValue": "Un objectif a une valeur de progression invalide : elle doit être un nombre positif ou nul.",
+    "duplicateGoalIds": "Deux objectifs partagent le même identifiant.",
+    "duplicateEntryDates": "L'objectif « {{title}} » a deux entrées pour le {{date}} : une seule par jour est attendue."
   },
   "settings": {
     "title": "Paramètres",

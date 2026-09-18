@@ -146,6 +146,111 @@ function isValidGoal(value: unknown): value is RawGoal {
   return true;
 }
 
+// Cohérence des objectifs, après isValidGoal. Les deux passes répondent à
+// deux questions distinctes : isValidGoal à « est-ce la bonne forme »,
+// celle-ci à « est-ce que ça a du sens ». Séparées parce qu'isValidGoal est
+// un type-guard booléen, consommé par .every() : il ne peut pas dire
+// laquelle de ses vérifications a échoué, alors que chaque règle ci-dessous
+// porte son propre message — un utilisateur qui a édité son fichier doit
+// savoir quoi y corriger.
+//
+// Toutes rejettent le fichier entier plutôt que de réparer : aucune valeur
+// de repli ne remplacerait une donnée de l'utilisateur sans l'inventer, et
+// l'import est destructif (replaceAllGoals efface l'existant, voir
+// goals-context.tsx). Les réglages suivent la règle inverse, voir
+// sanitizeSettings plus bas.
+//
+// Renvoie le message de la première règle violée, ou null si tout passe.
+function findGoalInconsistency(goals: RawGoal[]): string | null {
+  const seenIds = new Set<string>();
+
+  for (const g of goals) {
+    // L1-09 — updateGoal et deleteGoal opèrent par .map/.filter sur l'id :
+    // deux objectifs au même id sont modifiés ou supprimés ensemble, sans
+    // que rien ne le signale à l'écran.
+    if (seenIds.has(g.id)) return i18n.t('backup.duplicateGoalIds');
+    seenIds.add(g.id);
+
+    // L1-12 — Number.isFinite et pas seulement > 0 : Infinity ne s'écrit
+    // pas en JSON, mais JSON.parse le rend sur un exposant hors domaine
+    // (1e400), et typeof Infinity vaut 'number'. NaN, lui, ne peut pas
+    // arriver — JSON.parse refuse le littéral.
+    if (!Number.isFinite(g.targetValue) || g.targetValue <= 0) {
+      return i18n.t('backup.invalidTargetValue');
+    }
+
+    // L1-05 — isValidGoal ne vérifie que le type de ces deux champs, donc
+    // n'importe quelle chaîne passait.
+    const createdAt = new Date(g.createdAt).getTime();
+    const deadline = new Date(g.deadline).getTime();
+    if (Number.isNaN(createdAt) || Number.isNaN(deadline)) {
+      return i18n.t('backup.invalidGoalDates');
+    }
+    // Comparaison sur les instants et non sur les jours locaux : la
+    // validation ne dépend ainsi pas du fuseau de la machine, un fichier
+    // accepté ici l'étant partout. Reste le cas de deux instants tombant
+    // le même jour local à quelques heures d'écart, que le garde-fou de
+    // durée nulle de stats.ts (expectedProgress à 1) couvre déjà.
+    if (deadline <= createdAt) return i18n.t('backup.deadlineNotAfterCreatedAt');
+
+    const seenDates = new Set<string>();
+    for (const e of g.entries) {
+      // Zéro reste valide et signifiant : « pas d'entrée ce jour-là » doit
+      // rester distinct de « une entrée à 0 » (voir deleteEntry et
+      // ongoingGoalsWithoutTodayEntry).
+      if (!Number.isFinite(e.value) || e.value < 0) {
+        return i18n.t('backup.invalidEntryValue');
+      }
+
+      // L4-02 — la même donnée était lue de trois façons incompatibles en
+      // aval : sommée par getGoalStats, dernière-gagne par calcStreak
+      // (Map par date), première-trouvée par addProgress (findIndex).
+      // Rejet plutôt que fusion : l'app ne sait pas produire ce cas —
+      // addProgress fusionne dans l'entrée du jour, updateEntry remplace
+      // en place, deleteEntry supprime toutes les occurrences — donc un
+      // doublon signale un fichier abîmé, pas deux séances. Seul message
+      // interpolé du lot : c'est la seule règle où l'utilisateur ne peut
+      // rien corriger sans savoir où regarder.
+      if (seenDates.has(e.date)) {
+        return i18n.t('backup.duplicateEntryDates', { title: g.title, date: e.date });
+      }
+      seenDates.add(e.date);
+    }
+  }
+
+  return null;
+}
+
+// L1-04 — payload.settings n'était vérifié que comme objet, puis fusionné
+// tel quel : un dailyReminder à "oui" ou une langue à "xx" filaient jusqu'à
+// l'usage. Règle inverse de celle des objectifs, et pour une raison :
+// chaque réglage a déjà une valeur par défaut documentée dans
+// DEFAULT_SETTINGS, donc le repli n'invente rien. Rejeter tout le fichier
+// pour une préférence mal typée ferait perdre les objectifs avec, qui sont
+// la partie qui a de la valeur.
+function sanitizeSettings(raw: Record<string, unknown>): Settings {
+  const settings: Settings = { ...DEFAULT_SETTINGS };
+
+  if (typeof raw.dailyReminder === 'boolean') settings.dailyReminder = raw.dailyReminder;
+  // Type vérifié, format non — même arbitrage que pour le reminderTime
+  // d'un objectif (voir isValidGoal) : le repli sur l'horaire global se
+  // fait à l'usage, et vérifier ici dupliquerait parseReminderTime.
+  if (typeof raw.reminderTime === 'string') settings.reminderTime = raw.reminderTime;
+  if (typeof raw.goalReachedNotifs === 'boolean') {
+    settings.goalReachedNotifs = raw.goalReachedNotifs;
+  }
+  if (typeof raw.almostThereNotifs === 'boolean') {
+    settings.almostThereNotifs = raw.almostThereNotifs;
+  }
+  if (typeof raw.streakAlert === 'boolean') settings.streakAlert = raw.streakAlert;
+  // Laissé absent si la valeur n'est pas supportée : absent veut dire
+  // « suit la langue de l'appareil » (voir settingsStorage.ts), ce qui est
+  // le défaut documenté de ce champ — il n'y en a pas d'autre.
+  if (raw.language === 'fr' || raw.language === 'en') settings.language = raw.language;
+
+  return settings;
+}
+
 export function parseBackupPayload(raw: string): ParseBackupResult {
   let data: unknown;
   try {
@@ -172,6 +277,13 @@ export function parseBackupPayload(raw: string): ParseBackupResult {
     return { ok: false, error: i18n.t('backup.missingGoals') };
   }
 
+  // Seconde passe : la forme est bonne, reste à savoir si le contenu tient
+  // debout. Voir findGoalInconsistency pour la raison de la séparation.
+  const inconsistency = findGoalInconsistency(payload.goals);
+  if (inconsistency !== null) {
+    return { ok: false, error: inconsistency };
+  }
+
   // stats/unitLabel (s'ils sont présents dans le fichier) ne sont jamais
   // copiés : seuls les champs de Goal sont repris explicitement ci-dessous.
   const goals: Goal[] = payload.goals.map((g) => ({
@@ -181,11 +293,23 @@ export function parseBackupPayload(raw: string): ParseBackupResult {
     unit: g.unit,
     createdAt: g.createdAt,
     deadline: g.deadline,
-    entries: g.entries.map((e) => ({
-      date: e.date,
-      value: e.value,
-      ...(e.recordedAt !== undefined ? { recordedAt: e.recordedAt } : {}),
-    })),
+    // Trié par date (L2-07) : GoalHistoryList fait
+    // [...entries].reverse().slice(0, 12) et RecentSessionsCard .slice(-7),
+    // deux lectures qui supposent l'ordre chronologique sans que rien ne le
+    // garantisse pour un fichier importé. Comparaison de chaînes plutôt que
+    // de dates analysées : le format YYYY-MM-DD se trie lexicographiquement
+    // dans l'ordre chronologique, sans parsing ni dépendance au fuseau.
+    // Pas de troisième cas dans le comparateur : deux entrées à la même
+    // date ont déjà fait rejeter le fichier (voir findGoalInconsistency),
+    // donc il ne rencontre jamais d'égalité. Le laisser aurait été une
+    // branche morte, invérifiable par un test.
+    entries: [...g.entries]
+      .sort((a, b) => (a.date < b.date ? -1 : 1))
+      .map((e) => ({
+        date: e.date,
+        value: e.value,
+        ...(e.recordedAt !== undefined ? { recordedAt: e.recordedAt } : {}),
+      })),
     ...(g.reminderTime !== undefined ? { reminderTime: g.reminderTime } : {}),
     ...(g.reminderEnabled !== undefined ? { reminderEnabled: g.reminderEnabled } : {}),
   }));
@@ -196,9 +320,8 @@ export function parseBackupPayload(raw: string): ParseBackupResult {
   if (typeof payload.settings !== 'object' || payload.settings === null) {
     return { ok: false, error: i18n.t('backup.invalidSettings') };
   }
-  // Fusionné avec DEFAULT_SETTINGS comme le fait déjà loadSettings, pour
-  // tolérer un fichier plus ancien avec des clés manquantes.
-  const settings: Settings = { ...DEFAULT_SETTINGS, ...(payload.settings as Partial<Settings>) };
+
+  const settings = sanitizeSettings(payload.settings as Record<string, unknown>);
 
   return { ok: true, goals, settings };
 }
