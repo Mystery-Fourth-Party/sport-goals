@@ -244,7 +244,13 @@
     "invalidFileFormat": "Invalid file format.",
     "unsupportedVersion": "Unsupported file version ({{version}}).",
     "missingGoals": "Missing or malformed goal list in the file.",
-    "invalidSettings": "Malformed settings in the file."
+    "invalidSettings": "Malformed settings in the file.",
+    "invalidGoalDates": "A goal has an unreadable creation or deadline date.",
+    "deadlineNotAfterCreatedAt": "A goal has a deadline on or before its creation date.",
+    "invalidTargetValue": "A goal has an invalid target value: it must be a number greater than zero.",
+    "invalidEntryValue": "A goal has an invalid progress value: it must be zero or a positive number.",
+    "duplicateGoalIds": "Two goals share the same identifier.",
+    "duplicateEntryDates": "The goal \"{{title}}\" has two entries for {{date}}: only one per day is expected."
   },
   "settings": {
     "title": "Settings",
