@@ -211,10 +211,23 @@ export function getWeeklyStats(goals: Goal[], today: string): WeeklyStats {
 
   const withStats = goals.map((g) => ({ goal: g, stats: getGoalStats(g, today) }));
   const mostAdvanced = [...withStats].sort((a, b) => b.stats.progress - a.stats.progress)[0];
-  const mostBehind = [...withStats].sort(
-    (a, b) =>
-      a.stats.progress - a.stats.expectedProgress - (b.stats.progress - b.stats.expectedProgress),
-  )[0];
+  // Exclu des candidats au « plus en retard » : les deux cartes de
+  // app/weekly.tsx sont rendues l'une sous l'autre, et sans cette exclusion
+  // le même objectif pouvait s'y afficher deux fois sous deux titres
+  // contradictoires — un objectif très avancé en progression brute peut
+  // parfaitement être le plus en retard sur son propre rythme attendu
+  // (L1-07).
+  //
+  // Avec un seul objectif il ne reste aucun candidat, donc mostBehind vaut
+  // undefined et la garde {mostBehind && ...} de weekly.tsx fait disparaître
+  // la carte. C'est le comportement voulu, et il tombe de la règle générale :
+  // « le moins avancé » d'un ensemble d'un seul élément ne veut rien dire.
+  const mostBehind = withStats
+    .filter((w) => w.goal.id !== mostAdvanced?.goal.id)
+    .sort(
+      (a, b) =>
+        a.stats.progress - a.stats.expectedProgress - (b.stats.progress - b.stats.expectedProgress),
+    )[0];
 
   return { weekDates, sessionsPerDay, activeDays, totalSessions, mostAdvanced, mostBehind };
 }

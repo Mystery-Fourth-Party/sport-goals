@@ -23,7 +23,7 @@ import { Entry } from '../../src/types';
 export default function GoalDetailScreen() {
   const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { goals, addProgress, updateEntry, deleteEntry, deleteGoal } = useGoals();
+  const { goals, loaded, addProgress, updateEntry, deleteEntry, deleteGoal } = useGoals();
   const { settings } = useSettings();
   const goal = goals.find((g) => g.id === id);
 
@@ -40,15 +40,22 @@ export default function GoalDetailScreen() {
   // est introuvable.
   const today = useToday();
 
-  if (!goal) {
-    // Objectif supprimé entre-temps (ou id invalide) : on ne peut pas
-    // rendre le reste de l'écran sans lui, retour à la liste.
+  if (!loaded || !goal) {
     return (
       <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
         <View style={styles.header}>
           <BackButton onPress={() => router.back()} />
         </View>
-        <Text style={styles.notFound}>{t('goalDetail.notFound')}</Text>
+        {/* Le message n'apparaît qu'une fois le chargement terminé. Avant, on
+            ne sait pas encore si l'objectif existe : l'écran annonçait un
+            objectif introuvable qui existait très bien, le temps que
+            loadGoals résolve — visible sur un lien profond, une notification
+            ou un tap rapide après un démarrage à froid. Même garde que celle
+            posée sur l'écran d'édition en PR #25, sans le remount : aucun
+            useState de cet écran n'est initialisé depuis `goal`, les quatre
+            servent au modal. L'en-tête est rendu dans les deux cas, pour que
+            le bouton retour existe aussi pendant l'attente. */}
+        {loaded && <Text style={styles.notFound}>{t('goalDetail.notFound')}</Text>}
       </SafeAreaView>
     );
   }

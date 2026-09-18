@@ -28,6 +28,11 @@ export default function DataSection() {
   // Même pattern que notifError (NotificationsSection).
   const [dataError, setDataError] = useState<string | undefined>();
 
+  // Un seul élément accessible par ligne, titre et sous-titre fusionnés :
+  // même principe que rowA11yLabel dans NotificationsSection, où TalkBack
+  // annonçait sinon chaque fragment séparément.
+  const rowA11yLabel = (key: string) => `${t(`data.${key}Title`)}, ${t(`data.${key}Subtitle`)}`;
+
   async function handleExport() {
     setDataError(undefined);
     const json = JSON.stringify(buildBackupPayload(goals, settings, todayStr()), null, 2);
@@ -132,14 +137,29 @@ export default function DataSection() {
       <Text style={[s.sectionLabel, s.sectionLabelSpaced]}>{t('data.sectionTitle')}</Text>
       {dataError && <Text style={s.errorText}>{dataError}</Text>}
       <View style={s.card}>
-        <Pressable style={[s.row, s.rowBorder]} onPress={handleExport} accessibilityRole="button">
+        <Pressable
+          style={[s.row, s.rowBorder]}
+          onPress={handleExport}
+          accessibilityRole="button"
+          // Libellé explicite : sans lui, le lecteur d'écran concatène le
+          // contenu de la ligne, chevron « › » compris, qui ne veut rien
+          // dire à voix haute (L4-04). Même traitement que la carte
+          // « Terminés » de app/index.tsx. Titre et sous-titre fusionnés
+          // comme le fait rowA11yLabel dans NotificationsSection.
+          accessibilityLabel={rowA11yLabel('export')}
+        >
           <View style={s.rowTexts}>
             <Text style={s.rowTitle}>{t('data.exportTitle')}</Text>
             <Text style={s.rowSubtitle}>{t('data.exportSubtitle')}</Text>
           </View>
           <Text style={s.rowChevron}>›</Text>
         </Pressable>
-        <Pressable style={s.row} onPress={handleImport} accessibilityRole="button">
+        <Pressable
+          style={s.row}
+          onPress={handleImport}
+          accessibilityRole="button"
+          accessibilityLabel={rowA11yLabel('import')}
+        >
           <View style={s.rowTexts}>
             <Text style={s.rowTitle}>{t('data.importTitle')}</Text>
             <Text style={s.rowSubtitle}>{t('data.importSubtitle')}</Text>

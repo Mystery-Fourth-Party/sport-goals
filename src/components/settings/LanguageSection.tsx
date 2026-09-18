@@ -37,6 +37,13 @@ export default function LanguageSection() {
               style={[s.row, i < OPTIONS.length - 1 && s.rowBorder]}
               onPress={() => updateSettings({ language: option.value })}
               accessibilityRole="button"
+              // Libellé explicite : sans lui, le lecteur d'écran concatène le
+              // contenu de la ligne, « ✓ » compris sur la ligne sélectionnée,
+              // qui ne veut rien dire à voix haute (L4-04). L'état
+              // sélectionné reste porté par accessibilityState ci-dessous,
+              // que VoiceOver et TalkBack verbalisent déjà — le répéter dans
+              // le libellé ferait une double annonce.
+              accessibilityLabel={t(option.labelKey)}
               accessibilityState={{ selected }}
             >
               <Text style={s.rowTitlePlain}>{t(option.labelKey)}</Text>
