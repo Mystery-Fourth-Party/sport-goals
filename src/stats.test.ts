@@ -16,13 +16,19 @@ import {
 // Les résultats attendus ci-dessous ont été relevés en explorant le prototype publié
 // le 21/08/2026 (écran Détail : 770/1000, 77%, attendu 63%, streak 20, rythme actuel
 // 41/j, requis 21/j) — ce test protège contre une régression du portage.
+//
+// Midi UTC et non minuit : startDate/endDate du prototype dénotent des jours
+// calendaires, or getGoalStats en lit désormais le jour *local* (voir toDayStr
+// dans stats.ts). Minuit UTC tombe la veille dès qu'on est à l'ouest d'UTC, ce
+// qui décalait elapsedDays d'un jour. Midi laisse le même jour local partout
+// entre UTC-11 et UTC+11.
 const pompes: Goal = {
   id: '1',
   title: '1000 Pompes',
   targetValue: 1000,
   unit: 'reps',
-  createdAt: '2026-08-01T00:00:00.000Z',
-  deadline: '2026-08-31T00:00:00.000Z',
+  createdAt: '2026-08-01T12:00:00.000Z',
+  deadline: '2026-08-31T12:00:00.000Z',
   entries: [
     { date: '2026-08-01', value: 40 },
     { date: '2026-08-02', value: 35 },

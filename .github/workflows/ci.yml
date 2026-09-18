@@ -43,12 +43,20 @@ jobs:
       # npx jest et non npm run test : les seuils de couverture sont déjà
       # vérifiés par le passage UTC ci-dessus, les recalculer deux fois ne
       # dirait rien de plus.
+      #
+      # !cancelled() : sans lui, le job s'arrête au premier fuseau en échec et
+      # les suivants ne tournent jamais — constaté sur le run 35331249730 de
+      # cette PR, où America/New_York a masqué Asia/Tokyo. Les trois passages
+      # doivent pouvoir être comparés en une fois, sinon chaque fuseau cassé
+      # coûte un aller-retour.
       - name: tests (TZ=America/New_York)
+        if: ${{ !cancelled() }}
         run: npx jest
         env:
           TZ: America/New_York
 
       - name: tests (TZ=Asia/Tokyo)
+        if: ${{ !cancelled() }}
         run: npx jest
         env:
           TZ: Asia/Tokyo
