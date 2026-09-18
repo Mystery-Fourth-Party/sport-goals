@@ -331,3 +331,293 @@ describe('parseBackupPayload — formes malformées dans le tableau goals', () =
     rejectsGoals(goals);
   });
 });
+
+// ─── Validation d'import (L1-04, L1-05, L1-09, L1-12, L2-07, L4-02) ─────
+//
+// isValidGoal répond « est-ce la bonne forme ». Les règles ci-dessous
+// répondent « est-ce que ça a du sens », et chacune porte son propre
+// message : un utilisateur qui a édité son fichier doit savoir quoi y
+// corriger, pas seulement qu'il est refusé.
+//
+// Côté objectifs le fichier entier est rejeté — aucune valeur de repli ne
+// pourrait remplacer une donnée de l'utilisateur sans l'inventer, et
+// l'import est destructif (replaceAllGoals efface l'existant). Côté
+// réglages, chaque champ a déjà un défaut documenté : le repli par champ
+// suffit, voir le dernier describe de ce fichier.
+
+describe('parseBackupPayload — cohérence des objectifs', () => {
+  function exportedGoal(overrides: Record<string, unknown> = {}) {
+    const payload = buildBackupPayload([goal], settings, '2026-08-20');
+    return { ...payload.goals[0], ...overrides };
+  }
+
+  function parseWithGoals(goals: unknown[]) {
+    const payload = buildBackupPayload([goal], settings, '2026-08-20');
+    return parseBackupPayload(JSON.stringify({ ...payload, goals }));
+  }
+
+  function expectRejection(goals: unknown[], key: string, options?: Record<string, unknown>) {
+    expect(parseWithGoals(goals)).toEqual({ ok: false, error: i18n.t(key, options) });
+  }
+
+  // L1-12 — les deux formulaires imposent déjà une cible strictement
+  // positive ; l'import ne vérifiait que le type.
+  describe('valeur cible', () => {
+    it('rejects a target value of zero', () => {
+      expectRejection([exportedGoal({ targetValue: 0 })], 'backup.invalidTargetValue');
+    });
+
+    it('rejects a negative target value', () => {
+      expectRejection([exportedGoal({ targetValue: -10 })], 'backup.invalidTargetValue');
+    });
+
+    // Infinity ne s'écrit pas littéralement en JSON, mais un exposant hors
+    // du domaine des flottants y arrive : JSON.parse rend Infinity sur
+    // 1e400, et typeof Infinity vaut 'number'. Le JSON est bricolé à la
+    // main ici parce que JSON.stringify réécrit Infinity en null.
+    it('rejects a target value that overflows to Infinity', () => {
+      const payload = buildBackupPayload([goal], settings, '2026-08-20');
+      const raw = JSON.stringify(payload).replace('"targetValue":1000', '"targetValue":1e400');
+      expect(raw).toContain('1e400');
+
+      expect(parseBackupPayload(raw)).toEqual({
+        ok: false,
+        error: i18n.t('backup.invalidTargetValue'),
+      });
+    });
+
+    it('accepts a positive target value', () => {
+      expect(parseWithGoals([exportedGoal({ targetValue: 1 })]).ok).toBe(true);
+    });
+  });
+
+  // L1-05 — typeof === 'string' laissait passer n'importe quelle chaîne.
+  describe('dates', () => {
+    it('rejects a createdAt that cannot be parsed as a date', () => {
+      expectRejection([exportedGoal({ createdAt: 'pas une date' })], 'backup.invalidGoalDates');
+    });
+
+    it('rejects a deadline that cannot be parsed as a date', () => {
+      expectRejection([exportedGoal({ deadline: 'bientot' })], 'backup.invalidGoalDates');
+    });
+
+    it('rejects a deadline earlier than createdAt', () => {
+      expectRejection(
+        [
+          exportedGoal({
+            createdAt: '2026-08-31T00:00:00.000Z',
+            deadline: '2026-08-01T00:00:00.000Z',
+          }),
+        ],
+        'backup.deadlineNotAfterCreatedAt',
+      );
+    });
+
+    // Le cas de durée nulle de L1-10, jusqu'ici accepté : il produisait un
+    // objectif dont le statut ne pouvait jamais descendre à « en retard ».
+    // Le garde-fou posé dans stats.ts en PR4 reste en place ; cette règle
+    // ferme la porte en amont plutôt que de le remplacer.
+    it('rejects a deadline equal to createdAt', () => {
+      expectRejection(
+        [
+          exportedGoal({
+            createdAt: '2026-08-01T00:00:00.000Z',
+            deadline: '2026-08-01T00:00:00.000Z',
+          }),
+        ],
+        'backup.deadlineNotAfterCreatedAt',
+      );
+    });
+
+    it('accepts a deadline after createdAt', () => {
+      expect(parseWithGoals([exportedGoal()]).ok).toBe(true);
+    });
+  });
+
+  // L1-09 — updateGoal et deleteGoal opèrent par .map/.filter sur l'id
+  // (voir goals-context.tsx) : deux objectifs au même id sont modifiés ou
+  // supprimés ensemble, sans que rien ne le signale.
+  describe('identifiants', () => {
+    it('rejects two goals sharing the same id', () => {
+      expectRejection(
+        [exportedGoal({ id: 'meme' }), exportedGoal({ id: 'meme', title: 'Autre objectif' })],
+        'backup.duplicateGoalIds',
+      );
+    });
+
+    it('accepts two goals with distinct ids', () => {
+      expect(parseWithGoals([exportedGoal({ id: 'a' }), exportedGoal({ id: 'b' })]).ok).toBe(true);
+    });
+  });
+
+  describe('valeurs de progression', () => {
+    it('rejects a negative entry value', () => {
+      expectRejection(
+        [exportedGoal({ entries: [{ date: '2026-08-01', value: -5 }] })],
+        'backup.invalidEntryValue',
+      );
+    });
+
+    it('rejects an entry value that overflows to Infinity', () => {
+      const payload = buildBackupPayload([goal], settings, '2026-08-20');
+      const raw = JSON.stringify(payload).replace('"value":40', '"value":1e400');
+      expect(raw).toContain('1e400');
+
+      expect(parseBackupPayload(raw)).toEqual({
+        ok: false,
+        error: i18n.t('backup.invalidEntryValue'),
+      });
+    });
+
+    // value: 0 reste valide et signifiant — voir deleteEntry dans
+    // goals-context.tsx, où « pas d'entrée ce jour-là » doit rester
+    // distinct de « une entrée à 0 ce jour-là ».
+    it('accepts an entry value of zero', () => {
+      expect(
+        parseWithGoals([exportedGoal({ entries: [{ date: '2026-08-01', value: 0 }] })]).ok,
+      ).toBe(true);
+    });
+  });
+
+  // L4-02 — deux entrées à la même date étaient lues de trois façons
+  // incompatibles en aval : sommées par getGoalStats, dernière-gagne par
+  // calcStreak, première-trouvée par addProgress. Rejet plutôt que
+  // réparation : l'app ne sait pas produire ce cas (addProgress fusionne,
+  // updateEntry remplace en place), donc un doublon signale un fichier
+  // abîmé, pas deux séances. Message interpolé, seule règle où
+  // l'utilisateur ne peut rien corriger sans savoir où regarder.
+  describe('entrées en double', () => {
+    it('rejects two entries sharing a date, naming the goal and the date', () => {
+      expectRejection(
+        [
+          exportedGoal({
+            title: 'Course',
+            entries: [
+              { date: '2026-08-01', value: 5 },
+              { date: '2026-08-02', value: 3 },
+              { date: '2026-08-01', value: 7 },
+            ],
+          }),
+        ],
+        'backup.duplicateEntryDates',
+        { title: 'Course', date: '2026-08-01' },
+      );
+    });
+
+    it('accepts entries whose dates are all distinct', () => {
+      expect(
+        parseWithGoals([
+          exportedGoal({
+            entries: [
+              { date: '2026-08-01', value: 5 },
+              { date: '2026-08-02', value: 3 },
+            ],
+          }),
+        ]).ok,
+      ).toBe(true);
+    });
+  });
+});
+
+// L2-07 — GoalHistoryList fait [...entries].reverse().slice(0, 12) et
+// RecentSessionsCard .slice(-7) : les deux supposent l'ordre chronologique,
+// que rien ne garantissait pour un fichier importé.
+describe('parseBackupPayload — ordre des entrées', () => {
+  function parseWithEntries(entries: unknown[]) {
+    const payload = buildBackupPayload([goal], settings, '2026-08-20');
+    const goals = [{ ...payload.goals[0], entries }];
+    return parseBackupPayload(JSON.stringify({ ...payload, goals }));
+  }
+
+  it('sorts entries by date, whatever their order in the file', () => {
+    const result = parseWithEntries([
+      { date: '2026-08-03', value: 3 },
+      { date: '2026-08-01', value: 1 },
+      { date: '2026-08-02', value: 2 },
+    ]);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.goals[0].entries.map((e) => e.date)).toEqual([
+      '2026-08-01',
+      '2026-08-02',
+      '2026-08-03',
+    ]);
+  });
+
+  it('keeps each value and recordedAt attached to its own entry while sorting', () => {
+    const result = parseWithEntries([
+      { date: '2026-08-03', value: 3, recordedAt: '2026-08-03T10:00:00.000Z' },
+      { date: '2026-08-01', value: 1 },
+    ]);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.goals[0].entries).toEqual([
+      { date: '2026-08-01', value: 1 },
+      { date: '2026-08-03', value: 3, recordedAt: '2026-08-03T10:00:00.000Z' },
+    ]);
+  });
+});
+
+// L1-04 — payload.settings n'était vérifié que comme objet, puis fusionné
+// tel quel. Chaque champ a un défaut documenté dans DEFAULT_SETTINGS : un
+// champ mal typé retombe dessus, plutôt que de faire rejeter le fichier et
+// avec lui les objectifs, qui sont la partie qui a de la valeur.
+describe('parseBackupPayload — réglages mal typés', () => {
+  function importedSettings(raw: Record<string, unknown>): Settings | undefined {
+    const payload = buildBackupPayload([goal], settings, '2026-08-20');
+    const result = parseBackupPayload(JSON.stringify({ ...payload, settings: raw }));
+    if (!result.ok) {
+      throw new Error('fichier rejeté alors qu un repli était attendu : ' + result.error);
+    }
+    return result.settings;
+  }
+
+  it('falls back to the default for each mistyped field', () => {
+    const imported = importedSettings({
+      dailyReminder: 'oui',
+      reminderTime: 42,
+      goalReachedNotifs: 1,
+      almostThereNotifs: null,
+      streakAlert: 'non',
+    });
+
+    expect(imported).toEqual(DEFAULT_SETTINGS);
+  });
+
+  it('drops a language outside the supported set rather than keeping it', () => {
+    const imported = importedSettings({ ...DEFAULT_SETTINGS, language: 'xx' });
+
+    // Absent = suit la langue détectée de l'appareil (voir
+    // settingsStorage.ts), ce qui est le défaut documenté de ce champ.
+    expect(imported?.language).toBeUndefined();
+  });
+
+  it('keeps a supported language', () => {
+    expect(importedSettings({ ...DEFAULT_SETTINGS, language: 'en' })?.language).toBe('en');
+  });
+
+  it('keeps every well-typed value untouched', () => {
+    const custom: Settings = {
+      dailyReminder: true,
+      reminderTime: '07:30',
+      goalReachedNotifs: true,
+      almostThereNotifs: false,
+      streakAlert: false,
+      language: 'fr',
+    };
+
+    expect(importedSettings({ ...custom })).toEqual(custom);
+  });
+
+  // Même arbitrage que pour le reminderTime d'un objectif, déjà testé plus
+  // haut dans ce fichier : le type est vérifié, pas le format. Le repli sur
+  // l'horaire global se fait à l'usage (voir notifications.ts), et valider
+  // le format ici dupliquerait parseReminderTime.
+  it('keeps a malformed reminderTime as long as it is a string', () => {
+    expect(importedSettings({ ...DEFAULT_SETTINGS, reminderTime: '99:99' })?.reminderTime).toBe(
+      '99:99',
+    );
+  });
+});
