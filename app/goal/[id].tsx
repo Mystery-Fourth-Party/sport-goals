@@ -15,7 +15,8 @@ import { confirmDestructive } from '../../src/confirm';
 import { longDateLabel } from '../../src/dateLabels';
 import { useGoals } from '../../src/goals-context';
 import { useSettings } from '../../src/settings-context';
-import { getGoalStats, parseDate, todayStr } from '../../src/stats';
+import { getGoalStats, parseDate } from '../../src/stats';
+import { useToday } from '../../src/useToday';
 import { colors, fontFamily, radius, spacing, white } from '../../src/theme';
 import { Entry } from '../../src/types';
 
@@ -34,6 +35,10 @@ export default function GoalDetailScreen() {
   const [modalDate, setModalDate] = useState('');
   const [modalValue, setModalValue] = useState('');
   const [modalError, setModalError] = useState(false);
+  // Appelé avant le retour anticipé ci-dessous : les Hooks doivent être
+  // appelés dans le même ordre à chaque rendu, y compris quand l'objectif
+  // est introuvable.
+  const today = useToday();
 
   if (!goal) {
     // Objectif supprimé entre-temps (ou id invalide) : on ne peut pas
@@ -48,7 +53,6 @@ export default function GoalDetailScreen() {
     );
   }
 
-  const today = todayStr();
   const s = getGoalStats(goal, today);
   const remaining = goal.targetValue - s.actual;
   const showAlmostThere = settings.almostThereNotifs && s.progress >= 0.9 && s.progress < 1;

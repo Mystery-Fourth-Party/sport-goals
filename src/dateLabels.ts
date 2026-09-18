@@ -26,29 +26,50 @@ function monthShortList(): string[] {
   return i18n.t('dateLabels.monthShort', { returnObjects: true }) as unknown as string[];
 }
 
+// Une Date invalide (issue de parseDate sur une date corrompue arrivée par
+// import, voir GoalHistoryList/RecentSessionsCard/app/weekly.tsx) renvoyait
+// NaN sur getDay()/getMonth(). tableau[NaN] ne lève pas : il rend undefined,
+// qui finissait affiché tel quel, et getDate()/getFullYear() ajoutaient des
+// "NaN" dans les libellés composés (L1-11). Garder seulement les quatre
+// indexations ne suffisait donc pas — les trois libellés composés basculent
+// eux aussi en bloc sur le repli.
+function isValidDate(d: Date): boolean {
+  return !Number.isNaN(d.getTime());
+}
+
+function invalidDateLabel(): string {
+  return i18n.t('dateLabels.invalidDate');
+}
+
 export function weekdayLong(d: Date): string {
+  if (!isValidDate(d)) return invalidDateLabel();
   return weekdayLongList()[d.getDay()];
 }
 
 export function weekdayShort(d: Date): string {
+  if (!isValidDate(d)) return invalidDateLabel();
   return weekdayShortList()[d.getDay()];
 }
 
 export function monthLong(d: Date): string {
+  if (!isValidDate(d)) return invalidDateLabel();
   return monthLongList()[d.getMonth()];
 }
 
 export function monthShort(d: Date): string {
+  if (!isValidDate(d)) return invalidDateLabel();
   return monthShortList()[d.getMonth()];
 }
 
 // "vendredi 20 août" — utilisé pour l'historique de progression.
 export function longDateLabel(d: Date): string {
+  if (!isValidDate(d)) return invalidDateLabel();
   return `${weekdayLong(d)} ${d.getDate()} ${monthShort(d)}`;
 }
 
 // "Mercredi 20 août 2026" — utilisé pour l'en-tête de l'écran Liste.
 export function fullDateLabel(d: Date): string {
+  if (!isValidDate(d)) return invalidDateLabel();
   const weekday = weekdayLong(d);
   return `${weekday.charAt(0).toUpperCase()}${weekday.slice(1)} ${d.getDate()} ${monthLong(d)} ${d.getFullYear()}`;
 }
@@ -57,6 +78,7 @@ export function fullDateLabel(d: Date): string {
 // chevauche deux mois) — utilisé pour l'en-tête de l'écran Résumé
 // hebdomadaire. `start`/`end` sont les deux bornes de la semaine affichée.
 export function weekRangeLabel(start: Date, end: Date): string {
+  if (!isValidDate(start) || !isValidDate(end)) return invalidDateLabel();
   const sameMonth =
     start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear();
   if (sameMonth) {

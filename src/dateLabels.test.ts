@@ -121,3 +121,41 @@ describe('weekRangeLabel', () => {
     );
   });
 });
+
+// L1-11 — une Date invalide indexait les tableaux de libellés avec NaN.
+// tableau[NaN] ne lève pas : il renvoie undefined, qui finissait affiché
+// tel quel, et getDate()/getFullYear() ajoutaient des "NaN" au passage. Le
+// chemin réel est parseDate() sur une date corrompue arrivée par import
+// (voir GoalHistoryList, RecentSessionsCard, app/weekly.tsx), avant la
+// validation de format prévue en PR5.
+describe('date invalide', () => {
+  const invalide = new Date('pas une date');
+  const valide = new Date(2026, 7, 21);
+
+  function attendu(): string {
+    return i18n.t('dateLabels.invalidDate');
+  }
+
+  it('remplace le jour de la semaine par un libellé de repli', () => {
+    expect(weekdayLong(invalide)).toBe(attendu());
+    expect(weekdayShort(invalide)).toBe(attendu());
+  });
+
+  it('remplace le mois par un libellé de repli', () => {
+    expect(monthLong(invalide)).toBe(attendu());
+    expect(monthShort(invalide)).toBe(attendu());
+  });
+
+  // Garder les quatre indexations ne suffit pas : longDateLabel et
+  // fullDateLabel composent aussi getDate()/getFullYear(), qui valent NaN.
+  // Le libellé entier doit basculer sur le repli, pas seulement ses morceaux.
+  it('remplace le libellé composé entier, sans NaN résiduel', () => {
+    expect(longDateLabel(invalide)).toBe(attendu());
+    expect(fullDateLabel(invalide)).toBe(attendu());
+  });
+
+  it('remplace la plage de semaine si une seule de ses deux bornes est invalide', () => {
+    expect(weekRangeLabel(invalide, valide)).toBe(attendu());
+    expect(weekRangeLabel(valide, invalide)).toBe(attendu());
+  });
+});

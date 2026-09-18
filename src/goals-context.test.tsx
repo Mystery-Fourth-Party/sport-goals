@@ -353,23 +353,32 @@ describe('recordedAt', () => {
     };
     act(() => result.current.goals.createGoal(fresh));
 
+    // Horloge posée en heure locale, et non en instants UTC : ce que ce
+    // test observe est la fusion de deux enregistrements dans l'entrée d'un
+    // même jour, or addProgress date cette entrée avec todayStr(), qui lit
+    // le calendrier local. Écrits en UTC (10:00Z puis 18:30Z), les deux
+    // instants tombaient sur deux jours locaux distincts à partir d'UTC+6,
+    // et une deuxième entrée était créée au lieu d'une fusion.
+    const matin = new Date(2026, 7, 22, 10, 0);
+    const soir = new Date(2026, 7, 22, 18, 30);
+
     jest.useFakeTimers();
-    jest.setSystemTime(new Date('2026-08-22T10:00:00.000Z'));
+    jest.setSystemTime(matin);
     act(() => result.current.goals.addProgress('g4', 5));
 
     let entry = result.current.goals.goals[0].entries[0];
     expect(entry.value).toBe(5);
-    expect(entry.recordedAt).toBe('2026-08-22T10:00:00.000Z');
+    expect(entry.recordedAt).toBe(matin.toISOString());
 
     // Fusion sur la même entrée du jour, plus tard dans la journée :
     // recordedAt suit le dernier enregistrement, pas la création.
-    jest.setSystemTime(new Date('2026-08-22T18:30:00.000Z'));
+    jest.setSystemTime(soir);
     act(() => result.current.goals.addProgress('g4', 3));
 
     entry = result.current.goals.goals[0].entries[0];
     expect(result.current.goals.goals[0].entries).toHaveLength(1);
     expect(entry.value).toBe(8);
-    expect(entry.recordedAt).toBe('2026-08-22T18:30:00.000Z');
+    expect(entry.recordedAt).toBe(soir.toISOString());
   });
 
   it('is stamped on the entry when corrected via updateEntry', async () => {

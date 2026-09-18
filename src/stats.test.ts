@@ -16,13 +16,19 @@ import {
 // Les résultats attendus ci-dessous ont été relevés en explorant le prototype publié
 // le 21/08/2026 (écran Détail : 770/1000, 77%, attendu 63%, streak 20, rythme actuel
 // 41/j, requis 21/j) — ce test protège contre une régression du portage.
+//
+// Midi UTC et non minuit : startDate/endDate du prototype dénotent des jours
+// calendaires, or getGoalStats en lit désormais le jour *local* (voir toDayStr
+// dans stats.ts). Minuit UTC tombe la veille dès qu'on est à l'ouest d'UTC, ce
+// qui décalait elapsedDays d'un jour. Midi laisse le même jour local partout
+// entre UTC-11 et UTC+11.
 const pompes: Goal = {
   id: '1',
   title: '1000 Pompes',
   targetValue: 1000,
   unit: 'reps',
-  createdAt: '2026-08-01T00:00:00.000Z',
-  deadline: '2026-08-31T00:00:00.000Z',
+  createdAt: '2026-08-01T12:00:00.000Z',
+  deadline: '2026-08-31T12:00:00.000Z',
   entries: [
     { date: '2026-08-01', value: 40 },
     { date: '2026-08-02', value: 35 },
@@ -254,27 +260,53 @@ describe('getGoalStats — seuils de statut et rythme requis', () => {
 // "Uncovered Line #s" du rapport texte ne montre pas les branches partielles
 // sur une ligne par ailleurs exécutée.
 
+// L1-10 — createdAt === deadline : totalDays vaut 0. Les deux divisions par
+// totalDays retombaient alors sur une garde à 0, ce qui rendait le statut
+// "late" inatteignable quelle que soit la progression réelle, et annonçait
+// une moyenne quotidienne requise nulle. Atteignable par import (cas C4 du
+// jeu de test) ; plus depuis les formulaires depuis la PR #19.
+//
+// Ce bloc remplace un test écrit pendant le harnais de couverture (PR #21)
+// qui figeait expectedProgress et dailyAvg à 0 — c'est-à-dire qui
+// verrouillait ce défaut. Voir le corps de la PR pour le détail.
 describe('getGoalStats — durée nulle', () => {
-  // createdAt === deadline : totalDays vaut 0, donc les deux divisions par
-  // totalDays retombent sur leur garde. Atteignable par import (cas C4 du
-  // jeu de test) ; plus depuis les formulaires depuis la PR #19.
-  it('forces expectedProgress and dailyAvg to 0 instead of dividing by zero', () => {
-    const goal: Goal = {
-      id: 'zero-duration',
-      title: 'Créé et échu le même jour',
-      targetValue: 50,
-      unit: 'reps',
-      createdAt: '2026-08-21T12:00:00.000Z',
-      deadline: '2026-08-21T12:00:00.000Z',
-      entries: [{ date: '2026-08-21', value: 10 }],
-    };
-    const s = getGoalStats(goal, '2026-08-21');
+  const zeroDuration: Goal = {
+    id: 'zero-duration',
+    title: 'Créé et échu le même jour',
+    targetValue: 50,
+    unit: 'reps',
+    createdAt: '2026-08-21T12:00:00.000Z',
+    deadline: '2026-08-21T12:00:00.000Z',
+    entries: [{ date: '2026-08-21', value: 10 }],
+  };
+
+  // La fenêtre tient dans une seule journée : une fois ce jour arrivé, elle
+  // est entièrement écoulée, donc 100 % est attendu — et la cible entière
+  // est due dans la journée.
+  it('treats the whole window as elapsed once the single day has come', () => {
+    const s = getGoalStats(zeroDuration, '2026-08-21');
 
     expect(s.totalDays).toBe(0);
-    expect(s.expectedProgress).toBe(0);
-    expect(s.dailyAvg).toBe(0);
+    expect(s.expectedProgress).toBe(1);
+    expect(s.dailyAvg).toBe(50);
     expect(Number.isFinite(s.expectedProgress)).toBe(true);
     expect(Number.isFinite(s.dailyAvg)).toBe(true);
+  });
+
+  // Conséquence directe : le statut peut enfin descendre à "late".
+  it('lets the status reach late for a zero-duration goal left unfinished', () => {
+    const s = getGoalStats(zeroDuration, '2026-08-21');
+
+    // 10 / 50 = 20 % réalisés contre 100 % attendus.
+    expect(s.status).toBe('late');
+  });
+
+  // Autre branche de la même garde : tant que le jour n'est pas arrivé,
+  // rien n'est encore attendu.
+  it('expects nothing yet while the single day is still ahead', () => {
+    const s = getGoalStats(zeroDuration, '2026-08-20');
+
+    expect(s.expectedProgress).toBe(0);
   });
 });
 
@@ -321,5 +353,45 @@ describe('statusLabel', () => {
     expect(statusLabel('ahead')).toBe('Ahead');
 
     await i18n.changeLanguage('fr');
+  });
+});
+
+// L1-02 — remainingDays est planché à 0, et dailyRequired en dépendait
+// directement : dès le jour de l'échéance, et tous les jours suivants, le
+// rythme de rattrapage annoncé tombait à 0. Trois composants l'affichent
+// sans garde-fou (GoalCard, GoalDetailHeader, GoalProgressCard), le
+// quatrième s'en protège déjà (app/weekly.tsx).
+describe('getGoalStats — rythme de rattrapage après échéance', () => {
+  const enRetard: Goal = {
+    id: 'echu',
+    title: 'Échéance dépassée',
+    targetValue: 100,
+    unit: 'km',
+    createdAt: '2026-08-01T12:00:00.000Z',
+    deadline: '2026-08-31T12:00:00.000Z',
+    entries: [{ date: '2026-08-10', value: 40 }],
+  };
+
+  it('reports the full remaining amount on the deadline day itself', () => {
+    const s = getGoalStats(enRetard, '2026-08-31');
+
+    expect(s.remainingDays).toBe(0);
+    // Il reste 60 km, et il ne reste que cette journée pour les faire.
+    expect(s.dailyRequired).toBe(60);
+  });
+
+  it('keeps reporting a real catch-up pace days after the deadline', () => {
+    const s = getGoalStats(enRetard, '2026-09-05');
+
+    expect(s.remainingDays).toBe(0);
+    expect(s.dailyRequired).toBe(60);
+  });
+
+  // Le plancher à 0 existant ne doit pas être emporté par le correctif :
+  // plus rien à rattraper reste plus rien à rattraper.
+  it('still reports 0 after the deadline when the target is already met', () => {
+    const atteint: Goal = { ...enRetard, entries: [{ date: '2026-08-10', value: 120 }] };
+
+    expect(getGoalStats(atteint, '2026-09-05').dailyRequired).toBe(0);
   });
 });

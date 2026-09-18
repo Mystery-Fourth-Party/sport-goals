@@ -5,13 +5,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BackButton } from '../src/components/ui';
 import GoalCard from '../src/components/GoalCard';
 import { useGoals } from '../src/goals-context';
-import { splitGoalsByStatus, todayStr } from '../src/stats';
+import { splitGoalsByStatus } from '../src/stats';
+import { useToday } from '../src/useToday';
 import { colors, fontFamily, spacing, white } from '../src/theme';
 
 export default function ArchiveScreen() {
   const { t } = useTranslation();
   const { goals } = useGoals();
-  const today = todayStr();
+  const today = useToday();
   const { completed } = splitGoalsByStatus(goals, today);
 
   return (
