@@ -21,4 +21,34 @@ jobs:
       - run: npm run typecheck
       - run: npm run lint
       - run: npm run format:check
-      - run: npm run test
+
+      # Trois fuseaux, trois passages de tests. Seuls les tests en dépendent :
+      # typecheck/lint/format:check sont insensibles au fuseau, donc une
+      # matrice sur tout le job aurait triplé l'installation et ces trois
+      # étapes pour ne rien couvrir de plus.
+      #
+      # Suite complète à chaque fois, et pas seulement src/stats.timezone.test.ts :
+      # les régressions de fuseau trouvées en préparant ce commit étaient dans
+      # stats.test.ts et goals-context.test.tsx, qu'un passage ciblé aurait
+      # laissées filer.
+      #
+      # TZ posé explicitement même pour UTC : les runners GitHub y sont déjà,
+      # mais l'écrire fait des trois fuseaux un contrat du dépôt plutôt qu'un
+      # effet de bord de la machine d'exécution.
+      - name: tests (TZ=UTC)
+        run: npm run test
+        env:
+          TZ: UTC
+
+      # npx jest et non npm run test : les seuils de couverture sont déjà
+      # vérifiés par le passage UTC ci-dessus, les recalculer deux fois ne
+      # dirait rien de plus.
+      - name: tests (TZ=America/New_York)
+        run: npx jest
+        env:
+          TZ: America/New_York
+
+      - name: tests (TZ=Asia/Tokyo)
+        run: npx jest
+        env:
+          TZ: Asia/Tokyo
