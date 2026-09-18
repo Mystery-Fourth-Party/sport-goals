@@ -102,7 +102,9 @@ export default function GoalForm({ onCreate }: Props) {
         <View style={styles.dailyAvgCard}>
           <Text style={styles.dailyAvgLabel}>{t('goalForm.dailyAvgRequired')}</Text>
           <Text style={styles.dailyAvgValue}>≈ {fmt(dailyAvg, unit)}</Text>
-          <Text style={styles.dailyAvgUnit}>{t('goalForm.perDay', { unit })}</Text>
+          <Text style={styles.dailyAvgUnit}>
+            {t('goalForm.perDay', { unit: t(`unit.${unit}`) })}
+          </Text>
         </View>
       )}
 

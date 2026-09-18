@@ -7,7 +7,7 @@ import { weekdayShort, weekRangeLabel } from '../src/dateLabels';
 import { useGoals } from '../src/goals-context';
 import { fmt, getGoalStats, getWeeklyStats, parseDate } from '../src/stats';
 import { useToday } from '../src/useToday';
-import { colors, fontFamily, radius, spacing, white } from '../src/theme';
+import { colors, fontFamily, radius, spacing, statusColors, white } from '../src/theme';
 import { Goal, UNIT_ICONS } from '../src/types';
 
 function weekTotalFor(goal: Goal, weekDates: string[]): number {
@@ -58,6 +58,21 @@ export default function WeeklyScreen() {
         <View style={styles.card}>
           <Text style={[styles.label, styles.cardSectionLabel]}>{t('weekly.sessionsPerDay')}</Text>
           <BarChart
+            // Un seul élément accessible pour tout le graphique : c'est la
+            // seule représentation de cette donnée sur cet écran (celui de
+            // l'écran Détail double la liste d'historique et reste masqué
+            // exprès). Le libellé est composé ici parce que weekly.tsx est le
+            // seul à savoir que les barres comptent des séances (L4-03).
+            accessibilityLabel={t('weekly.sessionsPerDayA11y', {
+              days: sessionsPerDay
+                .map((d) =>
+                  t('weekly.sessionsPerDayDayA11y', {
+                    day: weekdayShort(parseDate(d.date)),
+                    count: d.count,
+                  }),
+                )
+                .join(', '),
+            })}
             showZeroValueLabel={false}
             bars={sessionsPerDay.map((d, i) => ({
               key: d.date,
@@ -85,7 +100,16 @@ export default function WeeklyScreen() {
                     </Text>
                   </View>
                 </View>
-                <Text style={[styles.goalPercent, { color: colors.ahead }]}>
+                <Text
+                  style={[
+                    styles.goalPercent,
+                    // Couleur dérivée du statut réel et non figée sur le vert :
+                    // le plus avancé en progression brute peut être en retard
+                    // sur son propre rythme attendu (L3-03). Le ProgressBar
+                    // juste en dessous suit déjà le statut.
+                    { color: statusColors[mostAdvanced.stats.status].text },
+                  ]}
+                >
                   {(mostAdvanced.stats.progress * 100).toFixed(0)}%
                 </Text>
               </View>

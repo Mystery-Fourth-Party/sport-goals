@@ -176,7 +176,10 @@ function EditGoalForm({ goal }: { goal: Goal }) {
             <Text style={styles.dailyAvgValue}>≈ {fmt(newDailyRequired, unit)}</Text>
             <Text style={styles.dailyAvgUnit}>
               {t('editGoal.remainingToComplete', {
-                unit,
+                // Libellé traduit et non la clé technique : la phrase
+                // mélangeait « reps/jour » avec « 5 répétitions » dans le
+                // même appel (L4-01).
+                unit: t(`unit.${unit}`),
                 value: fmt(remaining, unit),
                 unitLabel: t(`unit.${unit}`),
               })}
