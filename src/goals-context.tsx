@@ -244,10 +244,14 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
       prev.map((g) => {
         if (g.id !== goalId) return g;
         const merged = { ...g, ...updates };
-        // L'unité est écartée du merge dès que `entries` n'est pas vide :
-        // une entrée ne porte qu'un nombre, et changer l'unité sous elle
-        // relirait les mêmes valeurs dans une autre grandeur, sans
-        // conversion ni trace. Seul ce champ est ignoré — le reste de
+        // L'unité est écartée du merge dès qu'une séance porte une valeur
+        // positive : une entrée ne porte qu'un nombre, et changer l'unité
+        // sous elle relirait les mêmes valeurs dans une autre grandeur,
+        // sans conversion ni trace. Une entrée à 0 ne compte pas — 0 km et
+        // 0 reps sont le même nombre, il n'y a rien à relire. Même
+        // distinction que ongoingGoalsWithoutTodayEntry (notifications.ts),
+        // qui compte une séance sur sa valeur et non sur son existence.
+        // Seul ce champ est ignoré — le reste de
         // `updates` s'applique, refuser tout l'appel ferait perdre une
         // correction de titre ou de cible que rien ne justifie de bloquer.
         // La même condition est évaluée à l'écran (unitLocked dans
@@ -256,7 +260,7 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
         // celle de l'écran évite de proposer un geste qui serait ignoré.
         // L'import ne passe pas par ici (replaceAllGoals remplace le
         // tableau tel quel).
-        if (g.entries.length > 0) merged.unit = g.unit;
+        if (g.entries.some((e) => e.value > 0)) merged.unit = g.unit;
         return merged;
       }),
     );
