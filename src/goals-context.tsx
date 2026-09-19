@@ -59,14 +59,26 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
   // avec « rien de stocké ») : bloque la sauvegarde automatique, voir
   // l'effet plus bas.
   const [readFailed, setReadFailed] = useState(false);
-  // true tant qu'on n'a pas encore ignoré le premier passage de l'effet de
-  // sauvegarde suivant le chargement (ce passage sauvegarderait des données
-  // identiques à ce qui vient d'être lu, donc redondant).
-  // Sert aussi à l'import (voir replaceAllGoals) : celui-ci écrit lui-même,
-  // et arme ce drapeau pour que l'effet ne réécrive pas la même valeur
-  // derrière lui. Double usage assumé, c'est la même question dans les deux
-  // cas — « cette valeur est déjà sur le disque, ne la réécris pas ».
-  const skipNextSave = useRef(true);
+  // Le tableau exactement écrit sur le disque en dernier, par quelque voie
+  // que ce soit — le chargement initial (déjà lu, donc déjà là), l'effet de
+  // sauvegarde, ou replaceAllGoals qui écrit lui-même. L'effet compare
+  // `goals` à cette référence pour décider s'il a quelque chose à écrire.
+  //
+  // C'est une valeur, pas un drapeau consommable : un booléen « saute le
+  // prochain passage » ne dit pas *quelle* valeur il concerne, et React
+  // groupe les changements d'un même tick en un seul rendu. Un import suivi
+  // d'une action utilisateur avant tout rendu ne déclenche alors qu'un
+  // passage de l'effet, qui brûlait le drapeau et sortait sans écrire —
+  // l'action utilisateur n'atteignait jamais le disque. Comparer des
+  // références n'a pas ce défaut : l'état commité est un nouvel objet, donc
+  // distinct de ce qui a été écrit, donc sauvegardé. Épinglé par « persists
+  // a change stacked onto the import in the same tick » (goals-context.test.tsx).
+  //
+  // Voir aussi : settings-context.tsx porte encore le drapeau consommable
+  // sur le même mécanisme (mêmes deux effets, même question). Ce renvoi
+  // meurt le jour où les deux contextes partagent un hook de persistance
+  // unique — pas avant.
+  const lastWrittenRef = useRef<Goal[] | null>(null);
   // Titre de l'objectif à notifier, posé depuis l'intérieur du updater de
   // setGoals dans addProgress (voir ce commentaire pour le pourquoi) et
   // consommé par l'effet juste en dessous.
@@ -96,6 +108,9 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
     // jamais — ces .catch() sont formels, exigés par no-floating-promises.
     loadGoals()
       .then(({ value, ok }) => {
+        // Ce qui vient d'être lu est déjà sur le disque : l'effet de
+        // sauvegarde n'a rien à réécrire derrière ce premier setGoals.
+        lastWrittenRef.current = value;
         setGoals(value);
         setReadFailed(!ok);
         setLoaded(true);
@@ -115,17 +130,26 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
     // l'utilisateur (croyant avoir tout perdu) écrase ce qui restait. On
     // n'écrit plus rien jusqu'au prochain démarrage ; le bandeau posé par
     // reportLoadResult ci-dessus le dit à l'utilisateur.
-    // L'ordre de ces deux gardes est porteur : readFailed doit être testé
-    // AVANT skipNextSave, sinon l'import (qui arme le drapeau puis, une
-    // fois son écriture réussie, repasse readFailed à false) verrait le
-    // drapeau consommé au premier passage et provoquerait une seconde
-    // écriture au second. Épinglé par le test « persists an ordinary import
-    // exactly once » de goals-context.test.tsx.
     if (readFailed) return;
-    if (skipNextSave.current) {
-      skipNextSave.current = false;
-      return;
-    }
+    // Rien de neuf depuis la dernière écriture : ce passage réécrirait à
+    // l'identique. La comparaison est volontairement par référence et pas
+    // par contenu — tous les setters dérivent un nouveau tableau de `prev`
+    // (voir addProgress), donc « même référence » veut dire « exactement ce
+    // qu'on a écrit », et une égalité de contenu coûteuse n'apporterait
+    // rien.
+    if (goals === lastWrittenRef.current) return;
+    // Posé avant l'appel asynchrone plutôt que dans le .then, pour que le
+    // ref ne dise jamais autre chose que la dernière valeur confiée au
+    // disque. Ne change aucun comportement observable aujourd'hui : mesuré,
+    // supprimer cette ligne ne fait tomber aucun test, et aucun chemin ne
+    // rejoue cet effet avec la même référence après l'avoir écrite — les
+    // seules dépendances qui bougent sans que `goals` change sont readFailed
+    // (que seul replaceAllGoals repasse à false, en posant lui-même le ref)
+    // et reportSaveResult (useCallback à dépendances vides, voir
+    // storage-status.tsx). Gardée parce que la comparaison ci-dessus ne vaut
+    // que si le ref dit vrai : une dépendance ajoutée plus tard, ou
+    // StrictMode réinvoquant l'effet, rendrait ce chemin atteignable.
+    lastWrittenRef.current = goals;
     saveGoals(goals)
       .then((ok) => reportSaveResult('goals', ok))
       .catch(() => {});
@@ -232,9 +256,12 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
   // lui. La laisser bloquée revenait à l'afficher à l'écran sans jamais
   // l'écrire, et à la perdre au redémarrage.
   function replaceAllGoals(newGoals: Goal[]) {
-    // Armé avant setGoals : l'effet, réveillé par ce changement d'état, doit
-    // sauter ce passage — l'écriture ci-dessous s'en charge déjà.
-    skipNextSave.current = true;
+    // Posé avant setGoals : l'effet, réveillé par ce changement d'état, doit
+    // reconnaître cette valeur comme déjà écrite — l'écriture ci-dessous
+    // s'en charge. Si l'utilisateur modifie quoi que ce soit dans le même
+    // tick, l'état commité est une autre référence et l'effet l'écrit
+    // normalement, sans rien perdre.
+    lastWrittenRef.current = newGoals;
     setGoals(newGoals);
     saveGoals(newGoals)
       .then((ok) => {
