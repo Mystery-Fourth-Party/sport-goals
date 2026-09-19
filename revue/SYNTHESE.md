@@ -4,7 +4,9 @@
 **Branche des preuves** : `revue/preuves-claude`, jamais destinée au merge.
 **Auteur de cette passe** : Claude (session Claude Code), en aveugle de la
 passe menée en parallèle par Cowork.
-**Statut** : 22 findings, tous mesurés. Aucun correctif écrit.
+**Statut** : 22 findings issus de cette passe, plus 2 confirmés depuis la
+passe Cowork — tous mesurés. Aucun correctif écrit. Voir la section 8 pour
+les findings venus de Cowork et leur vérification.
 
 Ce document sert de base à la confrontation avec la liste de Cowork. Il
 contient la méthodologie employée, le détail de chaque finding avec une piste
@@ -171,7 +173,8 @@ Les lots 1 à 4 sont documentés dans les en-têtes de leurs fichiers de test.
 | R6-06 | Dérive SDK non surveillée (12 paquets)                 | CI / `package-lock.json`                  | Basse   | mesure   |
 | R6-07 | Version de Node de la CI non figée                     | `.github/workflows/ci.yml`                | Basse   | mesure   |
 
-**Gravités** : Haute 1 · Moyenne 10 · Basse 11.
+**Gravités** : Haute 1 · Moyenne 10 · Basse 11. Deux findings supplémentaires
+(`RC-A`, `RC-B`) viennent de la passe Cowork — section 8.
 
 ---
 
@@ -528,7 +531,7 @@ Rendre la CI honnête avant de corriger quoi que ce soit. Rien ici ne touche
 au comportement de l'app ; tout ici change ce qu'un vert signifie. Le
 rattrapage des 12 paquets se fait dans ce chantier, avant la garde.
 
-**B. Persistance** — R2-02, R3-02, R3-01
+**B. Persistance et cycle de vie d'un objectif** — R2-02, R3-02, R3-01, RC-A
 Le seul finding de gravité haute et ses voisins. Un seul chantier parce que
 R3-01 et R3-02 se corrigent ensemble (voir leurs pistes) et que R2-02 touche
 le même fichier. Demande une revue serrée : c'est là qu'on perd des données.
@@ -547,7 +550,7 @@ Trois lignes de `app.json` et une de `notifications.ts`, mais aucune
 validable autrement que par un build EAS preview. À grouper pour n'en faire
 qu'un.
 
-**F. Filet de tests** — R5-01, R6-02, R5-03, R5-04, R1-03, R4-03
+**F. Filet de tests** — R5-01, R6-02, R5-03, R5-04, R1-03, R4-03, RC-B
 Le reste : tests de fumée des cinq écrans, plateforme jest, les deux mutants
 survivants restants, et les deux findings d'affichage isolés.
 
@@ -669,3 +672,126 @@ trouvé ce qu'aucune des huit revues de PR n'avait vu.
   écarts — findings vus par l'un et pas l'autre, désaccords de gravité,
   pistes écartées par l'un et retenues par l'autre — sont l'information la
   plus utile que produira l'exercice.
+
+---
+
+# 8. Findings remontés par la passe Cowork
+
+Addendum écrit après la comparaison des deux listes sur la page Notion
+« Revue profonde — comparaison des findings ». Cowork signale trois findings
+absents de mes 22, en précisant qu'aucun n'a le régime de preuve « test
+rouge » des lots 1 à 4, et demande qu'ils y passent avant d'être intégrés à
+un chantier.
+
+Preuves : `__tests__/revue-cowork.test.tsx`. Deux findings sur trois sont
+confirmés et prouvés ; le troisième est reclassé.
+
+## RC-A — échéance déplacée en corrigeant un autre champ · **Confirmé, Moyenne**
+
+Site : `app/goal/[id]/edit.tsx:74`.
+
+Le champ « Jours restants » s'initialise sur `String(Math.max(1, s.remainingDays))`,
+et `handleSave` recalcule **toujours** l'échéance à partir de ce champ.
+
+Pour un objectif en cours, les deux se compensent exactement : `remainingDays`
+vaut `diffDays(aujourd'hui, échéance)`, donc réécrire `aujourd'hui + remainingDays`
+retombe sur le même jour. **Ne pas déplacer l'échéance quand on ne touche pas
+à la durée est donc la norme de cet écran** — un second test le constate et
+il passe.
+
+Pour un objectif dépassé, `remainingDays` vaut 0 et le plancher à 1 casse la
+compensation.
+
+**Mesuré** — objectif à échéance au 2026-09-16 (dépassée de 3 jours), statut
+`late`, `remainingDays` à 0 ; on change **uniquement le titre** et on
+enregistre :
+
+| Attendu      | Obtenu         |
+| ------------ | -------------- |
+| `2026-09-16` | **2026-09-20** |
+
+L'échéance est repoussée à demain et l'objectif cesse d'être en retard —
+statut, bannière, rythme requis et carte « le plus en retard » du résumé
+hebdomadaire suivent.
+
+**Ce que la piste de Cowork ne dit pas encore** : le plancher n'est pas
+gratuit. `parseDurationDays` refuse 0, donc sans lui un objectif dépassé ne
+pourrait plus être édité du tout sans saisir une nouvelle durée. L'arbitrage
+porte sur les deux ensemble, pas sur le plancher seul. Piste retenue : ne
+dériver l'échéance du champ durée que si l'utilisateur l'a effectivement
+modifié — ce qui règle aussi le cas général, où réécrire l'échéance à chaque
+enregistrement ne sert à rien.
+
+Rejoint le **chantier B**.
+
+## RC-B — le résumé hebdomadaire couronne un objectif terminé · **Confirmé, Moyenne**
+
+Site : `app/weekly.tsx:22` / `stats.ts:getWeeklyStats`.
+
+`weekly.tsx` passe `goals` sans filtrer, et `mostAdvanced` trie par
+progression brute décroissante : un objectif complété a `progress >= 1`, il
+bat donc tout objectif en cours.
+
+**Mesuré** — trois objectifs, un terminé il y a deux semaines et deux en
+cours : `mostAdvanced` désigne le terminé. Un second test montre que
+`totalSessions` vaut 0 sur la fenêtre de sept jours — la carte couronne donc
+un objectif dont rien n'a bougé pendant la période qu'elle prétend résumer.
+
+`mostBehind` n'est pas touché de la même façon : il exclut déjà
+`mostAdvanced` depuis le correctif L1-07. Le finding porte sur la carte du
+haut.
+
+La piste de Cowork — filtrer sur les actifs avant le calcul, avec
+`splitGoalsByStatus` déjà en place ailleurs — tient. À décider en même temps :
+la carte « Tous les objectifs » plus bas mélange elle aussi actifs et
+terminés, mais son titre l'annonce, donc c'est défendable.
+
+Rejoint le **chantier F**.
+
+## RC-C — « corriger une entrée peut compléter sans notifier » · **Reclassé : question produit, pas défaut**
+
+Site : `src/goals-context.tsx`.
+
+La lecture de Cowork est exacte : `updateEntry` remplace `entries[idx]` et
+n'appelle `getGoalStats` ni avant ni après, là où `addProgress` compare les
+deux pour poser `pendingGoalReachedTitle`. Il n'y a effectivement aucune
+logique équivalente.
+
+Mais ce n'est pas un oubli. Trois tests de `src/goals-context.test.tsx`
+épinglent ce comportement, dont un qui porte le cas dans son nom :
+
+- `describe('updateEntry')` → `it('never sends a notification, even when the edit completes the goal')`
+  — corrige l'entrée du 10 août à 100 sur une cible de 100, puis
+  `expect(sendGoalReachedNotification).not.toHaveBeenCalled()`
+- `describe('deleteEntry')` → `it('never sends a notification')`
+- `describe('replaceAllGoals')` → `it('never sends a notification, even when a restored goal is already completed')`
+
+Les trois dessinent une politique cohérente : **seule une progression
+ajoutée déclenche la célébration**. Une correction, une suppression et un
+import restauré sont des actes administratifs.
+
+Écrire un test rouge exigeant l'inverse reviendrait à trancher une question
+produit par un test, ce que cette revue s'est interdit partout ailleurs.
+RC-C est donc une question ouverte à poser à Pablo, pas un finding : _une
+correction d'historique qui franchit le seuil doit-elle célébrer ?_ Si la
+réponse est oui, c'est le test ci-dessus qu'il faut changer en premier — et
+son nom montre qu'il a été écrit en connaissance de cause.
+
+## Ce que cet écart dit des deux passes
+
+Les trois findings sont dans des fichiers que j'ai ouverts — `edit.tsx` et
+`weekly.tsx` pour R3-01, `goals-context.tsx` pour R2-02. Je les ai lus en
+cherchant une classe de défaut précise (la garde `loaded`, l'ordre des
+gardes d'écriture) et je n'ai pas relu le reste du fichier avec le même
+soin. C'est le coût d'une revue organisée par thème plutôt que par fichier,
+et il est symétrique : la passe Cowork a manqué des choses que la mienne a
+vues.
+
+À retenir pour la prochaine passe : quand un lot ouvre un fichier, le fichier
+est lu en entier, même si le motif cherché est trouvé dans les vingt
+premières lignes.
+
+Sur le fond, RC-A et RC-B confirment le motif décrit en 6.1 — poser
+l'invariant plutôt que le correctif ponctuel. RC-B en particulier : trois
+écrans séparent les objectifs actifs des terminés, le quatrième ne le fait
+pas, et rien dans le code ne dit que c'est une règle.
