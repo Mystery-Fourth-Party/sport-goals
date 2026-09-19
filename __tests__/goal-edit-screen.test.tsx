@@ -252,6 +252,28 @@ describe('EditGoalScreen — unité verrouillée quand des séances existent', (
 
     expect(unitChip('reps').props.accessibilityState.selected).toBe(true);
   });
+
+  // Même raison qu'au niveau donnée (voir « still allows a unit change when
+  // every entry is 0 » dans src/goals-context.test.tsx) : une séance à 0 ne
+  // dit rien de l'unité. Les deux sites évaluent la condition séparément,
+  // ils doivent donc être épinglés séparément — sinon l'un peut verrouiller
+  // pendant que l'autre laisse passer.
+  it('laisse les chips actives quand toutes les séances valent 0', async () => {
+    mockedLoadGoals.mockResolvedValue({
+      value: [{ ...makeGoal(), entries: [{ date: '2026-09-10', value: 0 }] }],
+      ok: true,
+    });
+    render(<Tree show />);
+    await flush();
+
+    expect(unitChip('reps').props.accessibilityState.disabled).toBeFalsy();
+    expect(screen.queryByText(i18n.t('goalFields.unitLocked'))).toBeNull();
+
+    fireEvent.press(unitChip('reps'));
+    await flush();
+
+    expect(unitChip('reps').props.accessibilityState.selected).toBe(true);
+  });
 });
 
 // L4-01 — t('editGoal.remainingToComplete', ...) mélangeait dans le même
