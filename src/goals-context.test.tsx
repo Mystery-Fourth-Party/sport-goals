@@ -479,6 +479,36 @@ describe('replaceAllGoals — import explicite', () => {
     expect(mockedSaveGoals).toHaveBeenCalledWith(restored);
   });
 
+  // Un import et une action utilisateur peuvent tomber dans le même tick :
+  // React groupe les deux setGoals sans rendu intercalé, donc l'effet de
+  // sauvegarde ne passe qu'une seule fois, sur le seul état commité — celui
+  // qui contient les deux. C'est cet état-là qui doit atteindre le disque,
+  // pas seulement la liste importée que replaceAllGoals a écrite lui-même.
+  // Même dispositif que « loses nothing and notifies exactly once on a
+  // double-tap » d'addProgress : deux appels dans un act() unique.
+  //
+  // Ce test ne tient pas seul. Il reste vert si l'effet écrit à chaque
+  // passage sans jamais retenir ce qu'il a écrit — c'est « persists an
+  // ordinary import exactly once », juste au-dessus, qui ferme cette
+  // sortie-là (il compterait alors deux écritures au lieu d'une). Les deux
+  // se relisent ensemble.
+  it('persists a change stacked onto the import in the same tick', async () => {
+    const { result } = await renderHarness();
+    const restored: Goal[] = [{ ...baseGoal, id: 'restored-1' }];
+
+    act(() => {
+      result.current.goals.replaceAllGoals(restored);
+      result.current.goals.createGoal({ ...baseGoal, id: 'pendant-import' });
+    });
+    await act(async () => {});
+
+    // L'état affiché porte bien les deux : c'est le disque qui décroche.
+    expect(result.current.goals.goals.map((g) => g.id)).toEqual(['pendant-import', 'restored-1']);
+
+    const written = mockedSaveGoals.mock.calls.at(-1)?.[0] as Goal[] | undefined;
+    expect(written?.map((g) => g.id)).toEqual(['pendant-import', 'restored-1']);
+  });
+
   it('writes an imported list even though the initial read failed', async () => {
     mockedLoadGoals.mockResolvedValue({ value: [], ok: false });
     const { result } = await renderHarness();
