@@ -214,6 +214,72 @@ describe('deleteEntry', () => {
   });
 });
 
+describe('updateGoal', () => {
+  // Une entrée ne porte qu'un nombre : changer l'unité sous elle relirait
+  // les mêmes valeurs dans une autre grandeur, sans conversion ni trace.
+  // Bloqué dans le contexte et pas seulement à l'écran, comme updateEntry
+  // refuse newValue <= 0 quel que soit l'appelant.
+  it('ignores a unit change once the goal has entries, without dropping the rest', async () => {
+    const { result } = await renderHarness();
+
+    // baseGoal est en 'reps' et porte déjà deux entrées, dont une à 0 : un
+    // mélange suffit à verrouiller, seul un objectif sans aucune valeur
+    // positive reste libre (voir le dernier test de ce describe).
+    act(() => result.current.goals.createGoal(baseGoal));
+    act(() =>
+      result.current.goals.updateGoal('g1', {
+        title: 'Renommé',
+        targetValue: 250,
+        unit: 'km',
+      }),
+    );
+
+    const goal = result.current.goals.goals[0];
+    // Seul `unit` est écarté du merge : refuser tout l'appel ferait perdre
+    // une correction de titre ou de cible que rien ne justifie de bloquer.
+    expect(goal.unit).toBe('reps');
+    expect(goal.title).toBe('Renommé');
+    expect(goal.targetValue).toBe(250);
+  });
+
+  // Garde-fou, vert avant comme après : la garde ne doit pas se déclencher
+  // sur un objectif neuf, où il n'y a rien à relire dans une autre unité.
+  it('still allows a unit change while the goal has no entry', async () => {
+    const { result } = await renderHarness();
+
+    act(() => result.current.goals.createGoal({ ...baseGoal, id: 'sans-entree', entries: [] }));
+    act(() => result.current.goals.updateGoal('sans-entree', { unit: 'km' }));
+
+    expect(result.current.goals.goals[0].unit).toBe('km');
+  });
+
+  // Une entrée à 0 ne porte aucune information dépendante de l'unité : 0 km
+  // et 0 reps sont le même nombre, il n'y a rien à relire dans une autre
+  // grandeur. Le verrou protège des valeurs existantes, pas la simple
+  // présence d'une ligne dans le tableau. Même distinction que
+  // ongoingGoalsWithoutTodayEntry (notifications.ts), qui compte une séance
+  // sur `e.value > 0` et pas sur l'existence de l'entrée.
+  //
+  // Cas atteignable par la restauration d'une sauvegarde uniquement : aucun
+  // chemin de l'app ne crée une entrée à 0 (addProgress et updateEntry
+  // refusent <= 0, deleteEntry retire la ligne au lieu de la mettre à 0),
+  // mais findGoalInconsistency laisse délibérément passer e.value === 0.
+  it('still allows a unit change when every entry is 0', async () => {
+    const { result } = await renderHarness();
+
+    act(() =>
+      result.current.goals.createGoal({
+        ...baseGoal,
+        id: 'que-des-zeros',
+        entries: [{ date: '2026-08-10', value: 0 }],
+      }),
+    );
+    act(() => result.current.goals.updateGoal('que-des-zeros', { unit: 'km' }));
+
+    expect(result.current.goals.goals[0].unit).toBe('km');
+  });
+});
+
 describe('addProgress', () => {
   const emptyGoal: Goal = {
     id: 'g2',

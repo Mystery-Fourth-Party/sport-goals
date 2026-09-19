@@ -11,6 +11,11 @@ interface Props {
   onTargetValueChange: (v: string) => void;
   unit: Unit;
   onUnitChange: (u: Unit) => void;
+  // Rend les chips d'unité inertes et les annonce désactivées, avec un
+  // texte expliquant pourquoi. Absent à la création (app/create.tsx via
+  // GoalForm.tsx), où l'objectif n'a encore aucune entrée : c'est
+  // app/goal/[id]/edit.tsx qui décide, sur `entries`.
+  unitLocked?: boolean;
   // Le libellé du 3e champ change selon le contexte : "Durée (jours)" à la
   // création, "Jours restants" en édition (on ne rejoue pas la création).
   durationLabel: string;
@@ -46,6 +51,7 @@ export default function GoalFields({
   onTargetValueChange,
   unit,
   onUnitChange,
+  unitLocked = false,
   durationLabel,
   duration,
   onDurationChange,
@@ -143,8 +149,23 @@ export default function GoalFields({
         {UNITS.map((u) => (
           <Pressable
             key={u}
-            onPress={() => onUnitChange(u)}
-            style={[styles.chip, unit === u && styles.chipSelected]}
+            // Verrouillage fonctionnel, pas seulement visuel : une chip
+            // seulement estompée resterait pressable au lecteur d'écran et
+            // mentirait sur ce qu'elle fait. Le handler est retiré en plus
+            // de `disabled`, qui suffit à lui seul à faire annoncer l'état
+            // (Pressable le reverse dans accessibilityState) — le répéter
+            // ci-dessous ne change donc rien à l'annonce, c'est là pour que
+            // l'état lu soit visible à la lecture du composant. Mesuré :
+            // retirer les deux rend la chip inerte et muette, et
+            // « annonce les chips comme désactivées et ignore un appui »
+            // (__tests__/goal-edit-screen.test.tsx) passe au rouge.
+            onPress={unitLocked ? undefined : () => onUnitChange(u)}
+            disabled={unitLocked}
+            style={[
+              styles.chip,
+              unit === u && styles.chipSelected,
+              unitLocked && unit !== u && styles.chipLocked,
+            ]}
             // Boutons de sélection (une seule unité active à la fois), pas
             // de simples boutons indépendants — accessibilityState.selected
             // et un libellé explicite plutôt que le glyphe seul ("REPS" ne
@@ -152,7 +173,7 @@ export default function GoalFields({
             // libellé est lu, pas affiché — TalkBack épelle "K M" sur
             // l'abréviation "km" (voir src/i18n/locales/*.json).
             accessibilityRole="button"
-            accessibilityState={{ selected: unit === u }}
+            accessibilityState={{ selected: unit === u, disabled: unitLocked }}
             accessibilityLabel={t('goalFields.unitA11y', { unit: t(`unitSpoken.${u}`) })}
           >
             <Text style={[styles.chipText, unit === u && styles.chipTextSelected]}>
@@ -161,6 +182,11 @@ export default function GoalFields({
           </Pressable>
         ))}
       </View>
+      {/* Dit pourquoi les chips ne répondent pas. Non masqué au lecteur
+          d'écran, contrairement aux libellés de champ plus haut : il porte
+          une information que l'annonce « désactivé » d'une chip ne donne
+          pas. */}
+      {unitLocked && <Text style={styles.lockedNote}>{t('goalFields.unitLocked')}</Text>}
 
       {/* Le Toggle porte déjà le libellé de la ligne : on masque le Text au
           lecteur d'écran pour n'avoir qu'un seul élément accessible par
@@ -263,6 +289,17 @@ const styles = StyleSheet.create({
   chipSelected: {
     backgroundColor: colors.brand,
     borderColor: colors.brand,
+  },
+  // Seules les chips non retenues sont estompées : celle qui porte l'unité
+  // en cours reste lisible, c'est une information, pas un choix offert.
+  chipLocked: {
+    opacity: 0.4,
+  },
+  lockedNote: {
+    fontFamily: fontFamily.bodyRegular,
+    fontSize: 12,
+    color: white(0.4),
+    marginTop: 4,
   },
   chipText: {
     fontFamily: fontFamily.displayBold,

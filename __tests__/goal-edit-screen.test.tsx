@@ -13,7 +13,7 @@ import { SettingsProvider } from '../src/settings-context';
 import { fmt, getGoalStats, todayStr } from '../src/stats';
 import { loadGoals, LoadResult, saveGoals } from '../src/storage';
 import { StorageStatusProvider } from '../src/storage-status';
-import { Goal } from '../src/types';
+import { Goal, Unit } from '../src/types';
 
 jest.mock('expo-router', () => ({
   router: { back: jest.fn() },
@@ -97,6 +97,13 @@ function fieldValue(label: string): string {
 
 function daysUntil(iso: string): number {
   return Math.round((new Date(iso).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+}
+
+// Les chips d'unité n'exposent pas leur glyphe au lecteur d'écran mais un
+// libellé épelé (voir le commentaire des chips dans GoalFields.tsx) : c'est
+// par lui qu'on les retrouve, pas par le texte "KM" affiché.
+function unitChip(u: Unit) {
+  return screen.getByLabelText(i18n.t('goalFields.unitA11y', { unit: i18n.t(`unitSpoken.${u}`) }));
 }
 
 const NAME = i18n.t('goalFields.name');
@@ -190,6 +197,82 @@ describe('EditGoalScreen monté avant le chargement des objectifs', () => {
 
     expect(fieldValue(NAME)).toBe(goal.title);
     expect(fieldValue(TARGET)).toBe('100');
+  });
+});
+
+// makeGoal() porte une séance en km : son unité ne doit plus pouvoir
+// changer, les entries ne portant qu'un nombre qu'on relirait sinon dans
+// une autre grandeur. Verrouillage fonctionnel et annoncé, pas seulement
+// grisé — c'est le reproche déjà fait à d'autres corrections d'affichage
+// de ce dépôt.
+describe('EditGoalScreen — unité verrouillée quand des séances existent', () => {
+  it('annonce les chips comme désactivées et ignore un appui', async () => {
+    mockedLoadGoals.mockResolvedValue({ value: [makeGoal()], ok: true });
+    render(<Tree show />);
+    await flush();
+
+    expect(unitChip('reps').props.accessibilityState.disabled).toBe(true);
+    // L'annonce « désactivé » dit que la chip ne répond pas, pas pourquoi :
+    // le texte sous les chips porte la raison, et doit être là.
+    expect(screen.getByText(i18n.t('goalFields.unitLocked'))).toBeTruthy();
+
+    fireEvent.press(unitChip('reps'));
+    await flush();
+
+    // La sélection affichée ne bouge pas : km reste l'unité marquée.
+    expect(unitChip('km').props.accessibilityState.selected).toBe(true);
+    expect(unitChip('reps').props.accessibilityState.selected).toBe(false);
+  });
+
+  it("garde l'unité d'origine à l'enregistrement, même après un appui sur une autre", async () => {
+    mockedLoadGoals.mockResolvedValue({ value: [makeGoal()], ok: true });
+    render(<Tree show />);
+    await flush();
+
+    fireEvent.press(unitChip('min'));
+    fireEvent.press(screen.getByText(SAVE));
+
+    await waitFor(() => expect(mockedSaveGoals).toHaveBeenCalled());
+    const saved: Goal = mockedSaveGoals.mock.calls.at(-1)[0][0];
+    expect(saved.unit).toBe('km');
+  });
+
+  // Garde-fou, vert avant comme après : un objectif sans aucune séance n'a
+  // rien à protéger, ses chips doivent rester pilotables.
+  it('laisse les chips actives sur un objectif sans aucune séance', async () => {
+    mockedLoadGoals.mockResolvedValue({ value: [{ ...makeGoal(), entries: [] }], ok: true });
+    render(<Tree show />);
+    await flush();
+
+    expect(unitChip('reps').props.accessibilityState.disabled).toBeFalsy();
+    expect(screen.queryByText(i18n.t('goalFields.unitLocked'))).toBeNull();
+
+    fireEvent.press(unitChip('reps'));
+    await flush();
+
+    expect(unitChip('reps').props.accessibilityState.selected).toBe(true);
+  });
+
+  // Même raison qu'au niveau donnée (voir « still allows a unit change when
+  // every entry is 0 » dans src/goals-context.test.tsx) : une séance à 0 ne
+  // dit rien de l'unité. Les deux sites évaluent la condition séparément,
+  // ils doivent donc être épinglés séparément — sinon l'un peut verrouiller
+  // pendant que l'autre laisse passer.
+  it('laisse les chips actives quand toutes les séances valent 0', async () => {
+    mockedLoadGoals.mockResolvedValue({
+      value: [{ ...makeGoal(), entries: [{ date: '2026-09-10', value: 0 }] }],
+      ok: true,
+    });
+    render(<Tree show />);
+    await flush();
+
+    expect(unitChip('reps').props.accessibilityState.disabled).toBeFalsy();
+    expect(screen.queryByText(i18n.t('goalFields.unitLocked'))).toBeNull();
+
+    fireEvent.press(unitChip('reps'));
+    await flush();
+
+    expect(unitChip('reps').props.accessibilityState.selected).toBe(true);
   });
 });
 
