@@ -147,6 +147,7 @@
     "targetValue": "Target value",
     "unit": "Unit",
     "unitA11y": "Unit: {{unit}}",
+    "unitLocked": "The unit can no longer change: sessions are already recorded in it.",
     "remindersEnabled": "Reminders enabled",
     "customTime": "Custom time",
     "reminderTime": "Reminder time"

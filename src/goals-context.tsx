@@ -240,7 +240,26 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
   // Partial<Goal> : les écrans n'envoient que les champs édités (title,
   // targetValue, unit, deadline), entries et id restent inchangés.
   function updateGoal(goalId: string, updates: Partial<Goal>) {
-    setGoals((prev) => prev.map((g) => (g.id === goalId ? { ...g, ...updates } : g)));
+    setGoals((prev) =>
+      prev.map((g) => {
+        if (g.id !== goalId) return g;
+        const merged = { ...g, ...updates };
+        // L'unité est écartée du merge dès que `entries` n'est pas vide :
+        // une entrée ne porte qu'un nombre, et changer l'unité sous elle
+        // relirait les mêmes valeurs dans une autre grandeur, sans
+        // conversion ni trace. Seul ce champ est ignoré — le reste de
+        // `updates` s'applique, refuser tout l'appel ferait perdre une
+        // correction de titre ou de cible que rien ne justifie de bloquer.
+        // La même condition est évaluée à l'écran (unitLocked dans
+        // app/goal/[id]/edit.tsx, qui verrouille les chips de GoalFields) :
+        // ce doublon est voulu, celle-ci tient quel que soit l'appelant,
+        // celle de l'écran évite de proposer un geste qui serait ignoré.
+        // L'import ne passe pas par ici (replaceAllGoals remplace le
+        // tableau tel quel).
+        if (g.entries.length > 0) merged.unit = g.unit;
+        return merged;
+      }),
+    );
   }
 
   function deleteGoal(goalId: string) {
