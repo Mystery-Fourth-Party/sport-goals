@@ -79,6 +79,15 @@ function EditGoalForm({ goal }: { goal: Goal }) {
   const [reminderEnabled, setReminderEnabled] = useState(goal.reminderEnabled ?? true);
   const [reminderTime, setReminderTime] = useState<string | undefined>(goal.reminderTime);
 
+  // Dès qu'une séance est enregistrée, l'unité ne bouge plus : une entrée
+  // ne porte qu'un nombre, et la changer relirait les mêmes valeurs dans
+  // une autre grandeur. Lu sur `goal` et non sur l'état de saisie — les
+  // entries ne s'éditent pas depuis cet écran. La même condition est
+  // évaluée par updateGoal dans src/goals-context.tsx, qui écarte le champ
+  // quel que soit l'appelant ; ici elle sert à ne pas proposer un geste qui
+  // serait ignoré.
+  const unitLocked = goal.entries.length > 0;
+
   const titleError = title.trim() === '' ? t('editGoal.titleRequired') : undefined;
   const targetNum = Number(target);
   const targetError =
@@ -158,6 +167,7 @@ function EditGoalForm({ goal }: { goal: Goal }) {
           onTargetValueChange={setTarget}
           unit={unit}
           onUnitChange={setUnit}
+          unitLocked={unitLocked}
           durationLabel={t('editGoal.durationLabel')}
           duration={days}
           onDurationChange={setDays}

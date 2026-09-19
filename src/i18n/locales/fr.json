@@ -147,6 +147,7 @@
     "targetValue": "Valeur cible",
     "unit": "Unité",
     "unitA11y": "Unité : {{unit}}",
+    "unitLocked": "L'unité ne peut plus changer : des séances sont déjà enregistrées dans cette unité.",
     "remindersEnabled": "Rappels activés",
     "customTime": "Horaire personnalisé",
     "reminderTime": "Heure du rappel"
