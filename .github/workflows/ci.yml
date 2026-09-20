@@ -32,6 +32,24 @@ jobs:
       # daté plutôt qu'un constat fait des mois après.
       - run: npx expo install --check
 
+      # `tsconfig.json` inclut `.expo/types/**/*.ts` et `expo-env.d.ts`, que
+      # `.gitignore` exclut : en CI ces deux fichiers n'existaient donc pas,
+      # et `tsc --noEmit` y typecheckait un programme plus faible que celui
+      # du poste de dev. Mesuré en remplaçant `router.push('/weekly')` par
+      # `'/weeekly'` dans app/index.tsx : TS2345 en local, aucune sortie et
+      # exit 0 sans les fichiers générés.
+      #
+      # `expo customize tsconfig.json` les régénère tous les deux sans
+      # démarrer Metro — il appelle startTypescriptTypeGenerationAsync avec
+      # `metro`/`server` à undefined. Environ 2,5 s, `.expo/` présent ou non.
+      - run: npx expo customize tsconfig.json
+
+      # La commande a le droit de réécrire tsconfig.json et .gitignore (elle
+      # y ajoute ses propres entrées si elles manquent) ; sur l'état actuel
+      # elle les laisse identiques à l'octet près. Le jour où ça change, on
+      # veut le voir ici et non dans le diff d'une PR sans rapport.
+      - run: git diff --exit-code tsconfig.json .gitignore
+
       - run: npm run typecheck
       - run: npm run lint
       - run: npm run format:check
