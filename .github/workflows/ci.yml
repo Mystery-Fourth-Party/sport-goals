@@ -24,6 +24,14 @@ jobs:
 
       - run: npm ci
 
+      # `npm ci` réinstalle le lock à l'identique : un paquet figé sous ce
+      # que sa propre plage `~57.0.x` autorise y reste indéfiniment sans que
+      # rien ne le signale. C'est ainsi que 12 paquets avaient dérivé, dont
+      # expo, expo-router et expo-notifications. Cette étape sort en erreur
+      # dès qu'un paquet du SDK décroche, pour que la dérive soit un échec
+      # daté plutôt qu'un constat fait des mois après.
+      - run: npx expo install --check
+
       - run: npm run typecheck
       - run: npm run lint
       - run: npm run format:check
