@@ -11,12 +11,44 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Version lue dans .nvmrc et non écrite ici : une seule source, que
+      # `nvm use` / `fnm use` lisent aussi sur le poste de dev, et qui rend
+      # toute montée de majeure visible dans un diff. `lts/*` suivait la LTS
+      # du jour, donc la CI changeait de Node sans qu'aucun commit ne le
+      # dise — alors que les trois passages de fuseaux plus bas reposent sur
+      # le comportement de Node face aux dates.
       - uses: actions/setup-node@v4
         with:
-          node-version: lts/*
+          node-version-file: '.nvmrc'
           cache: npm
 
       - run: npm ci
+
+      # `npm ci` réinstalle le lock à l'identique : un paquet figé sous ce
+      # que sa propre plage `~57.0.x` autorise y reste indéfiniment sans que
+      # rien ne le signale. C'est ainsi que 12 paquets avaient dérivé, dont
+      # expo, expo-router et expo-notifications. Cette étape sort en erreur
+      # dès qu'un paquet du SDK décroche, pour que la dérive soit un échec
+      # daté plutôt qu'un constat fait des mois après.
+      - run: npx expo install --check
+
+      # `tsconfig.json` inclut `.expo/types/**/*.ts` et `expo-env.d.ts`, que
+      # `.gitignore` exclut : en CI ces deux fichiers n'existaient donc pas,
+      # et `tsc --noEmit` y typecheckait un programme plus faible que celui
+      # du poste de dev. Mesuré en remplaçant `router.push('/weekly')` par
+      # `'/weeekly'` dans app/index.tsx : TS2345 en local, aucune sortie et
+      # exit 0 sans les fichiers générés.
+      #
+      # `expo customize tsconfig.json` les régénère tous les deux sans
+      # démarrer Metro — il appelle startTypescriptTypeGenerationAsync avec
+      # `metro`/`server` à undefined. Environ 2,5 s, `.expo/` présent ou non.
+      - run: npx expo customize tsconfig.json
+
+      # La commande a le droit de réécrire tsconfig.json et .gitignore (elle
+      # y ajoute ses propres entrées si elles manquent) ; sur l'état actuel
+      # elle les laisse identiques à l'octet près. Le jour où ça change, on
+      # veut le voir ici et non dans le diff d'une PR sans rapport.
+      - run: git diff --exit-code tsconfig.json .gitignore
 
       - run: npm run typecheck
       - run: npm run lint
