@@ -254,7 +254,8 @@
     "invalidTargetValue": "A goal has an invalid target value: it must be a number greater than zero.",
     "invalidEntryValue": "A goal has an invalid progress value: it must be zero or a positive number.",
     "duplicateGoalIds": "Two goals share the same identifier.",
-    "duplicateEntryDates": "The goal \"{{title}}\" has two entries for {{date}}: only one per day is expected."
+    "duplicateEntryDates": "The goal \"{{title}}\" has two entries for {{date}}: only one per day is expected.",
+    "invalidEntryDate": "The goal \"{{title}}\" has an entry dated \"{{date}}\", which is not a valid YYYY-MM-DD date."
   },
   "settings": {
     "title": "Settings",

@@ -14,6 +14,7 @@ import { BackButton } from '../../src/components/ui';
 import { confirmDestructive } from '../../src/confirm';
 import { longDateLabel } from '../../src/dateLabels';
 import { useGoals } from '../../src/goals-context';
+import { parsePositiveNumber } from '../../src/goalValidation';
 import { useSettings } from '../../src/settings-context';
 import { getGoalStats, parseDate } from '../../src/stats';
 import { useToday } from '../../src/useToday';
@@ -87,8 +88,12 @@ export default function GoalDetailScreen() {
   }
 
   function handleSave() {
-    const value = Number(modalValue);
-    if (!value || value <= 0) {
+    // parsePositiveNumber plutôt que `!value || value <= 0` : ce test
+    // laissait passer Infinity (saisie "1e400"), voir src/goalValidation.ts.
+    // La porte est ici et non dans ProgressEntryModal : son bouton n'est
+    // que grisé par un style, il reste pressable et appelle ce handler.
+    const value = parsePositiveNumber(modalValue);
+    if (value === null) {
       setModalError(true);
       return;
     }

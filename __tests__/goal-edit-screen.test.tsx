@@ -310,3 +310,24 @@ describe('EditGoalScreen — libellé du rythme restant', () => {
     expect(screen.getByText(expected)).toBeTruthy();
   });
 });
+
+// R2 — la cible n'était gardée que par `targetNum > 0`. Number('1e400')
+// vaut Infinity, qui passe : l'objectif était enregistré avec une cible que
+// JSON.stringify écrit null, et l'import rejette alors tout le fichier.
+describe('EditGoalScreen — cible hors domaine', () => {
+  it('refuse une cible qui déborde en Infinity', async () => {
+    mockedLoadGoals.mockResolvedValue({ value: [makeGoal()], ok: true });
+    render(<Tree show />);
+    await flush();
+
+    fireEvent.changeText(screen.getByLabelText(TARGET), '1e400');
+    fireEvent.press(screen.getByText(SAVE));
+    await flush();
+
+    expect(screen.getByText(i18n.t('editGoal.targetPositive'))).toBeTruthy();
+    const savedTargets = mockedSaveGoals.mock.calls.flatMap(([goals]: [Goal[]]) =>
+      goals.map((g) => g.targetValue),
+    );
+    expect(savedTargets.filter((v) => !Number.isFinite(v))).toEqual([]);
+  });
+});

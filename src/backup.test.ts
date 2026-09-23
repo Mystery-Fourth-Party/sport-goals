@@ -432,6 +432,34 @@ describe('parseBackupPayload — cohérence des objectifs', () => {
     it('accepts a deadline after createdAt', () => {
       expect(parseWithGoals([exportedGoal()]).ok).toBe(true);
     });
+
+    // R1 (suite) — le seul contrôle NaN laisse passer tout ce que le moteur
+    // sait analyser : un nombre nu, un format anglais, une année étendue,
+    // un jour impossible qui glisse au mois suivant. Une heure sans zone
+    // est lue en heure locale, ce qui rendrait la comparaison avec
+    // createdAt dépendante du fuseau. L'app n'écrit ces deux champs que
+    // par toISOString(), toujours suffixé Z.
+    it.each([
+      ['createdAt', '1'],
+      ['createdAt', '2026-02-30'],
+      ['createdAt', '2026-02-30T00:00:00.000Z'],
+      ['deadline', '+099999-01-01T00:00:00.000Z'],
+      ['deadline', 'Oct 1 2026'],
+      ['deadline', '2026-09-31T00:00:00.000Z'],
+      ['deadline', '2026-08-31T10:00:00'],
+    ])('rejects a %s of %j, which is not a zoned ISO date', (field, value) => {
+      expectRejection([exportedGoal({ [field]: value })], 'backup.invalidGoalDates');
+    });
+
+    // Ce que toISOString() écrit est déjà couvert par exportedGoal() : ce
+    // sont ici deux formes ISO sans ambiguïté de fuseau qu'un fichier
+    // édité à la main peut porter.
+    it.each([
+      ['deadline', '2026-08-31'],
+      ['deadline', '2026-08-31T10:00:00+02:00'],
+    ])('accepts a %s of %j, which is an unambiguous ISO date', (field, value) => {
+      expect(parseWithGoals([exportedGoal({ [field]: value })]).ok).toBe(true);
+    });
   });
 
   // L1-09 — updateGoal et deleteGoal opèrent par .map/.filter sur l'id
@@ -475,6 +503,35 @@ describe('parseBackupPayload — cohérence des objectifs', () => {
     it('accepts an entry value of zero', () => {
       expect(
         parseWithGoals([exportedGoal({ entries: [{ date: '2026-08-01', value: 0 }] })]).ok,
+      ).toBe(true);
+    });
+  });
+
+  // R1 — isValidEntry ne vérifiait que le type de e.date. Le tri des
+  // entrées compare des chaînes et calcStreak/getGoalStats lisent le champ
+  // comme un "YYYY-MM-DD" produit par dateStr() : une autre forme cassait
+  // l'ordre chronologique sans rien signaler. "2026-02-30" couvre le cas
+  // que new Date() ne rejette pas (V8 le fait glisser au 2 mars).
+  describe("dates d'entrée", () => {
+    it.each([
+      ['not-a-date'],
+      ['23/09/2026'],
+      [''],
+      ['2026-9-3'],
+      ['2026-13-01'],
+      ['2026-02-30'],
+      ['2026-08-01T00:00:00.000Z'],
+    ])('rejects an entry dated %j, naming the goal and the date', (date) => {
+      expectRejection(
+        [exportedGoal({ title: 'Course', entries: [{ date, value: 5 }] })],
+        'backup.invalidEntryDate',
+        { title: 'Course', date },
+      );
+    });
+
+    it('accepts a leap day in a leap year', () => {
+      expect(
+        parseWithGoals([exportedGoal({ entries: [{ date: '2028-02-29', value: 5 }] })]).ok,
       ).toBe(true);
     });
   });

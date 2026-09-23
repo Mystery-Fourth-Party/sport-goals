@@ -254,7 +254,8 @@
     "invalidTargetValue": "Un objectif a une valeur cible invalide : elle doit être un nombre strictement positif.",
     "invalidEntryValue": "Un objectif a une valeur de progression invalide : elle doit être un nombre positif ou nul.",
     "duplicateGoalIds": "Deux objectifs partagent le même identifiant.",
-    "duplicateEntryDates": "L'objectif « {{title}} » a deux entrées pour le {{date}} : une seule par jour est attendue."
+    "duplicateEntryDates": "L'objectif « {{title}} » a deux entrées pour le {{date}} : une seule par jour est attendue.",
+    "invalidEntryDate": "L'objectif « {{title}} » a une entrée datée « {{date}} », qui n'est pas une date valide au format AAAA-MM-JJ."
   },
   "settings": {
     "title": "Paramètres",

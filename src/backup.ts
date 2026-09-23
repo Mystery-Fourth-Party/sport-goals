@@ -115,6 +115,39 @@ function isValidEntry(value: unknown): value is RawEntry {
   return true;
 }
 
+const DATE_STR_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+// Vrai si la chaîne est exactement ce que dateStr() (stats.ts) produit :
+// "YYYY-MM-DD" avec un jour qui existe. Le motif seul laisse passer
+// "2026-02-30", et new Date() seul accepte d'autres formats et fait
+// glisser les jours impossibles au mois suivant — d'où l'aller-retour :
+// la date reconstruite doit redonner les mêmes composantes. Date.UTC
+// plutôt que le constructeur local, pour que le résultat ne dépende pas
+// du fuseau de la machine.
+function isCanonicalDateStr(s: string): boolean {
+  const m = DATE_STR_PATTERN.exec(s);
+  if (!m) return false;
+  const [year, month, day] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  const d = new Date(Date.UTC(year, month - 1, day));
+  return d.getUTCFullYear() === year && d.getUTCMonth() === month - 1 && d.getUTCDate() === day;
+}
+
+// Partie heure d'une date ISO 8601, optionnelle : THH:mm, secondes et
+// fraction facultatives, puis une zone obligatoire, Z ou ±HH:mm.
+const ISO_TIME_SUFFIX_PATTERN = /^(T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2}))?$/;
+
+// Vrai pour "YYYY-MM-DD" dont le jour existe, suivi en option d'une heure
+// zonée. C'est la forme que toISOString() écrit dans createdAt et deadline
+// (GoalForm.tsx, app/goal/[id]/edit.tsx), la seule que l'app ait jamais
+// écrite dans ces champs. Le jour passe par l'aller-retour de
+// isCanonicalDateStr : le motif seul n'écarte pas "2026-02-30". La zone est
+// exigée dès qu'une heure est présente : sans elle, la chaîne est lue en
+// heure locale et la comparaison avec createdAt dépendrait du fuseau de la
+// machine. La date seule reste acceptée, elle est lue en UTC.
+function isIsoDateTimeStr(s: string): boolean {
+  return isCanonicalDateStr(s.slice(0, 10)) && ISO_TIME_SUFFIX_PATTERN.test(s.slice(10));
+}
+
 interface RawGoal {
   id: string;
   title: string;
@@ -180,10 +213,19 @@ function findGoalInconsistency(goals: RawGoal[]): string | null {
     }
 
     // L1-05 — isValidGoal ne vérifie que le type de ces deux champs, donc
-    // n'importe quelle chaîne passait.
+    // n'importe quelle chaîne passait. Le contrôle NaN seul laissait encore
+    // passer tout ce que le moteur sait analyser ("1", "Oct 1 2026", une
+    // année étendue, "2026-02-30" qui glisse au 2 mars) : la forme ISO est
+    // exigée d'abord, voir isIsoDateTimeStr. Le contrôle NaN reste, pour
+    // une heure hors plage (25:00) que le motif ne voit pas.
     const createdAt = new Date(g.createdAt).getTime();
     const deadline = new Date(g.deadline).getTime();
-    if (Number.isNaN(createdAt) || Number.isNaN(deadline)) {
+    if (
+      !isIsoDateTimeStr(g.createdAt) ||
+      !isIsoDateTimeStr(g.deadline) ||
+      Number.isNaN(createdAt) ||
+      Number.isNaN(deadline)
+    ) {
       return i18n.t('backup.invalidGoalDates');
     }
     // Comparaison sur les instants et non sur les jours locaux : la
@@ -200,6 +242,14 @@ function findGoalInconsistency(goals: RawGoal[]): string | null {
       // ongoingGoalsWithoutTodayEntry).
       if (!Number.isFinite(e.value) || e.value < 0) {
         return i18n.t('backup.invalidEntryValue');
+      }
+
+      // R1 — isValidEntry ne vérifie que le type. Le tri plus bas compare
+      // des chaînes et calcStreak/getGoalStats lisent la date comme dateStr()
+      // la produit : toute autre forme casse l'ordre sans rien signaler.
+      // Interpolé pour la même raison que le doublon ci-dessous.
+      if (!isCanonicalDateStr(e.date)) {
+        return i18n.t('backup.invalidEntryDate', { title: g.title, date: e.date });
       }
 
       // L4-02 — la même donnée était lue de trois façons incompatibles en

@@ -160,6 +160,15 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
   }
 
   function addProgress(goalId: string, amount: number) {
+    // R2 — garde du contexte : elle fait foi quel que soit l'appelant, celle
+    // de l'écran (parsePositiveNumber dans src/goalValidation.ts, appelée
+    // par handleSave dans app/goal/[id].tsx) s'y ajoute. Même principe que
+    // l'unité dans updateGoal, et même règle qu'updateEntry ci-dessous.
+    // Infinity et NaN s'écriraient null sur le disque. Une valeur négative
+    // retirerait ce montant au total du jour. Zéro, sans entrée ce jour-là,
+    // créerait une entrée à 0, qui fait passer le jour de « pas d'entrée »
+    // à « entrée à 0 » pour ongoingGoalsWithoutTodayEntry (notifications.ts).
+    if (!Number.isFinite(amount) || amount <= 0) return;
     const today = todayStr();
     // Capturé une seule fois ici plutôt qu'appelé à l'intérieur de
     // l'updater ci-dessous : cet updater peut être réinvoqué avec le même
@@ -212,7 +221,11 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
   }
 
   function updateEntry(goalId: string, date: string, newValue: number) {
-    if (newValue <= 0) return;
+    // R2 — même garde qu'addProgress, et pour la même raison : elle fait foi
+    // quel que soit l'appelant, parsePositiveNumber (src/goalValidation.ts)
+    // la double à l'écran. `newValue <= 0` seul laissait passer Infinity, et
+    // NaN, puisque NaN <= 0 vaut false.
+    if (!Number.isFinite(newValue) || newValue <= 0) return;
     // Même raison que dans addProgress : capturé une seule fois ici, pas
     // appelé à l'intérieur de l'updater.
     const now = new Date().toISOString();
