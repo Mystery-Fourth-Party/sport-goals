@@ -32,6 +32,11 @@ export function parseDurationDays(raw: string): number | null {
 // JSON.stringify l'écrivait null à l'export, et l'import rejetait alors le
 // fichier entier (isValidGoal/isValidEntry exigent un number). Même garde
 // que celle posée côté import par L1-12 (voir backup.ts).
+//
+// Pour la valeur d'une séance, cette garde d'écran n'est pas la seule :
+// addProgress et updateEntry (src/goals-context.tsx) appliquent la même
+// règle, et c'est la leur qui fait foi quel que soit l'appelant. Celle-ci
+// sert à afficher l'erreur au lieu d'ignorer la saisie.
 export function parsePositiveNumber(raw: string): number | null {
   const value = Number(raw);
   if (!Number.isFinite(value) || value <= 0) return null;
