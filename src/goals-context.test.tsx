@@ -106,6 +106,24 @@ const baseGoal: Goal = {
   ],
 };
 
+// Appelle `call` et vérifie qu'il n'a rien changé, ni en mémoire ni sur le
+// disque. Le disque est relu par le vrai loadGoals : une valeur non finie
+// qui y serait arrivée se relirait null (JSON.stringify), pas à l'identique.
+async function expectNoChange(
+  result: { current: ReturnType<typeof useHarness> },
+  call: () => void,
+) {
+  // Laisse la sauvegarde de l'état de départ aboutir avant l'instantané.
+  await act(async () => {});
+  const before = result.current.goals.goals;
+
+  act(call);
+  await act(async () => {});
+
+  expect(result.current.goals.goals).toEqual(before);
+  expect(await actualStorage.loadGoals()).toEqual({ value: before, ok: true });
+}
+
 // Le mock AsyncStorage est un magasin en mémoire partagé entre les tests
 // (module-level) : sans le vider, un test qui persiste des goals/settings
 // pollue le chargement initial du suivant.
@@ -152,6 +170,21 @@ describe('updateEntry', () => {
     const entry = result.current.goals.goals[0].entries.find((e) => e.date === '2026-08-10');
     expect(entry?.value).toBe(20);
   });
+
+  // R2 — la garde `newValue <= 0` laisse passer Infinity (> 0) et NaN
+  // (NaN <= 0 vaut false). La garde de l'écran (parsePositiveNumber) ne
+  // couvre que ses propres appels.
+  it.each([[Infinity], [NaN]])(
+    'rejects a non-finite newValue (%p) in the context itself, leaving state and storage untouched',
+    async (value) => {
+      const { result } = await renderHarness();
+      act(() => result.current.goals.createGoal(baseGoal));
+
+      await expectNoChange(result, () =>
+        result.current.goals.updateEntry('g1', '2026-08-10', value),
+      );
+    },
+  );
 
   it('is a no-op for an unknown goal id or date', async () => {
     const { result } = await renderHarness();
@@ -302,6 +335,20 @@ describe('addProgress', () => {
     expect(entries).toHaveLength(1);
     expect(entries[0].value).toBe(12);
   });
+
+  // R2 — addProgress ne validait pas amount. Infinity et NaN s'écrivent
+  // null sur le disque ; -5 retirerait 5 au total du jour ; 0 créerait une
+  // entrée à 0, qui fait passer le jour de « pas d'entrée » à « entrée à 0 »
+  // pour ongoingGoalsWithoutTodayEntry.
+  it.each([[Infinity], [NaN], [0], [-5]])(
+    'rejects an amount of %p in the context itself, leaving state and storage untouched',
+    async (amount) => {
+      const { result } = await renderHarness();
+      act(() => result.current.goals.createGoal(emptyGoal));
+
+      await expectNoChange(result, () => result.current.goals.addProgress('g2', amount));
+    },
+  );
 
   it('notifies exactly once, at the moment the goal transitions to completed', async () => {
     const { result } = await renderHarness();
