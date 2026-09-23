@@ -479,6 +479,35 @@ describe('parseBackupPayload — cohérence des objectifs', () => {
     });
   });
 
+  // R1 — isValidEntry ne vérifiait que le type de e.date. Le tri des
+  // entrées compare des chaînes et calcStreak/getGoalStats lisent le champ
+  // comme un "YYYY-MM-DD" produit par dateStr() : une autre forme cassait
+  // l'ordre chronologique sans rien signaler. "2026-02-30" couvre le cas
+  // que new Date() ne rejette pas (V8 le fait glisser au 2 mars).
+  describe("dates d'entrée", () => {
+    it.each([
+      ['not-a-date'],
+      ['23/09/2026'],
+      [''],
+      ['2026-9-3'],
+      ['2026-13-01'],
+      ['2026-02-30'],
+      ['2026-08-01T00:00:00.000Z'],
+    ])('rejects an entry dated %j, naming the goal and the date', (date) => {
+      expectRejection(
+        [exportedGoal({ title: 'Course', entries: [{ date, value: 5 }] })],
+        'backup.invalidEntryDate',
+        { title: 'Course', date },
+      );
+    });
+
+    it('accepts a leap day in a leap year', () => {
+      expect(
+        parseWithGoals([exportedGoal({ entries: [{ date: '2028-02-29', value: 5 }] })]).ok,
+      ).toBe(true);
+    });
+  });
+
   // L4-02 — deux entrées à la même date étaient lues de trois façons
   // incompatibles en aval : sommées par getGoalStats, dernière-gagne par
   // calcStreak, première-trouvée par addProgress. Rejet plutôt que
