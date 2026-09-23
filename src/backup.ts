@@ -115,6 +115,23 @@ function isValidEntry(value: unknown): value is RawEntry {
   return true;
 }
 
+const DATE_STR_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+// Vrai si la chaîne est exactement ce que dateStr() (stats.ts) produit :
+// "YYYY-MM-DD" avec un jour qui existe. Le motif seul laisse passer
+// "2026-02-30", et new Date() seul accepte d'autres formats et fait
+// glisser les jours impossibles au mois suivant — d'où l'aller-retour :
+// la date reconstruite doit redonner les mêmes composantes. Date.UTC
+// plutôt que le constructeur local, pour que le résultat ne dépende pas
+// du fuseau de la machine.
+function isCanonicalDateStr(s: string): boolean {
+  const m = DATE_STR_PATTERN.exec(s);
+  if (!m) return false;
+  const [year, month, day] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  const d = new Date(Date.UTC(year, month - 1, day));
+  return d.getUTCFullYear() === year && d.getUTCMonth() === month - 1 && d.getUTCDate() === day;
+}
+
 interface RawGoal {
   id: string;
   title: string;
@@ -200,6 +217,14 @@ function findGoalInconsistency(goals: RawGoal[]): string | null {
       // ongoingGoalsWithoutTodayEntry).
       if (!Number.isFinite(e.value) || e.value < 0) {
         return i18n.t('backup.invalidEntryValue');
+      }
+
+      // R1 — isValidEntry ne vérifie que le type. Le tri plus bas compare
+      // des chaînes et calcStreak/getGoalStats lisent la date comme dateStr()
+      // la produit : toute autre forme casse l'ordre sans rien signaler.
+      // Interpolé pour la même raison que le doublon ci-dessous.
+      if (!isCanonicalDateStr(e.date)) {
+        return i18n.t('backup.invalidEntryDate', { title: g.title, date: e.date });
       }
 
       // L4-02 — la même donnée était lue de trois façons incompatibles en
