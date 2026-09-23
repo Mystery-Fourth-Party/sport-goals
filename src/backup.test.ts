@@ -432,6 +432,34 @@ describe('parseBackupPayload — cohérence des objectifs', () => {
     it('accepts a deadline after createdAt', () => {
       expect(parseWithGoals([exportedGoal()]).ok).toBe(true);
     });
+
+    // R1 (suite) — le seul contrôle NaN laisse passer tout ce que le moteur
+    // sait analyser : un nombre nu, un format anglais, une année étendue,
+    // un jour impossible qui glisse au mois suivant. Une heure sans zone
+    // est lue en heure locale, ce qui rendrait la comparaison avec
+    // createdAt dépendante du fuseau. L'app n'écrit ces deux champs que
+    // par toISOString(), toujours suffixé Z.
+    it.each([
+      ['createdAt', '1'],
+      ['createdAt', '2026-02-30'],
+      ['createdAt', '2026-02-30T00:00:00.000Z'],
+      ['deadline', '+099999-01-01T00:00:00.000Z'],
+      ['deadline', 'Oct 1 2026'],
+      ['deadline', '2026-09-31T00:00:00.000Z'],
+      ['deadline', '2026-08-31T10:00:00'],
+    ])('rejects a %s of %j, which is not a zoned ISO date', (field, value) => {
+      expectRejection([exportedGoal({ [field]: value })], 'backup.invalidGoalDates');
+    });
+
+    // Ce que toISOString() écrit est déjà couvert par exportedGoal() : ce
+    // sont ici deux formes ISO sans ambiguïté de fuseau qu'un fichier
+    // édité à la main peut porter.
+    it.each([
+      ['deadline', '2026-08-31'],
+      ['deadline', '2026-08-31T10:00:00+02:00'],
+    ])('accepts a %s of %j, which is an unambiguous ISO date', (field, value) => {
+      expect(parseWithGoals([exportedGoal({ [field]: value })]).ok).toBe(true);
+    });
   });
 
   // L1-09 — updateGoal et deleteGoal opèrent par .map/.filter sur l'id
