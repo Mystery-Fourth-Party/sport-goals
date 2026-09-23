@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import GoalFields from '../../../src/components/GoalFields';
 import { BackButton } from '../../../src/components/ui';
 import { useGoals } from '../../../src/goals-context';
-import { parseDurationDays } from '../../../src/goalValidation';
+import { parseDurationDays, parsePositiveNumber } from '../../../src/goalValidation';
 import { fmt, getGoalStats } from '../../../src/stats';
 import { colors, fontFamily, radius, spacing, statusColors, white } from '../../../src/theme';
 import { Goal, Unit } from '../../../src/types';
@@ -91,9 +91,12 @@ function EditGoalForm({ goal }: { goal: Goal }) {
   const unitLocked = goal.entries.some((e) => e.value > 0);
 
   const titleError = title.trim() === '' ? t('editGoal.titleRequired') : undefined;
-  const targetNum = Number(target);
+  // parsePositiveNumber plutôt que `Number(x) > 0` : ce test laissait passer
+  // Infinity (saisie "1e400"), voir src/goalValidation.ts.
+  const parsedTarget = parsePositiveNumber(target);
+  const targetNum = parsedTarget ?? 0;
   const targetError =
-    targetNum > 0
+    parsedTarget !== null
       ? targetNum < s.actual
         ? t('editGoal.targetTooLow', { value: fmt(s.actual, unit), unit: t(`unit.${unit}`) })
         : undefined

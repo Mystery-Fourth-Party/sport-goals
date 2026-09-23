@@ -1,4 +1,4 @@
-import { parseDurationDays } from './goalValidation';
+import { parseDurationDays, parsePositiveNumber } from './goalValidation';
 
 describe('parseDurationDays', () => {
   it('accepts a positive whole number of days', () => {
@@ -30,5 +30,30 @@ describe('parseDurationDays', () => {
     expect(parseDurationDays('abc')).toBeNull();
     expect(parseDurationDays('30j')).toBeNull();
     expect(parseDurationDays('Infinity')).toBeNull();
+  });
+});
+
+describe('parsePositiveNumber', () => {
+  it('accepts a positive number, whole or fractional', () => {
+    expect(parsePositiveNumber('100')).toBe(100);
+    expect(parsePositiveNumber('2.5')).toBe(2.5);
+  });
+
+  it('rejects zero, negatives and empty input', () => {
+    expect(parsePositiveNumber('0')).toBeNull();
+    expect(parsePositiveNumber('-5')).toBeNull();
+    expect(parsePositiveNumber('')).toBeNull();
+    expect(parsePositiveNumber('abc')).toBeNull();
+  });
+
+  // Le trou de R2 : `Number(x) > 0` laissait passer ces trois saisies.
+  it('rejects values that overflow to Infinity', () => {
+    expect(parsePositiveNumber('1e400')).toBeNull();
+    expect(parsePositiveNumber('Infinity')).toBeNull();
+    expect(parsePositiveNumber('1e309')).toBeNull();
+  });
+
+  it('keeps the largest finite values, which JSON can still write', () => {
+    expect(parsePositiveNumber('1e308')).toBe(1e308);
   });
 });
