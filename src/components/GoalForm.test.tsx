@@ -48,4 +48,21 @@ describe('GoalForm', () => {
     expect(screen.queryByText(i18n.t('goalForm.perDay', { unit: 'reps' }))).toBeNull();
     expect(screen.getByText(i18n.t('goalForm.perDay', { unit: i18n.t('unit.reps') }))).toBeTruthy();
   });
+
+  // R2 — même trou qu'à l'édition : `Number(x) > 0` laisse passer
+  // Infinity, que Number('1e400') produit.
+  it('refuses a target value that overflows to Infinity', async () => {
+    const onCreate = jest.fn();
+    render(<GoalForm onCreate={onCreate} />);
+    await flush();
+
+    fireEvent.changeText(screen.getByLabelText(i18n.t('goalFields.name')), 'Pompes');
+    fireEvent.changeText(screen.getByLabelText(i18n.t('goalFields.targetValue')), '1e400');
+    fireEvent.changeText(screen.getByLabelText(i18n.t('goalForm.durationLabel')), '10');
+    fireEvent.press(screen.getByText(i18n.t('goalForm.submit')));
+    await flush();
+
+    expect(onCreate).not.toHaveBeenCalled();
+    expect(screen.getByText(i18n.t('goalForm.targetPositive'))).toBeTruthy();
+  });
 });

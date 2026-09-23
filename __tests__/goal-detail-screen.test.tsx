@@ -12,11 +12,12 @@
 // transitoire, pas un écrasement de données. D'où une simple garde, sans le
 // key/remount de PR3 — cet écran n'a aucun useState initialisé depuis `goal`.
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { act, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import GoalDetailScreen from '../app/goal/[id]';
 import { GoalsProvider } from '../src/goals-context';
 import i18n from '../src/i18n';
 import { SettingsProvider } from '../src/settings-context';
+import { dateStr, fmt } from '../src/stats';
 import { loadGoals, LoadResult, saveGoals } from '../src/storage';
 import { StorageStatusProvider } from '../src/storage-status';
 import { Goal } from '../src/types';
@@ -110,5 +111,54 @@ describe('GoalDetailScreen', () => {
     await act(async () => resolveLoad({ value: [], ok: true }));
 
     expect(screen.getByText(i18n.t('goalDetail.notFound'))).toBeTruthy();
+  });
+});
+
+// R2 — handleSave ne gardait que `!value || value <= 0`. Number('1e400')
+// vaut Infinity, qui passe les deux : l'entrée était enregistrée, puis
+// JSON.stringify l'écrivait null, un fichier que l'import rejette en bloc.
+describe('GoalDetailScreen — valeur de séance hors domaine', () => {
+  // Résolus à l'appel et non au chargement du describe : la langue n'est
+  // passée en français qu'au beforeAll.
+  const valueField = () =>
+    screen.getByLabelText(i18n.t('progressModal.valueA11y', { unit: i18n.t('unitSpoken.km') }));
+  const errorText = () => screen.getByText(i18n.t('progressModal.errorPositive'));
+
+  function savedNonFiniteValues(): number[] {
+    return mockedSaveGoals.mock.calls.flatMap(([goals]: [Goal[]]) =>
+      goals.flatMap((g) => g.entries.map((e) => e.value).filter((v) => !Number.isFinite(v))),
+    );
+  }
+
+  async function renderLoaded(goal: Goal) {
+    mockedLoadGoals.mockResolvedValue({ value: [goal], ok: true });
+    renderScreen();
+    await act(async () => {});
+  }
+
+  it('refuse une valeur qui déborde en Infinity à l ajout', async () => {
+    await renderLoaded(makeGoal());
+
+    fireEvent.press(screen.getByText(i18n.t('goalDetail.addProgressCta')));
+    fireEvent.changeText(valueField(), '1e400');
+    await act(async () => fireEvent.press(screen.getByText(i18n.t('progressModal.save'))));
+
+    expect(errorText()).toBeTruthy();
+    expect(savedNonFiniteValues()).toEqual([]);
+  });
+
+  it('refuse une valeur qui déborde en Infinity à la modification', async () => {
+    const goal = { ...makeGoal(), entries: [{ date: dateStr(new Date()), value: 12 }] };
+    await renderLoaded(goal);
+
+    // Libellé de ligne construit comme GoalHistoryList : « <date>, <valeur> <unité parlée> ».
+    const rowLabel = `, ${fmt(12, 'km')} ${i18n.t('unitSpoken.km')}`;
+    const escaped = rowLabel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    fireEvent.press(screen.getByRole('button', { name: new RegExp(`${escaped}$`) }));
+    fireEvent.changeText(valueField(), '1e400');
+    await act(async () => fireEvent.press(screen.getByText(i18n.t('progressModal.save'))));
+
+    expect(errorText()).toBeTruthy();
+    expect(savedNonFiniteValues()).toEqual([]);
   });
 });
