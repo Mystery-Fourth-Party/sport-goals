@@ -18,6 +18,57 @@ Read the exact versioned docs at https://docs.expo.dev/versions/v57.0.0/ before 
 En cas de doute sur une de ces règles ou sur un cas particulier, demande
 avant d'improviser.
 
+# Contrat de commentaire
+
+Arbitrage du 19/09, après la revue profonde des 18 et 19/09. Chaque règle
+précise son périmètre : l'existant n'est pas repris d'office, il se met en
+conformité au fil des PR qui le touchent.
+
+## Dire pourquoi, pas quoi
+
+Un commentaire dit ce que le code ne peut pas dire : pourquoi ce choix, quelle
+contrainte, quel piège il évite. Paraphraser le code est interdit — le
+commentaire vieillit, le code non. Il se place en tête du bloc qu'il justifie,
+pas en fin de ligne ni au milieu. S'applique à tout commentaire écrit ou
+modifié.
+
+## Pas d'historique dans le code
+
+Ni numéro de PR, ni identifiant de finding (`L1-05`, `R2`…), ni récit au passé
+(« avant, handleSave ne gardait que… »). Le commentaire décrit le risque au
+présent : « sans cette garde, `Number('1e400')` passe ». L'historique vit dans
+git et dans les PR. Vaut aussi pour les libellés `describe`/`it` des tests.
+
+S'applique à tout commentaire ou libellé écrit, et aux blocs existants que la
+PR modifie réellement. Un bloc modifié qui porte un identifiant garde sa
+raison d'être, reformulée au présent : il n'est pas supprimé. Le reste du
+fichier n'est pas touché, pour que le diff reste lisible en revue.
+
+## Un commentaire provisoire dit quand il meurt
+
+Tout commentaire provisoire commence par le marqueur `TODO(retrait):`, suivi
+de la condition observable qui permettra de le retirer : « à retirer quand
+Expo corrige X », pas « à nettoyer plus tard ». Pas de `TODO` ni de `FIXME`
+nu : le marqueur fixe permet à la revue de lister les commentaires
+provisoires par une recherche dans le diff. S'applique à tout commentaire
+écrit ou modifié.
+
+## En-tête d'orientation
+
+Chaque fichier créé s'ouvre sur 3 à 5 lignes : son rôle, qui l'utilise (par
+catégorie — « les écrans d'édition », pas une liste de fichiers qui périmera),
+et ce qu'il ne fait pas. Un fichier de test dit quel comportement il couvre.
+S'applique aux fichiers créés seulement.
+
+## Un état lu à plusieurs endroits se cite
+
+Quand une même règle est gardée à deux endroits distants — typiquement la
+garde de données du contexte et la garde de l'écran — les deux sont
+regroupées, ou chacune cite l'autre par son nom de fonction ou de composant
+(pas de numéro de ligne). Exemple en place : `addProgress`/`updateEntry` ↔
+`parsePositiveNumber`. Le corps de PR liste ces sites parmi les consommateurs.
+S'applique à tout code écrit ou modifié.
+
 # Conventions de revue
 
 Arbitrage du 01/09 sur les méthodes de travail du projet, après le tri des
@@ -64,3 +115,30 @@ Ce test est commité **séparément** du correctif, et avant lui. Fusionnés
 dans un même commit, rien ne permet de vérifier dans l'historique de la PR
 que le test échouait vraiment, et la revue doit croire sur parole que
 l'ordre a été respecté.
+
+## Règles d'import : reporter dans generate.cjs
+
+`test-data/generate.cjs`, dossier voisin du dépôt et hors git, produit les
+fichiers d'import `TEST-*` et `ERREUR-*` à partir d'une copie manuelle des
+règles d'import. Cette copie ne suit pas seule : elle a déjà décroché deux
+fois. Choix du 23/09 : discipline plutôt que déplacer le générateur.
+
+Est concernée toute modification d'une règle d'import de `src/backup.ts`,
+d'une donnée qu'elle lit — unités (`UNITS`, `src/types.ts`), réglages par
+défaut (`DEFAULT_SETTINGS`, `src/settingsStorage.ts`) — ou d'un message
+d'erreur d'import (`backup.*` dans `src/i18n/locales/*.json`). Elle impose :
+
+- de reporter la règle dans `generate.cjs` ;
+- de relancer le script, puis de rejouer ses fichiers contre le vrai
+  `parseBackupPayload`, en français : chaque `TEST-*` accepté, chaque
+  `ERREUR-*` refusé avec son message exact (clé i18n et interpolation), pas
+  seulement « refusé ». La procédure est décrite dans `test-data/LISEZMOI.md` ;
+- d'écrire dans le corps de PR « generate.cjs mis à jour » et le résultat du
+  rejeu (fichiers acceptés, fichiers refusés, écarts), ou la raison pour
+  laquelle ce n'est pas nécessaire.
+
+Sans accès à `test-data/`, le signaler dans le corps de PR : « generate.cjs à
+mettre à jour : règle X modifiée, test-data/ non disponible ». Le report se
+fait ensuite, avant le prochain test d'import.
+
+La revue n'a pas accès à ce dossier : le corps de PR est sa seule preuve.
