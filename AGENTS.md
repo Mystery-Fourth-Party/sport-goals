@@ -115,3 +115,30 @@ Ce test est commité **séparément** du correctif, et avant lui. Fusionnés
 dans un même commit, rien ne permet de vérifier dans l'historique de la PR
 que le test échouait vraiment, et la revue doit croire sur parole que
 l'ordre a été respecté.
+
+## Règles d'import : reporter dans generate.cjs
+
+`test-data/generate.cjs`, dossier voisin du dépôt et hors git, produit les
+fichiers d'import `TEST-*` et `ERREUR-*` à partir d'une copie manuelle des
+règles d'import. Cette copie ne suit pas seule : elle a déjà décroché deux
+fois. Choix du 23/09 : discipline plutôt que déplacer le générateur.
+
+Est concernée toute modification d'une règle d'import de `src/backup.ts`,
+d'une donnée qu'elle lit — unités (`UNITS`, `src/types.ts`), réglages par
+défaut (`DEFAULT_SETTINGS`, `src/settingsStorage.ts`) — ou d'un message
+d'erreur d'import (`backup.*` dans `src/i18n/locales/*.json`). Elle impose :
+
+- de reporter la règle dans `generate.cjs` ;
+- de relancer le script, puis de rejouer ses fichiers contre le vrai
+  `parseBackupPayload`, en français : chaque `TEST-*` accepté, chaque
+  `ERREUR-*` refusé avec son message exact (clé i18n et interpolation), pas
+  seulement « refusé ». La procédure est décrite dans `test-data/LISEZMOI.md` ;
+- d'écrire dans le corps de PR « generate.cjs mis à jour » et le résultat du
+  rejeu (fichiers acceptés, fichiers refusés, écarts), ou la raison pour
+  laquelle ce n'est pas nécessaire.
+
+Sans accès à `test-data/`, le signaler dans le corps de PR : « generate.cjs à
+mettre à jour : règle X modifiée, test-data/ non disponible ». Le report se
+fait ensuite, avant le prochain test d'import.
+
+La revue n'a pas accès à ce dossier : le corps de PR est sa seule preuve.
