@@ -18,6 +18,57 @@ Read the exact versioned docs at https://docs.expo.dev/versions/v57.0.0/ before 
 En cas de doute sur une de ces règles ou sur un cas particulier, demande
 avant d'improviser.
 
+# Contrat de commentaire
+
+Arbitrage du 19/09, après la revue profonde des 18 et 19/09. Chaque règle
+précise son périmètre : l'existant n'est pas repris d'office, il se met en
+conformité au fil des PR qui le touchent.
+
+## Dire pourquoi, pas quoi
+
+Un commentaire dit ce que le code ne peut pas dire : pourquoi ce choix, quelle
+contrainte, quel piège il évite. Paraphraser le code est interdit — le
+commentaire vieillit, le code non. Il se place en tête du bloc qu'il justifie,
+pas en fin de ligne ni au milieu. S'applique à tout commentaire écrit ou
+modifié.
+
+## Pas d'historique dans le code
+
+Ni numéro de PR, ni identifiant de finding (`L1-05`, `R2`…), ni récit au passé
+(« avant, handleSave ne gardait que… »). Le commentaire décrit le risque au
+présent : « sans cette garde, `Number('1e400')` passe ». L'historique vit dans
+git et dans les PR. Vaut aussi pour les libellés `describe`/`it` des tests.
+
+S'applique à tout commentaire ou libellé écrit, et aux blocs existants que la
+PR modifie réellement. Un bloc modifié qui porte un identifiant garde sa
+raison d'être, reformulée au présent : il n'est pas supprimé. Le reste du
+fichier n'est pas touché, pour que le diff reste lisible en revue.
+
+## Un commentaire provisoire dit quand il meurt
+
+Tout commentaire provisoire commence par le marqueur `TODO(retrait):`, suivi
+de la condition observable qui permettra de le retirer : « à retirer quand
+Expo corrige X », pas « à nettoyer plus tard ». Pas de `TODO` ni de `FIXME`
+nu : le marqueur fixe permet à la revue de lister les commentaires
+provisoires par une recherche dans le diff. S'applique à tout commentaire
+écrit ou modifié.
+
+## En-tête d'orientation
+
+Chaque fichier créé s'ouvre sur 3 à 5 lignes : son rôle, qui l'utilise (par
+catégorie — « les écrans d'édition », pas une liste de fichiers qui périmera),
+et ce qu'il ne fait pas. Un fichier de test dit quel comportement il couvre.
+S'applique aux fichiers créés seulement.
+
+## Un état lu à plusieurs endroits se cite
+
+Quand une même règle est gardée à deux endroits distants — typiquement la
+garde de données du contexte et la garde de l'écran — les deux sont
+regroupées, ou chacune cite l'autre par son nom de fonction ou de composant
+(pas de numéro de ligne). Exemple en place : `addProgress`/`updateEntry` ↔
+`parsePositiveNumber`. Le corps de PR liste ces sites parmi les consommateurs.
+S'applique à tout code écrit ou modifié.
+
 # Conventions de revue
 
 Arbitrage du 01/09 sur les méthodes de travail du projet, après le tri des
