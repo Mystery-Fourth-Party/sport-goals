@@ -22,7 +22,8 @@ jobs:
           node-version-file: '.nvmrc'
           cache: npm
 
-      - run: npm ci
+      - id: install
+        run: npm ci
 
       # `npm ci` réinstalle le lock à l'identique : un paquet figé sous ce
       # que sa propre plage `~57.0.x` autorise y reste indéfiniment sans que
@@ -32,6 +33,14 @@ jobs:
       # daté plutôt qu'un constat fait des mois après.
       - run: npx expo install --check
 
+      # Toutes les étapes suivantes tournent même si la vérification de
+      # dérive échoue : une publication d'Expo ne dit rien du code de la PR,
+      # et sans ces conditions elle masquerait typecheck, lint et tests.
+      # Elles restent suspendues à ce dont elles dépendent vraiment : rien
+      # ne tourne sans `npm ci`, et typecheck exige que `expo customize`
+      # ait réussi — sans les types générés, il vérifierait un programme
+      # plus faible et pourrait sortir vert à tort (voir ci-dessous).
+      #
       # `tsconfig.json` inclut `.expo/types/**/*.ts` et `expo-env.d.ts`, que
       # `.gitignore` exclut : en CI ces deux fichiers n'existaient donc pas,
       # et `tsc --noEmit` y typecheckait un programme plus faible que celui
@@ -42,17 +51,23 @@ jobs:
       # `expo customize tsconfig.json` les régénère tous les deux sans
       # démarrer Metro — il appelle startTypescriptTypeGenerationAsync avec
       # `metro`/`server` à undefined. Environ 2,5 s, `.expo/` présent ou non.
-      - run: npx expo customize tsconfig.json
+      - id: customize
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npx expo customize tsconfig.json
 
       # La commande a le droit de réécrire tsconfig.json et .gitignore (elle
       # y ajoute ses propres entrées si elles manquent) ; sur l'état actuel
       # elle les laisse identiques à l'octet près. Le jour où ça change, on
       # veut le voir ici et non dans le diff d'une PR sans rapport.
-      - run: git diff --exit-code tsconfig.json .gitignore
+      - if: ${{ !cancelled() && steps.customize.outcome == 'success' }}
+        run: git diff --exit-code tsconfig.json .gitignore
 
-      - run: npm run typecheck
-      - run: npm run lint
-      - run: npm run format:check
+      - if: ${{ !cancelled() && steps.customize.outcome == 'success' }}
+        run: npm run typecheck
+      - if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm run lint
+      - if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm run format:check
 
       # Trois fuseaux, trois passages de tests. Seuls les tests en dépendent :
       # typecheck/lint/format:check sont insensibles au fuseau, donc une
@@ -68,6 +83,7 @@ jobs:
       # mais l'écrire fait des trois fuseaux un contrat du dépôt plutôt qu'un
       # effet de bord de la machine d'exécution.
       - name: tests (TZ=UTC)
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: npm run test
         env:
           TZ: UTC
@@ -77,18 +93,17 @@ jobs:
       # dirait rien de plus.
       #
       # !cancelled() : sans lui, le job s'arrête au premier fuseau en échec et
-      # les suivants ne tournent jamais — constaté sur le run 35331249730 de
-      # cette PR, où America/New_York a masqué Asia/Tokyo. Les trois passages
-      # doivent pouvoir être comparés en une fois, sinon chaque fuseau cassé
-      # coûte un aller-retour.
+      # les suivants ne tournent jamais, un fuseau cassé masquant le suivant.
+      # Les trois passages doivent pouvoir être comparés en une fois, sinon
+      # chaque fuseau cassé coûte un aller-retour.
       - name: tests (TZ=America/New_York)
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: npx jest
         env:
           TZ: America/New_York
 
       - name: tests (TZ=Asia/Tokyo)
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: npx jest
         env:
           TZ: Asia/Tokyo
