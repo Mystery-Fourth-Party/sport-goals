@@ -377,20 +377,51 @@ describe('addProgress', () => {
     expect(mockedSendGoalReachedNotification).not.toHaveBeenCalled();
   });
 
-  it('notifies exactly once, at the moment the goal transitions to completed', async () => {
+  it('notifies exactly once, when an addition crosses 100 %, and not on reached → exceeded', async () => {
     const { result } = await renderHarness();
     act(() => result.current.settings.updateSettings({ goalReachedNotifs: true }));
 
     act(() => result.current.goals.createGoal(emptyGoal));
-    act(() => result.current.goals.addProgress('g2', 20)); // 20/30 : pas encore complété
+    act(() => result.current.goals.addProgress('g2', 20)); // 20/30 : sous 100 %
     expect(mockedSendGoalReachedNotification).not.toHaveBeenCalled();
 
-    act(() => result.current.goals.addProgress('g2', 10)); // 30/30 : bascule à "completed"
+    act(() => result.current.goals.addProgress('g2', 10)); // 30/30 : reached
     expect(mockedSendGoalReachedNotification).toHaveBeenCalledTimes(1);
     expect(mockedSendGoalReachedNotification).toHaveBeenCalledWith('Fresh goal');
 
-    act(() => result.current.goals.addProgress('g2', 5)); // déjà complété : pas de re-notification
+    act(() => result.current.goals.addProgress('g2', 5)); // 35/30 : exceeded, pas de re-notification
     expect(mockedSendGoalReachedNotification).toHaveBeenCalledTimes(1);
+  });
+
+  // Sans l'arrondi de roundProgress, 0,1 + 0,1 + 0,1 = 0.30000000000000004
+  // franchirait bien 100 %, mais 0.7 + 0.1 + 0.1 = 0.8999999999999999 ne le
+  // franchirait jamais sur une cible de 0,9.
+  it('notifies when floating-point additions land an epsilon under the target', async () => {
+    const { result } = await renderHarness();
+    act(() => result.current.settings.updateSettings({ goalReachedNotifs: true }));
+
+    act(() => result.current.goals.createGoal({ ...emptyGoal, targetValue: 0.9, unit: 'km' }));
+    act(() => result.current.goals.addProgress('g2', 0.7));
+    act(() => result.current.goals.addProgress('g2', 0.1));
+    expect(mockedSendGoalReachedNotification).not.toHaveBeenCalled();
+
+    act(() => result.current.goals.addProgress('g2', 0.1));
+    expect(mockedSendGoalReachedNotification).toHaveBeenCalledTimes(1);
+  });
+
+  // Rien n'est mémorisé au franchissement : une correction qui repasse sous
+  // 100 % rend un nouveau franchissement possible, et il est annoncé.
+  it('notifies again after a correction took the goal back under 100 %', async () => {
+    const { result } = await renderHarness();
+    act(() => result.current.settings.updateSettings({ goalReachedNotifs: true }));
+
+    act(() => result.current.goals.createGoal(emptyGoal));
+    act(() => result.current.goals.addProgress('g2', 30));
+    act(() => result.current.goals.updateEntry('g2', todayStr(), 10));
+    expect(mockedSendGoalReachedNotification).toHaveBeenCalledTimes(1);
+
+    act(() => result.current.goals.addProgress('g2', 20));
+    expect(mockedSendGoalReachedNotification).toHaveBeenCalledTimes(2);
   });
 
   it('does not notify when goalReachedNotifs is off (the default)', async () => {
