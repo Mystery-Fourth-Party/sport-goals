@@ -11,7 +11,12 @@ interface Props {
   remaining: number;
   showAlmostThere: boolean;
   onBack: () => void;
-  onEdit: () => void;
+  // Absent sur un objectif clos : l'archive est en lecture seule (voir
+  // GoalDetailScreen pour la raison), le bouton disparaît avec.
+  onEdit?: () => void;
+  // Objectif clos : la méta annonce l'échéance passée plutôt que
+  // « 0 jour restant ».
+  closed: boolean;
 }
 
 // Bouton retour, titre + méta (jour X/Y, jours restants), bouton édition,
@@ -25,6 +30,7 @@ export default function GoalDetailHeader({
   showAlmostThere,
   onBack,
   onEdit,
+  closed,
 }: Props) {
   const { t } = useTranslation();
   const unitLabel = t(`unit.${goal.unit}`);
@@ -57,19 +63,23 @@ export default function GoalDetailHeader({
             {t('goalDetail.header.meta', {
               elapsedDays: s.elapsedDays,
               totalDays: s.totalDays,
-              remainingDays: t('goalCard.remainingDays', { count: s.remainingDays }),
+              remainingDays: closed
+                ? t('goalCard.closed')
+                : t('goalCard.remainingDays', { count: s.remainingDays }),
             })}
           </Text>
         </View>
-        <Pressable
-          style={styles.editButton}
-          onPress={onEdit}
-          hitSlop={8}
-          accessibilityRole="button"
-          accessibilityLabel={t('goalDetail.header.editA11y')}
-        >
-          <Text style={styles.editGlyph}>✎</Text>
-        </Pressable>
+        {onEdit && (
+          <Pressable
+            style={styles.editButton}
+            onPress={onEdit}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={t('goalDetail.header.editA11y')}
+          >
+            <Text style={styles.editGlyph}>✎</Text>
+          </Pressable>
+        )}
         <StatusBadge status={s.status} />
       </View>
 

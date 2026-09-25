@@ -211,6 +211,7 @@
   "editGoal": {
     "title": "Modifier",
     "subtitle": "Replanification de l'objectif",
+    "closed": "Cet objectif est arrivé à échéance : il ne peut plus être modifié.",
     "currentProgress": "Progression actuelle",
     "durationLabel": "Jours restants",
     "titleRequired": "Le titre de l'objectif est requis.",

@@ -6,7 +6,7 @@ import { sendGoalReachedNotification } from './notifications';
 import { useSettings } from './settings-context';
 import { loadGoals, saveGoals } from './storage';
 import { useStorageStatus } from './storage-status';
-import { getGoalStats, isSuccessStatus, todayStr } from './stats';
+import { getGoalStats, isGoalClosed, isSuccessStatus, todayStr } from './stats';
 import { Goal } from './types';
 
 interface GoalsContextValue {
@@ -186,6 +186,12 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
     setGoals((prev) =>
       prev.map((g) => {
         if (g.id !== goalId) return g;
+        // Un objectif clos n'accepte plus d'ajout : l'entrée serait datée
+        // après l'échéance et pourrait faire passer un objectif échoué à
+        // atteint, notification comprise. Garde de donnée, qui fait foi ;
+        // l'écran (GoalDetailScreen) masque en plus le bouton d'ajout.
+        // Correction et suppression d'entrée restent permises.
+        if (isGoalClosed(g, today)) return g;
 
         const idx = g.entries.findIndex((e) => e.date === today);
         // recordedAt représente le dernier enregistrement sur cette entrée

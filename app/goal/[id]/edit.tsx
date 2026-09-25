@@ -12,7 +12,7 @@ import {
   parseDurationDays,
   parsePositiveNumber,
 } from '../../../src/goalValidation';
-import { fmt, getGoalStats } from '../../../src/stats';
+import { fmt, getGoalStats, isGoalClosed } from '../../../src/stats';
 import { colors, fontFamily, radius, spacing, statusColors, white } from '../../../src/theme';
 import { Goal, Unit } from '../../../src/types';
 import { useToday } from '../../../src/useToday';
@@ -25,8 +25,18 @@ export default function EditGoalScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { goals, loaded } = useGoals();
   const goal = goals.find((g) => g.id === id);
+  // Appelé avant les retours anticipés : les Hooks doivent être appelés
+  // dans le même ordre à chaque rendu.
+  const today = useToday();
+  // Garde défensive d'un objectif clos, que l'écran de détail ne propose
+  // déjà plus de modifier (onEdit absent de GoalDetailHeader, voir
+  // GoalDetailScreen) mais qu'un lien profond ou un état obsolète peut
+  // encore atteindre. « Jours restants » y serait pré-rempli à
+  // max(1, remainingDays), et enregistrer recalculerait l'échéance depuis
+  // aujourd'hui : l'objectif ressusciterait.
+  const closed = goal !== undefined && isGoalClosed(goal, today);
 
-  if (!loaded || !goal) {
+  if (!loaded || !goal || closed) {
     return (
       <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
         <View style={styles.header}>
@@ -38,7 +48,11 @@ export default function EditGoalScreen() {
             que faisait l'écran à chaque démarrage à froid sur cette route.
             L'en-tête est rendu dans les deux cas, pour que le bouton retour
             existe aussi pendant l'attente. */}
-        {loaded && <Text style={styles.notFound}>{t('goalDetail.notFound')}</Text>}
+        {loaded && (
+          <Text style={styles.notFound}>
+            {closed ? t('editGoal.closed') : t('goalDetail.notFound')}
+          </Text>
+        )}
       </SafeAreaView>
     );
   }

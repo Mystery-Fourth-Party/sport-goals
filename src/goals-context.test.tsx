@@ -93,6 +93,15 @@ async function renderHarness() {
   return view;
 }
 
+// Échéance dans 30 jours, calculée depuis la date d'exécution : addProgress
+// refuse tout ajout sur un objectif clos, et une date écrite en dur finit
+// toujours par passer.
+function openDeadline(): string {
+  const d = new Date();
+  d.setDate(d.getDate() + 30);
+  return d.toISOString();
+}
+
 const baseGoal: Goal = {
   id: 'g1',
   title: 'Test goal',
@@ -320,7 +329,7 @@ describe('addProgress', () => {
     targetValue: 30,
     unit: 'reps',
     createdAt: '2026-08-01T00:00:00.000Z',
-    deadline: '2026-08-31T00:00:00.000Z',
+    deadline: openDeadline(),
     entries: [],
   };
 
@@ -349,6 +358,24 @@ describe('addProgress', () => {
       await expectNoChange(result, () => result.current.goals.addProgress('g2', amount));
     },
   );
+
+  // Un ajout daté après l'échéance ferait passer un objectif échoué à
+  // atteint. Garde de donnée, doublée à l'écran par l'absence du bouton
+  // d'ajout (voir goal-detail-screen.test.tsx).
+  it('refuses to add progress to a closed goal, leaving state and storage untouched', async () => {
+    const { result } = await renderHarness();
+    act(() => result.current.settings.updateSettings({ goalReachedNotifs: true }));
+    const closed: Goal = {
+      ...emptyGoal,
+      id: 'closed',
+      deadline: '2026-08-31T12:00:00.000Z',
+      entries: [{ date: '2026-08-10', value: 20 }],
+    };
+    act(() => result.current.goals.createGoal(closed));
+
+    await expectNoChange(result, () => result.current.goals.addProgress('closed', 10));
+    expect(mockedSendGoalReachedNotification).not.toHaveBeenCalled();
+  });
 
   it('notifies exactly once, at the moment the goal transitions to completed', async () => {
     const { result } = await renderHarness();
@@ -386,7 +413,7 @@ describe('addProgress', () => {
       targetValue: 30,
       unit: 'reps',
       createdAt: '2026-08-01T00:00:00.000Z',
-      deadline: '2026-08-31T00:00:00.000Z',
+      deadline: openDeadline(),
       entries: [{ date: '2026-08-10', value: 20 }],
     };
     act(() => result.current.goals.createGoal(almostThere));

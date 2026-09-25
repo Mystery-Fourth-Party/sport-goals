@@ -211,6 +211,7 @@
   "editGoal": {
     "title": "Edit",
     "subtitle": "Reschedule the goal",
+    "closed": "This goal is past its deadline: it can no longer be edited.",
     "currentProgress": "Current progress",
     "durationLabel": "Days left",
     "titleRequired": "The goal title is required.",

@@ -333,6 +333,25 @@ describe('EditGoalScreen — cible hors domaine', () => {
   });
 });
 
+// Garde défensive : un lien profond ou un état obsolète peut encore mener
+// à la modification d'un objectif clos, qu'enregistrer ressusciterait.
+describe('EditGoalScreen — objectif clos', () => {
+  it('refuse le formulaire et le dit', async () => {
+    const closed: Goal = {
+      ...makeGoal(),
+      deadline: '2026-08-31T12:00:00.000Z',
+      createdAt: '2026-08-01T12:00:00.000Z',
+    };
+    mockedLoadGoals.mockResolvedValue({ value: [closed], ok: true });
+    render(<Tree show />);
+    await flush();
+
+    expect(screen.getByText(i18n.t('editGoal.closed'))).toBeTruthy();
+    expect(screen.queryByLabelText(NAME)).toBeNull();
+    expect(screen.queryByText(SAVE)).toBeNull();
+  });
+});
+
 // Même défaut qu'à la création : une durée entière démesurée passe
 // parseDurationDays, setDate sort de la plage des dates JS et toISOString
 // lève une RangeError dans handleSave.
