@@ -96,6 +96,40 @@ describe('GoalForm', () => {
     return onCreate;
   }
 
+  describe('continuer le rappel après réussite', () => {
+    const LABEL = () => i18n.t('goalFields.remindAfterReached');
+
+    it('is off by default and saved as false', async () => {
+      const onCreate = await submitWithDuration('10');
+      expect(onCreate.mock.calls[0][0].remindAfterReached).toBe(false);
+    });
+
+    it('is saved as true once switched on', async () => {
+      const onCreate = jest.fn();
+      render(<GoalForm onCreate={onCreate} />);
+      await flush();
+      fireEvent.changeText(screen.getByLabelText(i18n.t('goalFields.name')), 'Pompes');
+      fireEvent.changeText(screen.getByLabelText(i18n.t('goalFields.targetValue')), '100');
+      fireEvent.changeText(screen.getByLabelText(i18n.t('goalForm.durationLabel')), '10');
+      fireEvent.press(screen.getByLabelText(LABEL()));
+      fireEvent.press(screen.getByText(i18n.t('goalForm.submit')));
+      await flush();
+
+      expect(onCreate.mock.calls[0][0].remindAfterReached).toBe(true);
+    });
+
+    // reminderEnabled === false l'emporte : l'interrupteur n'aurait aucun effet.
+    it('is hidden while the goal reminders are off', async () => {
+      render(<GoalForm onCreate={jest.fn()} />);
+      await flush();
+      expect(screen.getByLabelText(LABEL())).toBeTruthy();
+
+      fireEvent.press(screen.getByLabelText(i18n.t('goalFields.remindersEnabled')));
+      await flush();
+      expect(screen.queryByLabelText(LABEL())).toBeNull();
+    });
+  });
+
   it('accepts a duration of exactly the maximum', async () => {
     const onCreate = await submitWithDuration(String(MAX_GOAL_DAYS));
     expect(onCreate).toHaveBeenCalledTimes(1);

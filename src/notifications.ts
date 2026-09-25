@@ -18,7 +18,14 @@ import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import type { TFunction } from 'i18next';
 import i18n from './i18n';
-import { calcStreak, dateStr, getGoalStats, isSuccessStatus, parseDate } from './stats';
+import {
+  calcStreak,
+  dateStr,
+  getGoalStats,
+  isGoalClosed,
+  isSuccessStatus,
+  parseDate,
+} from './stats';
 import { Goal } from './types';
 
 const CHANNEL_ID = 'reminders';
@@ -73,14 +80,18 @@ export function parseReminderTime(time: string): { hour: number; minute: number 
   return { hour: Number(match[1]), minute: Number(match[2]) };
 }
 
-// Objectifs "en cours" (ni terminés), n'ayant reçu aucune entrée aujourd'hui,
-// et pas explicitement exclus du rappel (reminderEnabled === false — absent
-// ou true reste inclus, voir types.ts) — ce sont les seuls concernés par le
-// rappel quotidien.
+// Objectifs concernés par le rappel quotidien : aucune entrée aujourd'hui,
+// pas explicitement exclus (reminderEnabled === false, prioritaire — absent
+// ou true reste inclus, voir types.ts), pas clos (isGoalClosed), et pas
+// encore réussis — sauf si l'utilisateur a demandé à continuer après
+// réussite (remindAfterReached === true, absent = false).
 export function ongoingGoalsWithoutTodayEntry(goals: Goal[], today: string): Goal[] {
   return goals.filter((g) => {
     if (g.reminderEnabled === false) return false;
-    if (isSuccessStatus(getGoalStats(g, today).status)) return false;
+    if (isGoalClosed(g, today)) return false;
+    if (isSuccessStatus(getGoalStats(g, today).status) && g.remindAfterReached !== true) {
+      return false;
+    }
     return !g.entries.some((e) => e.date === today && e.value > 0);
   });
 }

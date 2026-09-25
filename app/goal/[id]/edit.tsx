@@ -97,6 +97,7 @@ function EditGoalForm({ goal }: { goal: Goal }) {
   // jamais explicitement ce champ.
   const [reminderEnabled, setReminderEnabled] = useState(goal.reminderEnabled ?? true);
   const [reminderTime, setReminderTime] = useState<string | undefined>(goal.reminderTime);
+  const [remindAfterReached, setRemindAfterReached] = useState(goal.remindAfterReached ?? false);
 
   // Dès qu'une séance porte une valeur positive, l'unité ne bouge plus :
   // une entrée ne porte qu'un nombre, et la changer relirait les mêmes
@@ -159,6 +160,7 @@ function EditGoalForm({ goal }: { goal: Goal }) {
       // personnalisé après l'avoir activé.
       reminderEnabled,
       reminderTime,
+      remindAfterReached,
     });
     router.back();
   }
@@ -208,6 +210,8 @@ function EditGoalForm({ goal }: { goal: Goal }) {
           onReminderEnabledChange={setReminderEnabled}
           reminderTime={reminderTime}
           onReminderTimeChange={setReminderTime}
+          remindAfterReached={remindAfterReached}
+          onRemindAfterReachedChange={setRemindAfterReached}
         />
 
         {newDailyRequired > 0 && (

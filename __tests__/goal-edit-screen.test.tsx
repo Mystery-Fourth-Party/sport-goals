@@ -333,6 +333,26 @@ describe('EditGoalScreen — cible hors domaine', () => {
   });
 });
 
+describe('EditGoalScreen — continuer le rappel après réussite', () => {
+  it("reprend la valeur de l'objectif et enregistre son inversion", async () => {
+    mockedLoadGoals.mockResolvedValue({
+      value: [{ ...makeGoal(), remindAfterReached: true }],
+      ok: true,
+    });
+    render(<Tree show />);
+    await flush();
+    const toggle = screen.getByLabelText(i18n.t('goalFields.remindAfterReached'));
+    expect(toggle.props.accessibilityState.checked).toBe(true);
+
+    fireEvent.press(toggle);
+    fireEvent.press(screen.getByText(SAVE));
+
+    await waitFor(() => expect(mockedSaveGoals).toHaveBeenCalled());
+    const saved: Goal = mockedSaveGoals.mock.calls.at(-1)[0][0];
+    expect(saved.remindAfterReached).toBe(false);
+  });
+});
+
 // Garde défensive : un lien profond ou un état obsolète peut encore mener
 // à la modification d'un objectif clos, qu'enregistrer ressusciterait.
 describe('EditGoalScreen — objectif clos', () => {

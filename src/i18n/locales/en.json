@@ -163,7 +163,8 @@
     "unitLocked": "The unit can no longer change: sessions are already recorded in it.",
     "remindersEnabled": "Reminders enabled",
     "customTime": "Custom time",
-    "reminderTime": "Reminder time"
+    "reminderTime": "Reminder time",
+    "remindAfterReached": "Keep reminding after success"
   },
   "goalDetail": {
     "notFound": "Goal not found.",

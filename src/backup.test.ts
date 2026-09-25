@@ -28,6 +28,7 @@ const goalWithReminderOverrides: Goal = {
   id: 'g2',
   reminderTime: '07:30',
   reminderEnabled: false,
+  remindAfterReached: true,
 };
 
 describe('buildBackupPayload', () => {
@@ -69,7 +70,7 @@ describe('buildBackupPayload', () => {
     expect(Object.keys(reparsed.goals[0].entries[1])).toEqual(['date', 'value']);
   });
 
-  it('includes reminderTime/reminderEnabled when set, omits them when never set', () => {
+  it('includes reminderTime/reminderEnabled/remindAfterReached when set, omits them when never set', () => {
     const payload = buildBackupPayload([goal, goalWithReminderOverrides], settings, '2026-08-20');
 
     const withoutOverrides = payload.goals[0];
@@ -77,10 +78,14 @@ describe('buildBackupPayload', () => {
     expect(withoutOverrides.reminderEnabled).toBeUndefined();
     expect(Object.prototype.hasOwnProperty.call(withoutOverrides, 'reminderTime')).toBe(false);
     expect(Object.prototype.hasOwnProperty.call(withoutOverrides, 'reminderEnabled')).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(withoutOverrides, 'remindAfterReached')).toBe(
+      false,
+    );
 
     const withOverrides = payload.goals[1];
     expect(withOverrides.reminderTime).toBe('07:30');
     expect(withOverrides.reminderEnabled).toBe(false);
+    expect(withOverrides.remindAfterReached).toBe(true);
   });
 });
 
@@ -126,7 +131,7 @@ describe('parseBackupPayload', () => {
     expect(result.goals[0].entries[1].recordedAt).toBeUndefined();
   });
 
-  it('round-trips reminderTime/reminderEnabled, present or absent', () => {
+  it('round-trips reminderTime/reminderEnabled/remindAfterReached, present or absent', () => {
     const payload = buildBackupPayload([goal, goalWithReminderOverrides], settings, '2026-08-20');
     const result = parseBackupPayload(JSON.stringify(payload));
 
@@ -210,6 +215,10 @@ describe('parseBackupPayload', () => {
     ],
     ['reminderTime as a number', (g: Record<string, unknown>) => (g.reminderTime = 800)],
     ['reminderEnabled as a string', (g: Record<string, unknown>) => (g.reminderEnabled = 'false')],
+    [
+      'remindAfterReached as a string',
+      (g: Record<string, unknown>) => (g.remindAfterReached = 'true'),
+    ],
   ])('rejects a malformed goal: %s', (_label, mutate) => {
     const payload = buildBackupPayload([goal], settings, '2026-08-20');
     const goals = JSON.parse(JSON.stringify(payload.goals)) as Record<string, unknown>[];
