@@ -331,3 +331,21 @@ describe('EditGoalScreen — cible hors domaine', () => {
     expect(savedTargets.filter((v) => !Number.isFinite(v))).toEqual([]);
   });
 });
+
+// Même défaut qu'à la création : une durée entière démesurée passe
+// parseDurationDays, setDate sort de la plage des dates JS et toISOString
+// lève une RangeError dans handleSave.
+describe('EditGoalScreen — durée hors domaine', () => {
+  it('refuse une durée qui ne donne pas d échéance valide, sans planter', async () => {
+    mockedLoadGoals.mockResolvedValue({ value: [makeGoal()], ok: true });
+    render(<Tree show />);
+    await flush();
+    mockedSaveGoals.mockClear();
+
+    fireEvent.changeText(screen.getByLabelText(DURATION), '1000000000');
+    expect(() => fireEvent.press(screen.getByText(SAVE))).not.toThrow();
+    await flush();
+
+    expect(mockedSaveGoals).not.toHaveBeenCalled();
+  });
+});

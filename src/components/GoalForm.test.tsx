@@ -65,4 +65,21 @@ describe('GoalForm', () => {
     expect(onCreate).not.toHaveBeenCalled();
     expect(screen.getByText(i18n.t('goalForm.targetPositive'))).toBeTruthy();
   });
+
+  // Une durée entière mais démesurée passe parseDurationDays : setDate
+  // pousse alors l'échéance hors de la plage des dates JS, et toISOString
+  // lève une RangeError au milieu de handleSubmit.
+  it('refuses a duration too large to produce a valid deadline, without crashing', async () => {
+    const onCreate = jest.fn();
+    render(<GoalForm onCreate={onCreate} />);
+    await flush();
+
+    fireEvent.changeText(screen.getByLabelText(i18n.t('goalFields.name')), 'Pompes');
+    fireEvent.changeText(screen.getByLabelText(i18n.t('goalFields.targetValue')), '100');
+    fireEvent.changeText(screen.getByLabelText(i18n.t('goalForm.durationLabel')), '1000000000');
+    expect(() => fireEvent.press(screen.getByText(i18n.t('goalForm.submit')))).not.toThrow();
+    await flush();
+
+    expect(onCreate).not.toHaveBeenCalled();
+  });
 });
