@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BackButton, BarChart, ProgressBar, StatusBadge } from '../src/components/ui';
 import { weekdayShort, weekRangeLabel } from '../src/dateLabels';
 import { useGoals } from '../src/goals-context';
-import { fmt, getGoalStats, getWeeklyStats, parseDate } from '../src/stats';
+import { fmt, getGoalStats, getWeeklyStats, parseDate, splitGoalsByClosure } from '../src/stats';
 import { useToday } from '../src/useToday';
 import { colors, fontFamily, radius, spacing, statusColors, white } from '../src/theme';
 import { Goal, UNIT_ICONS } from '../src/types';
@@ -21,6 +21,10 @@ export default function WeeklyScreen() {
   const today = useToday();
   const { weekDates, sessionsPerDay, activeDays, totalSessions, mostAdvanced, mostBehind } =
     getWeeklyStats(goals, today);
+  // Liste par objectif : objectifs en cours seulement, comme les classements
+  // de getWeeklyStats. Les séances des objectifs clos restent comptées dans
+  // les cartes du haut et le graphique.
+  const { active } = splitGoalsByClosure(goals, today);
 
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
@@ -155,16 +159,16 @@ export default function WeeklyScreen() {
           </View>
         )}
 
-        {goals.length > 0 && (
+        {active.length > 0 && (
           <View style={[styles.card, styles.listCard]}>
             <Text style={[styles.label, styles.listCardHeader]}>{t('weekly.allGoals')}</Text>
-            {goals.map((g, i) => {
+            {active.map((g, i) => {
               const stats = getGoalStats(g, today);
               const weekTotal = weekTotalFor(g, weekDates);
               return (
                 <View
                   key={g.id}
-                  style={[styles.goalBreakdownRow, i < goals.length - 1 && styles.rowBorder]}
+                  style={[styles.goalBreakdownRow, i < active.length - 1 && styles.rowBorder]}
                 >
                   <View style={styles.goalBreakdownTop}>
                     <View style={styles.goalRowLeft}>
@@ -178,6 +182,7 @@ export default function WeeklyScreen() {
                       })}
                     </Text>
                   </View>
+                  <StatusBadge status={stats.status} />
                   <ProgressBar value={stats.progress} status={stats.status} />
                 </View>
               );

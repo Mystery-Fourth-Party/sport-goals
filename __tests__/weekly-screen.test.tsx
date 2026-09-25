@@ -84,6 +84,40 @@ describe('WeeklyScreen — carte « le plus avancé »', () => {
   });
 });
 
+describe('WeeklyScreen — liste par objectif', () => {
+  function goal(id: string, title: string, deadlineOffset: number, total: number): Goal {
+    const createdAt = new Date();
+    createdAt.setDate(createdAt.getDate() - 20);
+    const deadline = new Date();
+    deadline.setDate(deadline.getDate() + deadlineOffset);
+    return {
+      id,
+      title,
+      targetValue: 100,
+      unit: 'reps',
+      createdAt: createdAt.toISOString(),
+      deadline: deadline.toISOString(),
+      entries: [{ date: '2026-08-01', value: total }],
+    };
+  }
+
+  it('ne liste que les objectifs non clos, chacun avec son badge de statut', async () => {
+    await renderWeekly([
+      goal('open', 'Ouvert en retard', 10, 5),
+      goal('reached', 'Atteint en avance', 10, 120),
+      goal('closed', 'Échu hier', -1, 5),
+    ]);
+
+    expect(screen.getAllByText('Ouvert en retard').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Atteint en avance').length).toBeGreaterThan(0);
+    expect(screen.queryByText('Échu hier')).toBeNull();
+    // Badges de la liste : lus par leur libellé parlé (voir StatusBadge).
+    expect(screen.getAllByLabelText(i18n.t('statusSpoken.exceeded')).length).toBeGreaterThan(0);
+    expect(screen.getAllByLabelText(i18n.t('statusSpoken.late')).length).toBeGreaterThan(0);
+    expect(screen.queryByLabelText(i18n.t('statusSpoken.failed'))).toBeNull();
+  });
+});
+
 describe('WeeklyScreen — graphique « séances par jour »', () => {
   // L4-03 — le graphique de cet écran est la seule représentation de cette
   // donnée (contrairement à celui de l'écran Détail, doublé par la liste

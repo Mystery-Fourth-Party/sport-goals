@@ -407,6 +407,47 @@ describe('getGoalStats — durée nulle', () => {
   });
 });
 
+describe('getWeeklyStats — objectifs clos', () => {
+  // Échu la veille de TODAY, avec une séance dans la semaine et la meilleure
+  // progression brute du lot.
+  const closedThisWeek: Goal = {
+    ...pompes,
+    id: 'closed',
+    targetValue: 100,
+    createdAt: '2026-07-20T12:00:00.000Z',
+    deadline: '2026-08-19T12:00:00.000Z',
+    entries: [{ date: '2026-08-18', value: 99 }],
+  };
+  const reachedOpen: Goal = {
+    ...pompes,
+    id: 'reached-open',
+    targetValue: 100,
+    entries: [{ date: '2026-08-15', value: 100 }],
+  };
+
+  it('still counts the sessions of a closed goal', () => {
+    const w = getWeeklyStats([closedThisWeek], TODAY);
+
+    expect(w.sessionsPerDay.find((d) => d.date === '2026-08-18')?.count).toBe(1);
+    expect(w.totalSessions).toBe(1);
+    expect(w.activeDays).toBe(1);
+  });
+
+  it('leaves closed goals out of the rankings, keeping reached open ones in', () => {
+    const w = getWeeklyStats([closedThisWeek, pompes, reachedOpen], TODAY);
+
+    expect(w.mostAdvanced?.goal.id).toBe('reached-open');
+    expect(w.mostBehind?.goal.id).toBe('1');
+  });
+
+  it('ranks nothing when every goal is closed', () => {
+    const w = getWeeklyStats([closedThisWeek], TODAY);
+
+    expect(w.mostAdvanced).toBeUndefined();
+    expect(w.mostBehind).toBeUndefined();
+  });
+});
+
 describe('getWeeklyStats — objectif sans historique', () => {
   // Même repli que getGoalStats ci-dessus : un objectif enregistré avant
   // l'ajout du champ entries ne doit pas faire planter le résumé.

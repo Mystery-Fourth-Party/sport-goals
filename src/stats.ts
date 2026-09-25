@@ -246,7 +246,14 @@ export function getWeeklyStats(goals: Goal[], today: string): WeeklyStats {
   const activeDays = sessionsPerDay.filter((d) => d.count > 0).length;
   const totalSessions = sessionsPerDay.reduce((sum, d) => sum + d.count, 0);
 
-  const withStats = goals.map((g) => ({ goal: g, stats: getGoalStats(g, today) }));
+  // Les séances comptent tous les objectifs, clos compris : elles ont bien
+  // eu lieu cette semaine. Les classements, eux, ne portent que sur les
+  // objectifs encore en cours — un objectif clos n'a plus de rythme à tenir.
+  // Même partition que la liste par objectif de app/weekly.tsx.
+  const withStats = splitGoalsByClosure(goals, today).active.map((g) => ({
+    goal: g,
+    stats: getGoalStats(g, today),
+  }));
   const mostAdvanced = [...withStats].sort((a, b) => b.stats.progress - a.stats.progress)[0];
   // Exclu des candidats au « plus en retard » : les deux cartes de
   // app/weekly.tsx sont rendues l'une sous l'autre, et sans cette exclusion
