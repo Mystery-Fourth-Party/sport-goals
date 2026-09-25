@@ -164,7 +164,7 @@
     "remindersEnabled": "Reminders enabled",
     "customTime": "Custom time",
     "reminderTime": "Reminder time",
-    "remindAfterReached": "Keep reminding after success"
+    "remindAfterReached": "Keep reminding once reached"
   },
   "goalDetail": {
     "notFound": "Goal not found.",

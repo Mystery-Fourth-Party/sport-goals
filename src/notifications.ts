@@ -83,8 +83,8 @@ export function parseReminderTime(time: string): { hour: number; minute: number 
 // Objectifs concernés par le rappel quotidien : aucune entrée aujourd'hui,
 // pas explicitement exclus (reminderEnabled === false, prioritaire — absent
 // ou true reste inclus, voir types.ts), pas clos (isGoalClosed), et pas
-// encore réussis — sauf si l'utilisateur a demandé à continuer après
-// réussite (remindAfterReached === true, absent = false).
+// encore atteints ni dépassés — sauf si l'utilisateur a demandé à continuer
+// le rappel une fois atteint (remindAfterReached === true, absent = false).
 export function ongoingGoalsWithoutTodayEntry(goals: Goal[], today: string): Goal[] {
   return goals.filter((g) => {
     if (g.reminderEnabled === false) return false;

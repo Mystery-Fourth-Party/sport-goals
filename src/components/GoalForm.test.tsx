@@ -96,7 +96,7 @@ describe('GoalForm', () => {
     return onCreate;
   }
 
-  describe('continuer le rappel après réussite', () => {
+  describe('continuer le rappel une fois atteint', () => {
     const LABEL = () => i18n.t('goalFields.remindAfterReached');
 
     it('is off by default and saved as false', async () => {

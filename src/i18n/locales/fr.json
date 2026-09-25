@@ -164,7 +164,7 @@
     "remindersEnabled": "Rappels activés",
     "customTime": "Horaire personnalisé",
     "reminderTime": "Heure du rappel",
-    "remindAfterReached": "Continuer le rappel après réussite"
+    "remindAfterReached": "Continuer le rappel une fois atteint"
   },
   "goalDetail": {
     "notFound": "Objectif introuvable.",

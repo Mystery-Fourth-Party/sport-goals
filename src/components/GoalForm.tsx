@@ -24,7 +24,7 @@ export default function GoalForm({ onCreate }: Props) {
   // personnalisé".
   const [reminderEnabled, setReminderEnabled] = useState(true);
   const [reminderTime, setReminderTime] = useState<string | undefined>(undefined);
-  // Absent = false (voir types.ts) : un objectif réussi sort du rappel.
+  // Absent = false (voir types.ts) : un objectif atteint sort du rappel.
   const [remindAfterReached, setRemindAfterReached] = useState(false);
   // Les erreurs ne s'affichent qu'après une première tentative de soumission
   // invalide, pour ne pas asperger l'utilisateur de messages rouges dès

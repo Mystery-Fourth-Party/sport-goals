@@ -333,7 +333,7 @@ describe('EditGoalScreen — cible hors domaine', () => {
   });
 });
 
-describe('EditGoalScreen — continuer le rappel après réussite', () => {
+describe('EditGoalScreen — continuer le rappel une fois atteint', () => {
   it("reprend la valeur de l'objectif et enregistre son inversion", async () => {
     mockedLoadGoals.mockResolvedValue({
       value: [{ ...makeGoal(), remindAfterReached: true }],
