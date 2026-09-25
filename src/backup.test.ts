@@ -1,4 +1,5 @@
 import { buildBackupPayload, parseBackupPayload, SCHEMA_VERSION } from './backup';
+import { MAX_GOAL_DAYS } from './goalValidation';
 import i18n from './i18n';
 import { DEFAULT_SETTINGS, Settings } from './settingsStorage';
 import { Goal } from './types';
@@ -440,6 +441,37 @@ describe('parseBackupPayload — cohérence des objectifs', () => {
 
     it('accepts a deadline after createdAt', () => {
       expect(parseWithGoals([exportedGoal()]).ok).toBe(true);
+    });
+
+    // Même plafond de durée qu'à la création et à la modification.
+    describe('durée maximale', () => {
+      const created = '2026-01-10T09:00:00.000Z';
+
+      it('accepts a goal lasting exactly the maximum', () => {
+        expect(
+          parseWithGoals([
+            exportedGoal({ createdAt: created, deadline: '2027-01-10T09:00:00.000Z' }),
+          ]).ok,
+        ).toBe(true);
+      });
+
+      it('rejects a goal lasting one day more, naming it', () => {
+        expectRejection(
+          [exportedGoal({ createdAt: created, deadline: '2027-01-11T09:00:00.000Z' })],
+          'backup.goalTooLong',
+          { title: goal.title, max: MAX_GOAL_DAYS },
+        );
+      });
+
+      // setDate en heure locale : 365 jours qui traversent un changement
+      // d'heure mesurent 365 jours et 1 heure en instants.
+      it('accepts the maximum stretched by a daylight-saving hour', () => {
+        expect(
+          parseWithGoals([
+            exportedGoal({ createdAt: created, deadline: '2027-01-10T10:00:00.000Z' }),
+          ]).ok,
+        ).toBe(true);
+      });
     });
 
     // R1 (suite) — le seul contrôle NaN laisse passer tout ce que le moteur
