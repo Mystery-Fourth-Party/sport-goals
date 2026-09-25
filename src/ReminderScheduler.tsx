@@ -4,7 +4,7 @@ import { useGoals } from './goals-context';
 import { cancelDailyReminder, rescheduleDailyReminder } from './notifications';
 import { useReminderStatus } from './reminder-status';
 import { useSettings } from './settings-context';
-import { todayStr } from './stats';
+import { useToday } from './useToday';
 
 // Composant invisible monté une fois dans app/_layout.tsx (à l'intérieur de
 // SettingsProvider, GoalsProvider et ReminderStatusProvider) : maintient le
@@ -42,6 +42,9 @@ export default function ReminderScheduler() {
   // résultat de la DERNIÈRE exécution déclenchée, jamais une plus ancienne,
   // quel que soit l'ordre de résolution des promesses.
   const runId = useRef(0);
+  // Relu au retour au premier plan (voir useToday) ; la raison de sa
+  // présence dans les dépendances est donnée au pied de l'effet.
+  const today = useToday();
 
   useEffect(() => {
     if (!goalsLoaded || !settingsLoaded) return;
@@ -59,7 +62,7 @@ export default function ReminderScheduler() {
       return;
     }
 
-    rescheduleDailyReminder(goals, todayStr(), settings.reminderTime, settings.streakAlert, {
+    rescheduleDailyReminder(goals, today, settings.reminderTime, settings.streakAlert, {
       // La garde ne sert plus seulement à filtrer l'affichage du statut :
       // elle est consultée à l'intérieur, avant l'annulation et avant chaque
       // programmation, pour qu'une exécution obsolète n'aille pas défaire ou
@@ -84,6 +87,15 @@ export default function ReminderScheduler() {
       });
   }, [
     goals,
+    // Un objectif se clôt avec le seul passage du temps (isGoalClosed), sans
+    // que `goals` ni les réglages ne changent, alors qu'un trigger DAILY
+    // garde le contenu et les horaires posés à la programmation. Sans la
+    // date ici, un objectif échu resterait nommé dans le rappel et son
+    // horaire personnalisé sonnerait encore chaque jour. useToday ne change
+    // de valeur qu'au retour au premier plan un autre jour : le même jour,
+    // rien ne se relance. Limite : une app qui ne revient jamais au premier
+    // plan garde le rappel figé jusqu'à sa prochaine ouverture.
+    today,
     settings.dailyReminder,
     settings.reminderTime,
     settings.streakAlert,
