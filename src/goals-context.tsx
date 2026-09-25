@@ -6,7 +6,7 @@ import { sendGoalReachedNotification } from './notifications';
 import { useSettings } from './settings-context';
 import { loadGoals, saveGoals } from './storage';
 import { useStorageStatus } from './storage-status';
-import { getGoalStats, todayStr } from './stats';
+import { getGoalStats, isSuccessStatus, todayStr } from './stats';
 import { Goal } from './types';
 
 interface GoalsContextValue {
@@ -199,18 +199,19 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
             : [...g.entries, { date: today, value: amount, recordedAt: now }];
         const updated: Goal = { ...g, entries };
 
-        // Ne notifie qu'au moment précis où le statut *passe* à "completed",
-        // pas à chaque ajout une fois déjà atteint (sinon spam à chaque
-        // progression ajoutée après coup). Le titre est posé dans un ref
+        // Ne notifie qu'au moment précis où la progression franchit 100 %
+        // (vers reached ou exceeded), pas à chaque ajout une fois déjà
+        // atteint : le passage reached → exceeded ne renotifie pas. Même
+        // arrondi que le statut (voir roundProgress). Le titre est posé dans un ref
         // plutôt qu'envoyé ici directement : cet updater doit rester pur
         // (StrictMode peut le réinvoquer avec le même `prev`, auquel cas il
         // réécrit juste la même valeur — sans risque), l'envoi réel de la
         // notification est un effet de bord réservé à l'effect au-dessus,
         // qui tourne une fois l'état effectivement commité.
         if (settings.goalReachedNotifs) {
-          const wasCompleted = getGoalStats(g, today).status === 'completed';
-          const isCompleted = getGoalStats(updated, today).status === 'completed';
-          if (!wasCompleted && isCompleted) {
+          const wasReached = isSuccessStatus(getGoalStats(g, today).status);
+          const isReached = isSuccessStatus(getGoalStats(updated, today).status);
+          if (!wasReached && isReached) {
             pendingGoalReachedTitle.current = g.title;
           }
         }

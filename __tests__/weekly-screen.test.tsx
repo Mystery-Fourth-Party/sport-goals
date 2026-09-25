@@ -35,13 +35,14 @@ beforeEach(async () => {
 });
 
 // Objectif à 90 % de progression brute — donc le plus avancé du lot — mais
-// en retard sur son propre rythme attendu : son échéance est passée. C'est
-// exactement le cas que la couleur verte codée en dur rendait trompeur.
+// en retard sur son propre rythme attendu : son échéance tombe aujourd'hui,
+// 100 % sont attendus. C'est exactement le cas que la couleur verte codée
+// en dur rendait trompeur. Échéance aujourd'hui et non hier : un objectif
+// échu est clos, donc « non atteint », et quitte l'écran Hebdo.
 function avanceMaisEnRetard(): Goal {
   const createdAt = new Date();
   createdAt.setDate(createdAt.getDate() - 30);
   const deadline = new Date();
-  deadline.setDate(deadline.getDate() - 1);
   return {
     id: 'avance-en-retard',
     title: 'Presque fini mais en retard',

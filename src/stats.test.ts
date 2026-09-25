@@ -7,8 +7,10 @@ import {
   getGoalStats,
   getWeeklyStats,
   parseDate,
-  splitGoalsByStatus,
+  isGoalClosed,
+  splitGoalsByClosure,
   statusLabel,
+  statusSpokenLabel,
 } from './stats';
 
 // Objectif "1000 Pompes" du prototype Figma Make (design-reference/figma-make-source.tsx,
@@ -89,17 +91,17 @@ describe('getGoalStats', () => {
     expect(s.actual).toBe(10);
   });
 
-  it('marks a goal completed once actual reaches the target, even past the deadline', () => {
+  it('keeps a goal reached past the deadline when its target was met exactly', () => {
     const done: Goal = { ...pompes, entries: [{ date: '2026-08-31', value: 1000 }] };
     const s = getGoalStats(done, '2026-09-05');
-    expect(s.status).toBe('completed');
+    expect(s.status).toBe('reached');
     expect(s.progress).toBe(1);
   });
 
-  it('lets progress exceed 100% when the goal is overshot, and still marks it completed', () => {
+  it('lets progress exceed 100% when the goal is overshot, and marks it exceeded', () => {
     const overshot: Goal = { ...pompes, entries: [{ date: '2026-08-31', value: 1500 }] };
     const s = getGoalStats(overshot, '2026-09-05');
-    expect(s.status).toBe('completed');
+    expect(s.status).toBe('exceeded');
     expect(s.progress).toBe(1.5);
   });
 
@@ -146,35 +148,130 @@ describe('getWeeklyStats', () => {
   });
 });
 
-describe('splitGoalsByStatus', () => {
-  // Cible atteinte quel que soit le statut d'avancement attendu ce jour-là.
-  const completed: Goal = { ...pompes, id: 'done', entries: [{ date: '2026-08-31', value: 1000 }] };
-  // Aucune entrée : pas "completed" (voir getGoalStats — not-started).
-  const active: Goal = { ...pompes, id: 'active', entries: [] };
+describe('splitGoalsByClosure', () => {
+  // pompes échoit le 2026-08-31 : ouvert ce jour-là, clos dès le lendemain.
+  const reachedEarly: Goal = {
+    ...pompes,
+    id: 'reached-early',
+    entries: [{ date: '2026-08-10', value: 1000 }],
+  };
+  const expired: Goal = {
+    ...pompes,
+    id: 'expired',
+    createdAt: '2026-07-01T12:00:00.000Z',
+    deadline: '2026-07-31T12:00:00.000Z',
+  };
+  const expiredReached: Goal = { ...expired, id: 'expired-reached', entries: reachedEarly.entries };
 
-  it('splits a mix of active and completed goals, keeping original order in each list', () => {
-    const goals = [active, completed, pompes];
-    const result = splitGoalsByStatus(goals, TODAY);
+  it('keeps a goal reached ahead of its deadline among the active ones', () => {
+    const result = splitGoalsByClosure([reachedEarly, pompes], TODAY);
 
-    expect(result.active.map((g) => g.id)).toEqual(['active', '1']);
-    expect(result.completed.map((g) => g.id)).toEqual(['done']);
+    expect(result.active.map((g) => g.id)).toEqual(['reached-early', '1']);
+    expect(result.closed).toEqual([]);
   });
 
-  it('puts everything in active when nothing is completed', () => {
-    const result = splitGoalsByStatus([active, pompes], TODAY);
-    expect(result.active).toHaveLength(2);
-    expect(result.completed).toEqual([]);
-  });
+  it('archives every goal past its deadline, reached or not, keeping the original order', () => {
+    const result = splitGoalsByClosure([expired, pompes, expiredReached], TODAY);
 
-  it('puts everything in completed when all goals are done', () => {
-    const otherCompleted: Goal = { ...completed, id: 'done-2' };
-    const result = splitGoalsByStatus([completed, otherCompleted], TODAY);
-    expect(result.completed.map((g) => g.id)).toEqual(['done', 'done-2']);
-    expect(result.active).toEqual([]);
+    expect(result.active.map((g) => g.id)).toEqual(['1']);
+    expect(result.closed.map((g) => g.id)).toEqual(['expired', 'expired-reached']);
   });
 
   it('returns two empty lists for an empty input', () => {
-    expect(splitGoalsByStatus([], TODAY)).toEqual({ active: [], completed: [] });
+    expect(splitGoalsByClosure([], TODAY)).toEqual({ active: [], closed: [] });
+  });
+});
+
+// Table des statuts : chaque statut, le seuil exact de 100 % en flottant,
+// et la frontière de clôture entre le jour de l'échéance et le lendemain.
+describe('getGoalStats — statuts reached / exceeded / failed', () => {
+  const base: Goal = {
+    id: 'table',
+    title: 'Table',
+    targetValue: 100,
+    unit: 'reps',
+    createdAt: '2026-08-01T12:00:00.000Z',
+    deadline: '2026-08-31T12:00:00.000Z',
+    entries: [],
+  };
+  const withTotal = (value: number): Goal => ({
+    ...base,
+    entries: value > 0 ? [{ date: '2026-08-10', value }] : [],
+  });
+
+  it.each([
+    // [total, jour, statut attendu]
+    [0, '2026-08-01', 'not-started'],
+    [80, '2026-08-20', 'ahead'],
+    [60, '2026-08-20', 'on-track'],
+    [20, '2026-08-20', 'late'],
+    [100, '2026-08-20', 'reached'],
+    [150, '2026-08-20', 'exceeded'],
+    // Jour de l'échéance : encore ouvert, la logique de rythme s'applique.
+    [20, '2026-08-31', 'late'],
+    [100, '2026-08-31', 'reached'],
+    [150, '2026-08-31', 'exceeded'],
+    // Lendemain : clos, statut final.
+    [20, '2026-09-01', 'failed'],
+    [0, '2026-09-01', 'failed'],
+    [99.99, '2026-09-01', 'failed'],
+    [100, '2026-09-01', 'reached'],
+    [150, '2026-09-01', 'exceeded'],
+  ] as const)('total %p on %s gives %s', (value, today, expected) => {
+    expect(getGoalStats(withTotal(value), today).status).toBe(expected);
+  });
+
+  // 0,1 + 0,1 + 0,1 vaut 0.30000000000000004 : sans arrondi, la progression
+  // dépasse 1 d'un epsilon et l'objectif s'annonce dépassé.
+  it('treats 3 × 0.1 km on a 0.3 km target as reached, not exceeded', () => {
+    const goal: Goal = {
+      ...base,
+      targetValue: 0.3,
+      unit: 'km',
+      entries: [
+        { date: '2026-08-10', value: 0.1 },
+        { date: '2026-08-11', value: 0.1 },
+        { date: '2026-08-12', value: 0.1 },
+      ],
+    };
+
+    expect(getGoalStats(goal, '2026-08-20').progress).toBeGreaterThan(1);
+    expect(getGoalStats(goal, '2026-08-20').status).toBe('reached');
+    expect(getGoalStats(goal, '2026-09-01').status).toBe('reached');
+  });
+
+  // 0,7 + 0,1 + 0,1 vaut 0.8999999999999999 : sans arrondi, l'objectif
+  // clos s'annonce non atteint.
+  it('treats a sum landing an epsilon under the target as reached', () => {
+    const goal: Goal = {
+      ...base,
+      targetValue: 0.9,
+      unit: 'km',
+      entries: [
+        { date: '2026-08-10', value: 0.7 },
+        { date: '2026-08-11', value: 0.1 },
+        { date: '2026-08-12', value: 0.1 },
+      ],
+    };
+
+    expect(getGoalStats(goal, '2026-09-01').progress).toBeLessThan(1);
+    expect(getGoalStats(goal, '2026-09-01').status).toBe('reached');
+  });
+});
+
+describe('isGoalClosed', () => {
+  const goal: Goal = { ...pompes, entries: [] };
+
+  it('keeps the goal open for the whole deadline day, and closes it the next day', () => {
+    expect(isGoalClosed(goal, '2026-08-30')).toBe(false);
+    expect(isGoalClosed(goal, '2026-08-31')).toBe(false);
+    expect(isGoalClosed(goal, '2026-09-01')).toBe(true);
+  });
+
+  it('compares calendar days across a year boundary', () => {
+    const newYear: Goal = { ...goal, deadline: '2026-12-31T12:00:00.000Z' };
+    expect(isGoalClosed(newYear, '2026-12-31')).toBe(false);
+    expect(isGoalClosed(newYear, '2027-01-01')).toBe(true);
   });
 });
 
@@ -346,13 +443,35 @@ describe('statusLabel', () => {
     expect(statusLabel('ahead')).toBe('En avance');
     expect(statusLabel('on-track')).toBe('Dans les temps');
     expect(statusLabel('late')).toBe('En retard');
-    expect(statusLabel('completed')).toBe('Terminé ✓');
     expect(statusLabel('not-started')).toBe('Pas commencé');
+    expect(statusLabel('reached')).toBe('Atteint ✓');
+    expect(statusLabel('exceeded')).toBe('Dépassé ★');
+    expect(statusLabel('failed')).toBe('Non atteint');
 
     await i18n.changeLanguage('en');
     expect(statusLabel('ahead')).toBe('Ahead');
+    expect(statusLabel('failed')).toBe('Not reached');
 
     await i18n.changeLanguage('fr');
+  });
+
+  // Les lecteurs d'écran lisent ✓ et ★ tels quels.
+  it('offers a spoken variant without symbols for every status', async () => {
+    await i18n.changeLanguage('fr');
+    const all = [
+      'ahead',
+      'on-track',
+      'late',
+      'not-started',
+      'reached',
+      'exceeded',
+      'failed',
+    ] as const;
+    for (const status of all) {
+      expect(statusSpokenLabel(status)).not.toMatch(/[✓★]/);
+      expect(statusSpokenLabel(status)).not.toMatch(/^statusSpoken\./);
+    }
+    expect(statusSpokenLabel('exceeded')).toBe('Dépassé');
   });
 });
 

@@ -18,7 +18,7 @@ import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import type { TFunction } from 'i18next';
 import i18n from './i18n';
-import { calcStreak, dateStr, getGoalStats, parseDate } from './stats';
+import { calcStreak, dateStr, getGoalStats, isSuccessStatus, parseDate } from './stats';
 import { Goal } from './types';
 
 const CHANNEL_ID = 'reminders';
@@ -80,7 +80,7 @@ export function parseReminderTime(time: string): { hour: number; minute: number 
 export function ongoingGoalsWithoutTodayEntry(goals: Goal[], today: string): Goal[] {
   return goals.filter((g) => {
     if (g.reminderEnabled === false) return false;
-    if (getGoalStats(g, today).status === 'completed') return false;
+    if (isSuccessStatus(getGoalStats(g, today).status)) return false;
     return !g.entries.some((e) => e.date === today && e.value > 0);
   });
 }

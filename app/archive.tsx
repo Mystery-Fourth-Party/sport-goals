@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BackButton } from '../src/components/ui';
 import GoalCard from '../src/components/GoalCard';
 import { useGoals } from '../src/goals-context';
-import { splitGoalsByStatus } from '../src/stats';
+import { splitGoalsByClosure } from '../src/stats';
 import { useToday } from '../src/useToday';
 import { colors, fontFamily, spacing, white } from '../src/theme';
 
@@ -13,7 +13,7 @@ export default function ArchiveScreen() {
   const { t } = useTranslation();
   const { goals } = useGoals();
   const today = useToday();
-  const { completed } = splitGoalsByStatus(goals, today);
+  const { closed } = splitGoalsByClosure(goals, today);
 
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
@@ -25,14 +25,13 @@ export default function ArchiveScreen() {
       <FlatList
         style={styles.list}
         contentContainerStyle={styles.listContent}
-        data={completed}
+        data={closed}
         keyExtractor={(g) => g.id}
         renderItem={({ item }) => (
-          // Même onPress que la liste principale : un objectif qui n'est
-          // plus "completed" après une correction/suppression d'entrée
-          // ressort naturellement de cette liste au rendu suivant — voir
-          // splitGoalsByStatus, purement dérivé de getGoalStats, jamais
-          // stocké — rien de spécifique à faire ici pour ça.
+          // Même onPress que la liste principale : l'écran de détail se
+          // met lui-même en lecture seule sur un objectif clos (voir
+          // isGoalClosed dans stats.ts). La carte porte le badge du statut
+          // final (reached / exceeded / failed).
           <GoalCard goal={item} onPress={() => router.push(`/goal/${item.id}`)} />
         )}
         ItemSeparatorComponent={() => <View style={styles.separator} />}

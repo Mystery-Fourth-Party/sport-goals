@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Goal, UNIT_ICONS } from '../types';
-import { fmt, getGoalStats, statusLabel, todayStr } from '../stats';
+import { fmt, getGoalStats, isGoalClosed, statusSpokenLabel, todayStr } from '../stats';
 import { colors, fontFamily, radius, spacing, statusColors, white } from '../theme';
 import { ProgressBar, StatusBadge } from './ui';
 
@@ -15,7 +15,8 @@ interface Props {
 // vivent désormais sur l'écran Détail plutôt qu'inline ici.
 export default function GoalCard({ goal, onPress }: Props) {
   const { t } = useTranslation();
-  const s = getGoalStats(goal, todayStr());
+  const today = todayStr();
+  const s = getGoalStats(goal, today);
   const unitLabel = t(`unit.${goal.unit}`);
   // Variante "parlée" de l'unité, réservée aux libellés d'accessibilité :
   // l'abréviation "km" de unit.km est épelée "K M" par TalkBack. unitLabel
@@ -30,11 +31,18 @@ export default function GoalCard({ goal, onPress }: Props) {
   // n'entre alors pas dans les enfants — pas besoin en plus de
   // accessibilityElementsHidden/importantForAccessibility côté enfants ni de
   // accessible={false} dessus (vérifié dans la doc RN sur l'accessibilité).
+  //
+  // Sur un objectif clos, « 0 jour restant » ne dit rien : la ligne
+  // annonce l'échéance passée, et le statut final suit.
+  const closed = isGoalClosed(goal, today);
+  const remainingText = closed
+    ? t('goalCard.closed')
+    : t('goalCard.remainingDays', { count: s.remainingDays });
   const accessibilityParts = [
     goal.title,
     t('goalCard.progressA11y', { percent: Math.round(s.progress * 100) }),
-    t('goalCard.remainingDaysA11y', { count: s.remainingDays }),
-    statusLabel(s.status),
+    closed ? t('goalCard.closed') : t('goalCard.remainingDaysA11y', { count: s.remainingDays }),
+    statusSpokenLabel(s.status),
   ];
   if (s.status === 'late') {
     accessibilityParts.push(
@@ -63,9 +71,7 @@ export default function GoalCard({ goal, onPress }: Props) {
             <Text style={styles.title} numberOfLines={2}>
               {goal.title}
             </Text>
-            <Text style={styles.remaining}>
-              {t('goalCard.remainingDays', { count: s.remainingDays })}
-            </Text>
+            <Text style={styles.remaining}>{remainingText}</Text>
           </View>
         </View>
         <StatusBadge status={s.status} />

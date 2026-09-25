@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
-import { Status, statusLabel } from '../../stats';
+import { Status, statusLabel, statusSpokenLabel } from '../../stats';
 import { fontFamily, radius, statusColors } from '../../theme';
 
 interface Props {
@@ -10,7 +10,11 @@ interface Props {
 export default function StatusBadge({ status }: Props) {
   const palette = statusColors[status];
   return (
-    <View style={[styles.container, { backgroundColor: palette.badgeBg }]}>
+    <View
+      style={[styles.container, { backgroundColor: palette.badgeBg }]}
+      accessible
+      accessibilityLabel={statusSpokenLabel(status)}
+    >
       <Text style={[styles.text, { color: palette.badgeText }]}>
         {statusLabel(status).toUpperCase()}
       </Text>

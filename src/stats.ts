@@ -11,7 +11,11 @@
 import i18n from './i18n';
 import { Entry, Goal } from './types';
 
-export type Status = 'ahead' | 'on-track' | 'late' | 'completed' | 'not-started';
+// Pendant la durée de l'objectif : not-started / ahead / on-track / late
+// sous 100 %, reached à 100 %, exceeded au-delà. Une fois clos (voir
+// isGoalClosed) : reached / exceeded / failed selon la progression finale.
+export type Status =
+  'ahead' | 'on-track' | 'late' | 'not-started' | 'reached' | 'exceeded' | 'failed';
 
 export interface GoalStats {
   actual: number;
@@ -75,6 +79,33 @@ export function todayStr(): string {
   return dateStr(new Date());
 }
 
+// ─── Clôture et seuil de 100 % ─────────────────────────────────────────
+
+// Seul endroit où se décide qu'un objectif est clos : les écrans, le
+// rappel et l'archive passent tous par ici plutôt que de comparer des
+// dates eux-mêmes. L'objectif reste actif pendant tout le jour local de
+// l'échéance et se clôt au jour suivant. Comparaison de chaînes : le
+// format YYYY-MM-DD se trie dans l'ordre chronologique.
+export function isGoalClosed(goal: Goal, today: string): boolean {
+  return today > toDayStr(goal.deadline);
+}
+
+// Progression arrondie à 6 décimales avant toute comparaison à 100 % :
+// 3 × 0,1 km sur une cible de 0,3 km donne 1.0000000000000002 en flottant,
+// qui passerait pour « dépassé ». Même arrondi que l'écart au rythme
+// attendu dans getGoalStats. addProgress (goals-context.tsx) détecte le
+// franchissement de 100 % par le statut, donc sur cette même base.
+export function roundProgress(progress: number): number {
+  return Math.round(progress * 1e6) / 1e6;
+}
+
+// Cible atteinte ou dépassée, que l'objectif soit clos ou non. Lu par le
+// rappel quotidien (ongoingGoalsWithoutTodayEntry) et par la détection du
+// franchissement de 100 % (addProgress).
+export function isSuccessStatus(status: Status): boolean {
+  return status === 'reached' || status === 'exceeded';
+}
+
 // ─── Calcul principal par objectif ─────────────────────────────────────
 // Débloque : moyenne quotidienne, recalcul dynamique, alerte de retard, streak.
 
@@ -115,9 +146,14 @@ export function getGoalStats(goal: Goal, today: string): GoalStats {
   // cible entière est due dans la seule journée disponible.
   const dailyAvg = totalDays > 0 ? goal.targetValue / totalDays : goal.targetValue;
 
+  const rounded = roundProgress(progress);
   let status: Status;
-  if (progress >= 1) {
-    status = 'completed';
+  if (rounded > 1) {
+    status = 'exceeded';
+  } else if (rounded === 1) {
+    status = 'reached';
+  } else if (isGoalClosed(goal, today)) {
+    status = 'failed';
   } else if (elapsedDays === 0 && actual === 0) {
     status = 'not-started';
   } else {
@@ -166,26 +202,27 @@ export function calcStreak(entries: Entry[], today: string): number {
   return streak;
 }
 
-// ─── Actifs / terminés ──────────────────────────────────────────────────
-// Dérivé de getGoalStats à chaque appel, jamais stocké sur Goal : depuis
-// l'édition/suppression d'entrée, un objectif "completed" peut redevenir
-// non-complété si on corrige/supprime l'entrée qui l'avait fait basculer —
-// un flag persisté se désynchroniserait de ce cas.
+// ─── Actifs / clos ──────────────────────────────────────────────────────
+// Partition sur la clôture et non sur le statut : un objectif atteint en
+// avance reste sur l'accueil jusqu'à son échéance, un objectif échu part
+// en archive quelle que soit sa progression. Dérivé à chaque appel, jamais
+// stocké sur Goal : rien n'est à migrer, et une correction d'entrée se
+// reflète d'elle-même.
 
-export function splitGoalsByStatus(
+export function splitGoalsByClosure(
   goals: Goal[],
   today: string,
-): { active: Goal[]; completed: Goal[] } {
+): { active: Goal[]; closed: Goal[] } {
   const active: Goal[] = [];
-  const completed: Goal[] = [];
+  const closed: Goal[] = [];
   for (const g of goals) {
-    if (getGoalStats(g, today).status === 'completed') {
-      completed.push(g);
+    if (isGoalClosed(g, today)) {
+      closed.push(g);
     } else {
       active.push(g);
     }
   }
-  return { active, completed };
+  return { active, closed };
 }
 
 // ─── Résumé hebdomadaire ────────────────────────────────────────────────
@@ -247,10 +284,29 @@ const STATUS_KEYS: Record<Status, string> = {
   ahead: 'status.ahead',
   'on-track': 'status.onTrack',
   late: 'status.late',
-  completed: 'status.completed',
   'not-started': 'status.notStarted',
+  reached: 'status.reached',
+  exceeded: 'status.exceeded',
+  failed: 'status.failed',
 };
 
 export function statusLabel(s: Status): string {
   return i18n.t(STATUS_KEYS[s]);
+}
+
+// Variante pour les lecteurs d'écran : les libellés affichés portent des
+// symboles (✓, ★) que TalkBack et VoiceOver lisent tels quels. Consommée
+// par StatusBadge et GoalCard, à côté de statusLabel.
+const STATUS_SPOKEN_KEYS: Record<Status, string> = {
+  ahead: 'statusSpoken.ahead',
+  'on-track': 'statusSpoken.onTrack',
+  late: 'statusSpoken.late',
+  'not-started': 'statusSpoken.notStarted',
+  reached: 'statusSpoken.reached',
+  exceeded: 'statusSpoken.exceeded',
+  failed: 'statusSpoken.failed',
+};
+
+export function statusSpokenLabel(s: Status): string {
+  return i18n.t(STATUS_SPOKEN_KEYS[s]);
 }

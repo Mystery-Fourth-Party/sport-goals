@@ -36,7 +36,18 @@
     "ahead": "Ahead",
     "onTrack": "On track",
     "late": "Late",
-    "completed": "Completed ✓",
+    "reached": "Reached ✓",
+    "exceeded": "Exceeded ★",
+    "failed": "Not reached",
+    "notStarted": "Not started"
+  },
+  "statusSpoken": {
+    "ahead": "Ahead",
+    "onTrack": "On track",
+    "late": "Late",
+    "reached": "Reached",
+    "exceeded": "Exceeded",
+    "failed": "Not reached",
     "notStarted": "Not started"
   },
   "dateLabels": {
@@ -80,16 +91,16 @@
     "active": "Active",
     "activeA11y_one": "Active, {{count}} goal",
     "activeA11y_other": "Active, {{count}} goals",
-    "completed": "Completed",
-    "completedA11y_one": "Completed, {{count}} goal",
-    "completedA11y_other": "Completed, {{count}} goals",
+    "archived": "Archived",
+    "archivedA11y_one": "Archived, {{count}} goal",
+    "archivedA11y_other": "Archived, {{count}} goals",
     "total": "Total",
     "totalA11y_one": "Total, {{count}} goal",
     "totalA11y_other": "Total, {{count}} goals",
     "emptyNoGoalsTitle": "No goals yet",
     "emptyNoGoalsText": "Set your first fitness goal and track your progress every day.",
-    "emptyAllDoneTitle": "All done",
-    "emptyAllDoneText": "All your goals are complete — find them in the archive, or set yourself a new challenge.",
+    "emptyAllClosedTitle": "All archived",
+    "emptyAllClosedText": "All your goals have reached their deadline — find them in the archive, or set yourself a new challenge.",
     "createGoal": "Create a goal",
     "viewArchive": "View archive"
   },
@@ -99,7 +110,7 @@
   "archive": {
     "title": "Archive",
     "emptyTitle": "Nothing yet",
-    "emptyText": "Completed goals will show up here as you go."
+    "emptyText": "Goals past their deadline will show up here, reached or not."
   },
   "weekly": {
     "title": "Week",
@@ -120,6 +131,7 @@
     "empty": "No goals yet — create one to see your weekly summary."
   },
   "goalCard": {
+    "closed": "Past deadline",
     "progressA11y": "{{percent}}% of the goal",
     "remainingDaysA11y_one": "{{count}} day left",
     "remainingDaysA11y_other": "{{count}} days left",
