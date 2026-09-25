@@ -1,4 +1,5 @@
 import { buildBackupPayload, parseBackupPayload, SCHEMA_VERSION } from './backup';
+import { MAX_GOAL_DAYS } from './goalValidation';
 import i18n from './i18n';
 import { DEFAULT_SETTINGS, Settings } from './settingsStorage';
 import { Goal } from './types';
@@ -28,6 +29,7 @@ const goalWithReminderOverrides: Goal = {
   id: 'g2',
   reminderTime: '07:30',
   reminderEnabled: false,
+  remindAfterReached: true,
 };
 
 describe('buildBackupPayload', () => {
@@ -69,7 +71,7 @@ describe('buildBackupPayload', () => {
     expect(Object.keys(reparsed.goals[0].entries[1])).toEqual(['date', 'value']);
   });
 
-  it('includes reminderTime/reminderEnabled when set, omits them when never set', () => {
+  it('includes reminderTime/reminderEnabled/remindAfterReached when set, omits them when never set', () => {
     const payload = buildBackupPayload([goal, goalWithReminderOverrides], settings, '2026-08-20');
 
     const withoutOverrides = payload.goals[0];
@@ -77,10 +79,14 @@ describe('buildBackupPayload', () => {
     expect(withoutOverrides.reminderEnabled).toBeUndefined();
     expect(Object.prototype.hasOwnProperty.call(withoutOverrides, 'reminderTime')).toBe(false);
     expect(Object.prototype.hasOwnProperty.call(withoutOverrides, 'reminderEnabled')).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(withoutOverrides, 'remindAfterReached')).toBe(
+      false,
+    );
 
     const withOverrides = payload.goals[1];
     expect(withOverrides.reminderTime).toBe('07:30');
     expect(withOverrides.reminderEnabled).toBe(false);
+    expect(withOverrides.remindAfterReached).toBe(true);
   });
 });
 
@@ -126,7 +132,7 @@ describe('parseBackupPayload', () => {
     expect(result.goals[0].entries[1].recordedAt).toBeUndefined();
   });
 
-  it('round-trips reminderTime/reminderEnabled, present or absent', () => {
+  it('round-trips reminderTime/reminderEnabled/remindAfterReached, present or absent', () => {
     const payload = buildBackupPayload([goal, goalWithReminderOverrides], settings, '2026-08-20');
     const result = parseBackupPayload(JSON.stringify(payload));
 
@@ -210,6 +216,10 @@ describe('parseBackupPayload', () => {
     ],
     ['reminderTime as a number', (g: Record<string, unknown>) => (g.reminderTime = 800)],
     ['reminderEnabled as a string', (g: Record<string, unknown>) => (g.reminderEnabled = 'false')],
+    [
+      'remindAfterReached as a string',
+      (g: Record<string, unknown>) => (g.remindAfterReached = 'true'),
+    ],
   ])('rejects a malformed goal: %s', (_label, mutate) => {
     const payload = buildBackupPayload([goal], settings, '2026-08-20');
     const goals = JSON.parse(JSON.stringify(payload.goals)) as Record<string, unknown>[];
@@ -431,6 +441,37 @@ describe('parseBackupPayload — cohérence des objectifs', () => {
 
     it('accepts a deadline after createdAt', () => {
       expect(parseWithGoals([exportedGoal()]).ok).toBe(true);
+    });
+
+    // Même plafond de durée qu'à la création et à la modification.
+    describe('durée maximale', () => {
+      const created = '2026-01-10T09:00:00.000Z';
+
+      it('accepts a goal lasting exactly the maximum', () => {
+        expect(
+          parseWithGoals([
+            exportedGoal({ createdAt: created, deadline: '2027-01-10T09:00:00.000Z' }),
+          ]).ok,
+        ).toBe(true);
+      });
+
+      it('rejects a goal lasting one day more, naming it', () => {
+        expectRejection(
+          [exportedGoal({ createdAt: created, deadline: '2027-01-11T09:00:00.000Z' })],
+          'backup.goalTooLong',
+          { title: goal.title, max: MAX_GOAL_DAYS },
+        );
+      });
+
+      // setDate en heure locale : 365 jours qui traversent un changement
+      // d'heure mesurent 365 jours et 1 heure en instants.
+      it('accepts the maximum stretched by a daylight-saving hour', () => {
+        expect(
+          parseWithGoals([
+            exportedGoal({ createdAt: created, deadline: '2027-01-10T10:00:00.000Z' }),
+          ]).ok,
+        ).toBe(true);
+      });
     });
 
     // R1 (suite) — le seul contrôle NaN laisse passer tout ce que le moteur

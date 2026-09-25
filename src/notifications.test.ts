@@ -67,13 +67,79 @@ describe('ongoingGoalsWithoutTodayEntry', () => {
     expect(ongoingGoalsWithoutTodayEntry([logged, pending], today)).toEqual([pending]);
   });
 
-  it('excludes completed goals even without a today entry', () => {
-    const completed = makeGoal({
+  it('excludes reached goals even without a today entry', () => {
+    const reached = makeGoal({
       id: '1',
       targetValue: 10,
       entries: [{ date: '2026-08-01', value: 10 }],
     });
-    expect(ongoingGoalsWithoutTodayEntry([completed], today)).toEqual([]);
+    expect(ongoingGoalsWithoutTodayEntry([reached], today)).toEqual([]);
+  });
+
+  // Rien n'est écrit au franchissement de 100 % : la même donnée corrigée
+  // sous 100 % retrouve le rappel sans autre intervention.
+  it('brings the reminder back once a correction takes the goal under 100 %', () => {
+    const reached = makeGoal({
+      id: '1',
+      targetValue: 10,
+      entries: [{ date: '2026-08-01', value: 10 }],
+    });
+    const corrected: Goal = { ...reached, entries: [{ date: '2026-08-01', value: 9 }] };
+
+    expect(ongoingGoalsWithoutTodayEntry([reached], today)).toEqual([]);
+    expect(ongoingGoalsWithoutTodayEntry([corrected], today)).toEqual([corrected]);
+  });
+
+  // Table de vérité : reminderEnabled × remindAfterReached × statut × clos.
+  // Aucune entrée aujourd'hui dans tous les cas. makeGoal échoit le
+  // 2026-09-01 : ouvert le 2026-08-21, clos le 2026-09-02.
+  describe('truth table', () => {
+    const states = {
+      'ouvert, sous 100 %': { total: 40, day: '2026-08-21' },
+      'ouvert, reached': { total: 100, day: '2026-08-21' },
+      'ouvert, exceeded': { total: 150, day: '2026-08-21' },
+      'clos, failed': { total: 40, day: '2026-09-02' },
+      'clos, reached': { total: 100, day: '2026-09-02' },
+      'clos, exceeded': { total: 150, day: '2026-09-02' },
+    } as const;
+    type State = keyof typeof states;
+    const reminderEnabledValues = [undefined, true, false] as const;
+    const remindAfterReachedValues = [undefined, false, true] as const;
+
+    // Attendu pour chaque état, dans l'ordre reminderEnabled × remindAfterReached :
+    // [abs/abs, abs/false, abs/true, true/abs, true/false, true/true, false/×3].
+    const expected: Record<State, boolean[]> = {
+      'ouvert, sous 100 %': [true, true, true, true, true, true, false, false, false],
+      'ouvert, reached': [false, false, true, false, false, true, false, false, false],
+      'ouvert, exceeded': [false, false, true, false, false, true, false, false, false],
+      'clos, failed': [false, false, false, false, false, false, false, false, false],
+      'clos, reached': [false, false, false, false, false, false, false, false, false],
+      'clos, exceeded': [false, false, false, false, false, false, false, false, false],
+    };
+
+    const rows = (Object.keys(states) as State[]).flatMap((state) =>
+      reminderEnabledValues.flatMap((reminderEnabled, i) =>
+        remindAfterReachedValues.map(
+          (remindAfterReached, j) =>
+            [state, reminderEnabled, remindAfterReached, expected[state][i * 3 + j]] as const,
+        ),
+      ),
+    );
+
+    it.each(rows)(
+      '%s, reminderEnabled=%p, remindAfterReached=%p → rappelé : %p',
+      (state, reminderEnabled, remindAfterReached, reminded) => {
+        const { total, day } = states[state];
+        const goal = makeGoal({
+          id: 'tt',
+          entries: [{ date: '2026-08-05', value: total }],
+          reminderEnabled,
+          remindAfterReached,
+        });
+
+        expect(ongoingGoalsWithoutTodayEntry([goal], day)).toEqual(reminded ? [goal] : []);
+      },
+    );
   });
 
   it('ignores a zero-value entry (not real progress)', () => {

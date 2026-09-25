@@ -114,6 +114,65 @@ describe('GoalDetailScreen', () => {
   });
 });
 
+// Un objectif clos est archivé en lecture seule : la modification
+// ressusciterait l'objectif (« Jours restants » pré-rempli, échéance
+// recalculée depuis aujourd'hui), et un ajout du jour tomberait après
+// l'échéance. Correction d'entrée et suppression restent accessibles.
+describe('GoalDetailScreen — objectif clos', () => {
+  function closedGoal(): Goal {
+    return {
+      ...makeGoal(),
+      createdAt: '2026-08-01T12:00:00.000Z',
+      deadline: '2026-08-31T12:00:00.000Z',
+      entries: [{ date: '2026-08-10', value: 95 }],
+    };
+  }
+
+  async function renderWith(goal: Goal) {
+    mockedLoadGoals.mockResolvedValue({ value: [goal], ok: true });
+    renderScreen();
+    await act(async () => {});
+  }
+
+  it("propose la modification et l'ajout sur un objectif ouvert", async () => {
+    await renderWith(makeGoal());
+
+    expect(screen.getByLabelText(i18n.t('goalDetail.header.editA11y'))).toBeTruthy();
+    expect(screen.getByText(i18n.t('goalDetail.addProgressCta'))).toBeTruthy();
+  });
+
+  it("n'offre ni modification ni ajout sur un objectif clos", async () => {
+    await renderWith(closedGoal());
+
+    expect(screen.queryByLabelText(i18n.t('goalDetail.header.editA11y'))).toBeNull();
+    expect(screen.queryByText(i18n.t('goalDetail.addProgressCta'))).toBeNull();
+    expect(screen.getByLabelText(i18n.t('statusSpoken.failed'))).toBeTruthy();
+  });
+
+  it('garde la suppression et la correction d entrée sur un objectif clos', async () => {
+    await renderWith(closedGoal());
+
+    expect(screen.getByText(i18n.t('goalDetail.deleteGoal'))).toBeTruthy();
+    // Libellé de ligne construit comme GoalHistoryList : « <date>, <valeur> <unité parlée> ».
+    const rowLabel = `, ${fmt(95, 'km')} ${i18n.t('unitSpoken.km')}`;
+    const escaped = rowLabel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    fireEvent.press(screen.getByRole('button', { name: new RegExp(`${escaped}$`) }));
+    expect(screen.getByText(i18n.t('progressModal.titleEdit'))).toBeTruthy();
+  });
+
+  // Témoin puis cas : la même progression de 95 % affiche la bannière tant
+  // que l'objectif est ouvert, et plus une fois clos.
+  it.each([
+    ['ouvert', () => ({ ...closedGoal(), deadline: makeGoal().deadline }), true],
+    ['clos', closedGoal, false],
+  ] as const)('« Presque là » sur un objectif %s à 95 % : %p', async (_, goal, shown) => {
+    await AsyncStorage.setItem('settings', JSON.stringify({ almostThereNotifs: true }));
+    await renderWith(goal());
+
+    expect(screen.queryByText(i18n.t('goalDetail.header.almostBannerTitle')) !== null).toBe(shown);
+  });
+});
+
 // R2 — handleSave ne gardait que `!value || value <= 0`. Number('1e400')
 // vaut Infinity, qui passe les deux : l'entrée était enregistrée, puis
 // JSON.stringify l'écrivait null, un fichier que l'import rejette en bloc.

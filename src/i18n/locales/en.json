@@ -36,7 +36,18 @@
     "ahead": "Ahead",
     "onTrack": "On track",
     "late": "Late",
-    "completed": "Completed ✓",
+    "reached": "Reached ✓",
+    "exceeded": "Exceeded ★",
+    "failed": "Not reached",
+    "notStarted": "Not started"
+  },
+  "statusSpoken": {
+    "ahead": "Ahead",
+    "onTrack": "On track",
+    "late": "Late",
+    "reached": "Reached",
+    "exceeded": "Exceeded",
+    "failed": "Not reached",
     "notStarted": "Not started"
   },
   "dateLabels": {
@@ -80,16 +91,16 @@
     "active": "Active",
     "activeA11y_one": "Active, {{count}} goal",
     "activeA11y_other": "Active, {{count}} goals",
-    "completed": "Completed",
-    "completedA11y_one": "Completed, {{count}} goal",
-    "completedA11y_other": "Completed, {{count}} goals",
+    "archived": "Archived",
+    "archivedA11y_one": "Archived, {{count}} goal",
+    "archivedA11y_other": "Archived, {{count}} goals",
     "total": "Total",
     "totalA11y_one": "Total, {{count}} goal",
     "totalA11y_other": "Total, {{count}} goals",
     "emptyNoGoalsTitle": "No goals yet",
     "emptyNoGoalsText": "Set your first fitness goal and track your progress every day.",
-    "emptyAllDoneTitle": "All done",
-    "emptyAllDoneText": "All your goals are complete — find them in the archive, or set yourself a new challenge.",
+    "emptyAllClosedTitle": "All archived",
+    "emptyAllClosedText": "All your goals have reached their deadline — find them in the archive, or set yourself a new challenge.",
     "createGoal": "Create a goal",
     "viewArchive": "View archive"
   },
@@ -99,7 +110,7 @@
   "archive": {
     "title": "Archive",
     "emptyTitle": "Nothing yet",
-    "emptyText": "Completed goals will show up here as you go."
+    "emptyText": "Goals past their deadline will show up here, reached or not."
   },
   "weekly": {
     "title": "Week",
@@ -120,6 +131,7 @@
     "empty": "No goals yet — create one to see your weekly summary."
   },
   "goalCard": {
+    "closed": "Past deadline",
     "progressA11y": "{{percent}}% of the goal",
     "remainingDaysA11y_one": "{{count}} day left",
     "remainingDaysA11y_other": "{{count}} days left",
@@ -136,6 +148,7 @@
     "titleRequired": "The goal title is required.",
     "targetPositive": "The target value must be a positive number.",
     "durationPositive": "The duration must be a whole number of days, greater than 0.",
+    "durationTooLong": "The duration cannot exceed {{max}} days.",
     "durationLabel": "Duration (days)",
     "dailyAvgRequired": "Required daily pace",
     "perDay": "{{unit}} per day",
@@ -150,7 +163,8 @@
     "unitLocked": "The unit can no longer change: sessions are already recorded in it.",
     "remindersEnabled": "Reminders enabled",
     "customTime": "Custom time",
-    "reminderTime": "Reminder time"
+    "reminderTime": "Reminder time",
+    "remindAfterReached": "Keep reminding once reached"
   },
   "goalDetail": {
     "notFound": "Goal not found.",
@@ -198,12 +212,15 @@
   "editGoal": {
     "title": "Edit",
     "subtitle": "Reschedule the goal",
+    "closed": "This goal is past its deadline: it can no longer be edited.",
     "currentProgress": "Current progress",
     "durationLabel": "Days left",
     "titleRequired": "The goal title is required.",
     "targetTooLow": "The target must be ≥ what's already done ({{value}} {{unit}}).",
     "targetPositive": "The target value must be a positive number.",
     "daysPositive": "The days left must be a whole number, greater than 0.",
+    "daysTooMany_one": "A goal lasts at most {{max}} days from its creation: {{count}} day left at most.",
+    "daysTooMany_other": "A goal lasts at most {{max}} days from its creation: {{count}} days left at most.",
     "newPace": "New daily pace",
     "remainingToComplete": "{{unit}}/day · {{value}} {{unitLabel}} left to complete",
     "save": "Save changes"
@@ -251,6 +268,7 @@
     "invalidSettings": "Malformed settings in the file.",
     "invalidGoalDates": "A goal has an unreadable creation or deadline date.",
     "deadlineNotAfterCreatedAt": "A goal has a deadline on or before its creation date.",
+    "goalTooLong": "The goal \"{{title}}\" lasts more than {{max}} days between its creation and its deadline.",
     "invalidTargetValue": "A goal has an invalid target value: it must be a number greater than zero.",
     "invalidEntryValue": "A goal has an invalid progress value: it must be zero or a positive number.",
     "duplicateGoalIds": "Two goals share the same identifier.",

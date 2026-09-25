@@ -8,6 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import EditGoalScreen from '../app/goal/[id]/edit';
 import { GoalsProvider } from '../src/goals-context';
+import { MAX_GOAL_DAYS, maxRemainingDays } from '../src/goalValidation';
 import i18n from '../src/i18n';
 import { SettingsProvider } from '../src/settings-context';
 import { fmt, getGoalStats, todayStr } from '../src/stats';
@@ -329,5 +330,84 @@ describe('EditGoalScreen — cible hors domaine', () => {
       goals.map((g) => g.targetValue),
     );
     expect(savedTargets.filter((v) => !Number.isFinite(v))).toEqual([]);
+  });
+});
+
+describe('EditGoalScreen — continuer le rappel une fois atteint', () => {
+  it("reprend la valeur de l'objectif et enregistre son inversion", async () => {
+    mockedLoadGoals.mockResolvedValue({
+      value: [{ ...makeGoal(), remindAfterReached: true }],
+      ok: true,
+    });
+    render(<Tree show />);
+    await flush();
+    const toggle = screen.getByLabelText(i18n.t('goalFields.remindAfterReached'));
+    expect(toggle.props.accessibilityState.checked).toBe(true);
+
+    fireEvent.press(toggle);
+    fireEvent.press(screen.getByText(SAVE));
+
+    await waitFor(() => expect(mockedSaveGoals).toHaveBeenCalled());
+    const saved: Goal = mockedSaveGoals.mock.calls.at(-1)[0][0];
+    expect(saved.remindAfterReached).toBe(false);
+  });
+});
+
+// Garde défensive : un lien profond ou un état obsolète peut encore mener
+// à la modification d'un objectif clos, qu'enregistrer ressusciterait.
+describe('EditGoalScreen — objectif clos', () => {
+  it('refuse le formulaire et le dit', async () => {
+    const closed: Goal = {
+      ...makeGoal(),
+      deadline: '2026-08-31T12:00:00.000Z',
+      createdAt: '2026-08-01T12:00:00.000Z',
+    };
+    mockedLoadGoals.mockResolvedValue({ value: [closed], ok: true });
+    render(<Tree show />);
+    await flush();
+
+    expect(screen.getByText(i18n.t('editGoal.closed'))).toBeTruthy();
+    expect(screen.queryByLabelText(NAME)).toBeNull();
+    expect(screen.queryByText(SAVE)).toBeNull();
+  });
+});
+
+// Même défaut qu'à la création : une durée entière démesurée passe
+// parseDurationDays, setDate sort de la plage des dates JS et toISOString
+// lève une RangeError dans handleSave.
+describe('EditGoalScreen — durée hors domaine', () => {
+  it('refuse une durée qui ne donne pas d échéance valide, sans planter', async () => {
+    mockedLoadGoals.mockResolvedValue({ value: [makeGoal()], ok: true });
+    render(<Tree show />);
+    await flush();
+    mockedSaveGoals.mockClear();
+
+    fireEvent.changeText(screen.getByLabelText(DURATION), '1000000000');
+    expect(() => fireEvent.press(screen.getByText(SAVE))).not.toThrow();
+    await flush();
+
+    expect(mockedSaveGoals).not.toHaveBeenCalled();
+  });
+
+  // La durée totale reste plafonnée : les jours déjà écoulés sont décomptés
+  // du maximum, puisqu'enregistrer recalcule l'échéance depuis aujourd'hui.
+  it('borne les jours restants à ce qui reste de la durée maximale', async () => {
+    const goal = makeGoal();
+    mockedLoadGoals.mockResolvedValue({ value: [goal], ok: true });
+    render(<Tree show />);
+    await flush();
+    const max = maxRemainingDays(getGoalStats(goal, todayStr()).elapsedDays);
+
+    fireEvent.changeText(screen.getByLabelText(DURATION), String(max + 1));
+    fireEvent.press(screen.getByText(SAVE));
+    await flush();
+    expect(
+      screen.getByText(i18n.t('editGoal.daysTooMany', { count: max, max: MAX_GOAL_DAYS })),
+    ).toBeTruthy();
+
+    mockedSaveGoals.mockClear();
+    fireEvent.changeText(screen.getByLabelText(DURATION), String(max));
+    fireEvent.press(screen.getByText(SAVE));
+    await waitFor(() => expect(mockedSaveGoals).toHaveBeenCalled());
   });
 });

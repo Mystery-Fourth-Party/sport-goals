@@ -14,7 +14,7 @@
 // process.env.TZ ne réinitialise plus le cache de fuseau de Node (constaté
 // sur Node 20 — la variable est bien posée, getTimezoneOffset ne bouge pas),
 // contrairement à un process node ordinaire.
-import { getGoalStats, todayStr } from './stats';
+import { getGoalStats, isGoalClosed, todayStr } from './stats';
 import { Goal } from './types';
 
 // Ce que le commentaire ci-dessus décrivait sans que rien ne l'applique :
@@ -94,6 +94,35 @@ describe('getGoalStats — jour local contre jour UTC', () => {
       // L'échéance est aujourd'hui : tout est écoulé, plus rien devant.
       expect(s.elapsedDays).toBe(30);
       expect(s.remainingDays).toBe(0);
+    },
+  );
+});
+
+// Même piège appliqué à la clôture : isGoalClosed doit lire le jour local
+// de l'échéance, pas son jour UTC, sans quoi un objectif se clôt un jour
+// trop tôt (à l'est) ou reste ouvert un jour de trop (à l'ouest).
+describe('isGoalClosed — clôture autour de minuit local', () => {
+  // 00:30 local aujourd'hui tombe hier en UTC à l'est d'UTC : lu en UTC,
+  // l'objectif serait déjà clos le jour même de son échéance.
+  itEastOfUtc(
+    "laisse ouvert un objectif échéant aujourd'hui juste après minuit local (ne rougit qu'à l'est d'UTC)",
+    () => {
+      const goal = goalBetween(isoAtLocalTime(-30, 0, 30), isoAtLocalTime(0, 0, 30));
+
+      expect(isGoalClosed(goal, todayStr())).toBe(false);
+      expect(getGoalStats(goal, todayStr()).status).not.toBe('failed');
+    },
+  );
+
+  // 23:30 local hier tombe aujourd'hui en UTC à l'ouest d'UTC : lu en UTC,
+  // l'objectif resterait ouvert un jour après son échéance.
+  itWestOfUtc(
+    "clôt un objectif échu hier juste avant minuit local (ne rougit qu'à l'ouest d'UTC)",
+    () => {
+      const goal = goalBetween(isoAtLocalTime(-30, 23, 30), isoAtLocalTime(-1, 23, 30));
+
+      expect(isGoalClosed(goal, todayStr())).toBe(true);
+      expect(getGoalStats(goal, todayStr()).status).toBe('failed');
     },
   );
 });

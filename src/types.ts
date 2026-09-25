@@ -42,6 +42,13 @@ export interface Goal {
   // almostThereNotifs, réglages globaux sans lien avec ce champ (voir
   // ongoingGoalsWithoutTodayEntry).
   reminderEnabled?: boolean;
+  // Absent = false : un objectif atteint ou dépassé sort du rappel
+  // quotidien, sauf si ce champ vaut true. Choix de l'utilisateur, pas un
+  // état : rien n'est écrit au franchissement de 100 %, et une correction
+  // qui repasse sous 100 % rétablit le rappel d'elle-même (voir
+  // ongoingGoalsWithoutTodayEntry). reminderEnabled === false garde la
+  // priorité.
+  remindAfterReached?: boolean;
 }
 
 // Le libellé affiché à la place des clés techniques ('reps', 'km'...) vit

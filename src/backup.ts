@@ -7,6 +7,7 @@
 // Le format est documenté et figé pour être directement exploitable par un
 // outil de traitement de données externe, pas seulement comme mécanisme de
 // restauration interne — voir buildBackupPayload pour sa forme exacte.
+import { MAX_GOAL_DAYS } from './goalValidation';
 import i18n from './i18n';
 import { DEFAULT_SETTINGS, Settings } from './settingsStorage';
 import { getGoalStats, GoalStats } from './stats';
@@ -29,6 +30,8 @@ export interface BackupGoal {
   // JSON si jamais posés, même convention que recordedAt sur Entry ci-dessous.
   reminderTime?: string;
   reminderEnabled?: boolean;
+  // Reflète Goal.remindAfterReached, même convention : absent si jamais posé.
+  remindAfterReached?: boolean;
   // Instantané dérivé (statut, progression, streak...), calculé au moment
   // de l'export via stats.ts — jamais réimplémenté ici. Purement informatif :
   // ignoré à l'import, voir parseBackupPayload.
@@ -87,6 +90,9 @@ export function buildBackupPayload(
       })),
       ...(goal.reminderTime !== undefined ? { reminderTime: goal.reminderTime } : {}),
       ...(goal.reminderEnabled !== undefined ? { reminderEnabled: goal.reminderEnabled } : {}),
+      ...(goal.remindAfterReached !== undefined
+        ? { remindAfterReached: goal.remindAfterReached }
+        : {}),
       stats: roundGoalStats(getGoalStats(goal, today)),
     })),
     settings,
@@ -158,6 +164,7 @@ interface RawGoal {
   entries: RawEntry[];
   reminderTime?: string;
   reminderEnabled?: boolean;
+  remindAfterReached?: boolean;
 }
 
 function isValidGoal(value: unknown): value is RawGoal {
@@ -176,6 +183,9 @@ function isValidGoal(value: unknown): value is RawGoal {
   // fait au moment de l'usage (voir groupPendingGoalsByReminderTime).
   if (g.reminderTime !== undefined && typeof g.reminderTime !== 'string') return false;
   if (g.reminderEnabled !== undefined && typeof g.reminderEnabled !== 'boolean') return false;
+  if (g.remindAfterReached !== undefined && typeof g.remindAfterReached !== 'boolean') {
+    return false;
+  }
   return true;
 }
 
@@ -194,6 +204,8 @@ function isValidGoal(value: unknown): value is RawGoal {
 // sanitizeSettings plus bas.
 //
 // Renvoie le message de la première règle violée, ou null si tout passe.
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
 function findGoalInconsistency(goals: RawGoal[]): string | null {
   const seenIds = new Set<string>();
 
@@ -234,6 +246,18 @@ function findGoalInconsistency(goals: RawGoal[]): string | null {
     // le même jour local à quelques heures d'écart, que le garde-fou de
     // durée nulle de stats.ts (expectedProgress à 1) couvre déjà.
     if (deadline <= createdAt) return i18n.t('backup.deadlineNotAfterCreatedAt');
+
+    // Même plafond qu'à la création et à la modification (MAX_GOAL_DAYS,
+    // goalValidation.ts). Écart en jours arrondi et non comparaison stricte
+    // des instants : l'app pose l'échéance par setDate en heure locale, et
+    // un objectif de 365 jours qui traverse un changement d'heure mesure
+    // 365 jours ± 1 h. L'arrondi garde la validation indépendante du fuseau,
+    // comme la comparaison ci-dessus. Interpolé pour la même raison que les
+    // messages d'entrée plus bas : sans le titre, l'utilisateur ne sait pas
+    // quel objectif corriger.
+    if (Math.round((deadline - createdAt) / MS_PER_DAY) > MAX_GOAL_DAYS) {
+      return i18n.t('backup.goalTooLong', { title: g.title, max: MAX_GOAL_DAYS });
+    }
 
     const seenDates = new Set<string>();
     for (const e of g.entries) {
@@ -362,6 +386,7 @@ export function parseBackupPayload(raw: string): ParseBackupResult {
       })),
     ...(g.reminderTime !== undefined ? { reminderTime: g.reminderTime } : {}),
     ...(g.reminderEnabled !== undefined ? { reminderEnabled: g.reminderEnabled } : {}),
+    ...(g.remindAfterReached !== undefined ? { remindAfterReached: g.remindAfterReached } : {}),
   }));
 
   if (payload.settings === undefined) {

@@ -36,7 +36,18 @@
     "ahead": "En avance",
     "onTrack": "Dans les temps",
     "late": "En retard",
-    "completed": "Terminé ✓",
+    "reached": "Atteint ✓",
+    "exceeded": "Dépassé ★",
+    "failed": "Non atteint",
+    "notStarted": "Pas commencé"
+  },
+  "statusSpoken": {
+    "ahead": "En avance",
+    "onTrack": "Dans les temps",
+    "late": "En retard",
+    "reached": "Atteint",
+    "exceeded": "Dépassé",
+    "failed": "Non atteint",
     "notStarted": "Pas commencé"
   },
   "dateLabels": {
@@ -80,16 +91,16 @@
     "active": "En cours",
     "activeA11y_one": "En cours, {{count}} objectif",
     "activeA11y_other": "En cours, {{count}} objectifs",
-    "completed": "Terminés",
-    "completedA11y_one": "Terminés, {{count}} objectif",
-    "completedA11y_other": "Terminés, {{count}} objectifs",
+    "archived": "Archivés",
+    "archivedA11y_one": "Archivés, {{count}} objectif",
+    "archivedA11y_other": "Archivés, {{count}} objectifs",
     "total": "Total",
     "totalA11y_one": "Total, {{count}} objectif",
     "totalA11y_other": "Total, {{count}} objectifs",
     "emptyNoGoalsTitle": "Aucun objectif",
     "emptyNoGoalsText": "Fixe ton premier objectif sportif et suis ta progression chaque jour.",
-    "emptyAllDoneTitle": "Tout est accompli",
-    "emptyAllDoneText": "Tous tes objectifs sont terminés — retrouve-les dans l'archive, ou fixe-toi un nouveau défi.",
+    "emptyAllClosedTitle": "Tout est archivé",
+    "emptyAllClosedText": "Tous tes objectifs sont arrivés à échéance — retrouve-les dans l'archive, ou fixe-toi un nouveau défi.",
     "createGoal": "Créer un objectif",
     "viewArchive": "Voir l'archive"
   },
@@ -99,7 +110,7 @@
   "archive": {
     "title": "Archive",
     "emptyTitle": "Rien pour l'instant",
-    "emptyText": "Les objectifs terminés apparaîtront ici au fur et à mesure."
+    "emptyText": "Les objectifs arrivés à échéance apparaîtront ici, atteints ou non."
   },
   "weekly": {
     "title": "Semaine",
@@ -120,6 +131,7 @@
     "empty": "Aucun objectif pour l'instant — crée-en un pour voir ton résumé de la semaine."
   },
   "goalCard": {
+    "closed": "Échéance passée",
     "progressA11y": "{{percent}}% de l'objectif",
     "remainingDaysA11y_one": "{{count}} jour restant",
     "remainingDaysA11y_other": "{{count}} jours restants",
@@ -136,6 +148,7 @@
     "titleRequired": "Le titre de l'objectif est requis.",
     "targetPositive": "La valeur cible doit être un nombre positif.",
     "durationPositive": "La durée doit être un nombre entier de jours, supérieur à 0.",
+    "durationTooLong": "La durée ne peut pas dépasser {{max}} jours.",
     "durationLabel": "Durée (jours)",
     "dailyAvgRequired": "Rythme quotidien requis",
     "perDay": "{{unit}} par jour",
@@ -150,7 +163,8 @@
     "unitLocked": "L'unité ne peut plus changer : des séances sont déjà enregistrées dans cette unité.",
     "remindersEnabled": "Rappels activés",
     "customTime": "Horaire personnalisé",
-    "reminderTime": "Heure du rappel"
+    "reminderTime": "Heure du rappel",
+    "remindAfterReached": "Continuer le rappel une fois atteint"
   },
   "goalDetail": {
     "notFound": "Objectif introuvable.",
@@ -198,12 +212,15 @@
   "editGoal": {
     "title": "Modifier",
     "subtitle": "Replanification de l'objectif",
+    "closed": "Cet objectif est arrivé à échéance : il ne peut plus être modifié.",
     "currentProgress": "Progression actuelle",
     "durationLabel": "Jours restants",
     "titleRequired": "Le titre de l'objectif est requis.",
     "targetTooLow": "La cible doit être ≥ à ce qui est déjà accompli ({{value}} {{unit}}).",
     "targetPositive": "La valeur cible doit être un nombre positif.",
     "daysPositive": "Les jours restants doivent être un nombre entier, supérieur à 0.",
+    "daysTooMany_one": "Un objectif dure au plus {{max}} jours depuis sa création : {{count}} jour restant au maximum.",
+    "daysTooMany_other": "Un objectif dure au plus {{max}} jours depuis sa création : {{count}} jours restants au maximum.",
     "newPace": "Nouveau rythme quotidien",
     "remainingToComplete": "{{unit}}/jour · encore {{value}} {{unitLabel}} à accomplir",
     "save": "Enregistrer les modifications"
@@ -251,6 +268,7 @@
     "invalidSettings": "Réglages mal formés dans le fichier.",
     "invalidGoalDates": "Un objectif a une date de création ou d'échéance illisible.",
     "deadlineNotAfterCreatedAt": "Un objectif a une échéance antérieure ou égale à sa date de création.",
+    "goalTooLong": "L'objectif « {{title}} » dure plus de {{max}} jours entre sa création et son échéance.",
     "invalidTargetValue": "Un objectif a une valeur cible invalide : elle doit être un nombre strictement positif.",
     "invalidEntryValue": "Un objectif a une valeur de progression invalide : elle doit être un nombre positif ou nul.",
     "duplicateGoalIds": "Deux objectifs partagent le même identifiant.",

@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import GoalCard from '../src/components/GoalCard';
 import { fullDateLabel } from '../src/dateLabels';
 import { useGoals } from '../src/goals-context';
-import { splitGoalsByStatus } from '../src/stats';
+import { splitGoalsByClosure } from '../src/stats';
 import { useToday } from '../src/useToday';
 import { colors, fontFamily, radius, size, spacing, white } from '../src/theme';
 
@@ -13,7 +13,7 @@ export default function GoalListScreen() {
   const { t } = useTranslation();
   const { goals, loaded } = useGoals();
   const today = useToday();
-  const { active, completed } = splitGoalsByStatus(goals, today);
+  const { active, closed } = splitGoalsByClosure(goals, today);
 
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
@@ -64,7 +64,7 @@ export default function GoalListScreen() {
             {goals.length > 0 && (
               <View style={styles.statsRow}>
                 {/* accessible + libellé explicite, comme la carte
-                    "Terminés" ci-dessous : sans ça le lecteur d'écran entre
+                    "Archivés" ci-dessous : sans ça le lecteur d'écran entre
                     dans les enfants et annonce le libellé puis le nombre en
                     deux éléments séparés. Un View n'est pas accessible par
                     défaut, contrairement au Pressable de la carte voisine
@@ -86,15 +86,15 @@ export default function GoalListScreen() {
                   // Explicite plutôt que laissé à la concaténation par
                   // défaut : le chevron "›" seul ne veut rien dire pour un
                   // lecteur d'écran.
-                  accessibilityLabel={t('goalList.completedA11y', { count: completed.length })}
+                  accessibilityLabel={t('goalList.archivedA11y', { count: closed.length })}
                 >
                   <View style={styles.statLabelRow}>
                     <Text style={[styles.statLabel, { color: colors.ahead }]}>
-                      {t('goalList.completed')}
+                      {t('goalList.archived')}
                     </Text>
                     <Text style={styles.statChevron}>›</Text>
                   </View>
-                  <Text style={styles.statValue}>{completed.length}</Text>
+                  <Text style={styles.statValue}>{closed.length}</Text>
                 </Pressable>
                 {/* Même traitement que la carte "En cours" ci-dessus. */}
                 <View
@@ -124,13 +124,13 @@ export default function GoalListScreen() {
               </Pressable>
             </View>
           ) : (
-            // Tous les objectifs existants sont terminés — pas la même
+            // Tous les objectifs existants sont clos — pas la même
             // situation que "aucun objectif du tout" : message dédié plutôt
             // que de tomber dans le même état vide.
             <View style={styles.empty}>
               <Text style={styles.emptyEmoji}>🏆</Text>
-              <Text style={styles.emptyTitle}>{t('goalList.emptyAllDoneTitle')}</Text>
-              <Text style={styles.emptyText}>{t('goalList.emptyAllDoneText')}</Text>
+              <Text style={styles.emptyTitle}>{t('goalList.emptyAllClosedTitle')}</Text>
+              <Text style={styles.emptyText}>{t('goalList.emptyAllClosedText')}</Text>
               <Pressable
                 style={styles.emptyButton}
                 onPress={() => router.push('/archive')}
@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 1,
   },
-  // Légère affordance visuelle : la carte "Terminés" est pressable
+  // Légère affordance visuelle : la carte "Archivés" est pressable
   // (navigue vers /archive), contrairement aux deux autres.
   statChevron: {
     fontFamily: fontFamily.bodyRegular,

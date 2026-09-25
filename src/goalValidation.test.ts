@@ -1,4 +1,9 @@
-import { parseDurationDays, parsePositiveNumber } from './goalValidation';
+import {
+  MAX_GOAL_DAYS,
+  maxRemainingDays,
+  parseDurationDays,
+  parsePositiveNumber,
+} from './goalValidation';
 
 describe('parseDurationDays', () => {
   it('accepts a positive whole number of days', () => {
@@ -55,5 +60,17 @@ describe('parsePositiveNumber', () => {
 
   it('keeps the largest finite values, which JSON can still write', () => {
     expect(parsePositiveNumber('1e308')).toBe(1e308);
+  });
+});
+
+describe('maxRemainingDays', () => {
+  it('leaves room for the rest of the maximum total duration', () => {
+    expect(maxRemainingDays(0)).toBe(MAX_GOAL_DAYS);
+    expect(maxRemainingDays(100)).toBe(MAX_GOAL_DAYS - 100);
+  });
+
+  it('drops to 0, never below, once the maximum duration has elapsed', () => {
+    expect(maxRemainingDays(MAX_GOAL_DAYS)).toBe(0);
+    expect(maxRemainingDays(MAX_GOAL_DAYS + 3)).toBe(0);
   });
 });

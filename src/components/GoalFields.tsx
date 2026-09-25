@@ -39,6 +39,12 @@ interface Props {
   onReminderEnabledChange: (v: boolean) => void;
   reminderTime: string | undefined;
   onReminderTimeChange: (v: string | undefined) => void;
+  // Garde le rappel quotidien après 100 % (voir Goal.remindAfterReached
+  // dans types.ts). Proposé seulement quand les rappels de l'objectif sont
+  // actifs, comme l'horaire personnalisé : reminderEnabled === false
+  // l'emporte de toute façon.
+  remindAfterReached: boolean;
+  onRemindAfterReachedChange: (v: boolean) => void;
 }
 
 // Champs de saisie communs à l'écran Création (app/create.tsx) et à l'écran
@@ -62,6 +68,8 @@ export default function GoalFields({
   onReminderEnabledChange,
   reminderTime,
   onReminderTimeChange,
+  remindAfterReached,
+  onRemindAfterReachedChange,
 }: Props) {
   const { t } = useTranslation();
 
@@ -220,6 +228,23 @@ export default function GoalFields({
             value={reminderTime !== undefined}
             onChange={(v) => onReminderTimeChange(v ? '20:00' : undefined)}
             accessibilityLabel={t('goalFields.customTime')}
+          />
+        </View>
+      )}
+
+      {reminderEnabled && (
+        <View style={styles.toggleRow}>
+          <Text
+            style={styles.toggleLabel}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+          >
+            {t('goalFields.remindAfterReached')}
+          </Text>
+          <Toggle
+            value={remindAfterReached}
+            onChange={onRemindAfterReachedChange}
+            accessibilityLabel={t('goalFields.remindAfterReached')}
           />
         </View>
       )}

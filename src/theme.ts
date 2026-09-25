@@ -83,17 +83,33 @@ export const statusColors: Record<Status, StatusPalette> = {
     bar: colors.late,
     text: colors.late,
   },
-  completed: {
-    badgeBg: withAlpha(colors.ahead, 0.15),
-    badgeText: colors.ahead,
-    bar: colors.ahead,
-    text: colors.ahead,
-  },
   'not-started': {
     badgeBg: white(0.1),
     badgeText: white(0.4),
     bar: white(0.2),
     text: white(0.4),
+  },
+  reached: {
+    badgeBg: withAlpha(colors.ahead, 0.15),
+    badgeText: colors.ahead,
+    bar: colors.ahead,
+    text: colors.ahead,
+  },
+  // Ambre déjà présent dans la palette (almostThere) plutôt qu'une teinte
+  // inventée : il distingue le dépassement de la simple réussite.
+  exceeded: {
+    badgeBg: withAlpha(colors.almostThere, 0.15),
+    badgeText: colors.almostThere,
+    bar: colors.almostThere,
+    text: colors.almostThere,
+  },
+  // Rouge atténué : l'échec est un constat sur un objectif clos, pas une
+  // alerte appelant à rattraper comme « late ».
+  failed: {
+    badgeBg: withAlpha(colors.late, 0.1),
+    badgeText: withAlpha(colors.late, 0.7),
+    bar: withAlpha(colors.late, 0.5),
+    text: withAlpha(colors.late, 0.7),
   },
 };
 

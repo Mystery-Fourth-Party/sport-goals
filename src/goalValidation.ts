@@ -6,6 +6,23 @@
 // logique de validation (voir AGENTS.md) : aucun accès natif, aucun t() ici,
 // les messages d'erreur restent côté écran.
 
+// Durée totale maximale d'un objectif, de la création à l'échéance. Sans
+// plafond, une durée entière démesurée (1e9) passe parseDurationDays, puis
+// setDate sort de la plage des dates JS et toISOString lève une RangeError.
+// Appliquée à la création (GoalForm), à la modification (EditGoalForm, où
+// elle borne « Jours restants » à ce qui reste de ce total, voir
+// maxRemainingDays) et à l'import (findGoalInconsistency dans backup.ts).
+export const MAX_GOAL_DAYS = 365;
+
+// Plus grand nombre de « Jours restants » acceptable à la modification.
+// Enregistrer recalcule l'échéance depuis aujourd'hui : la durée totale
+// devient jours écoulés + jours restants, qui doit tenir dans MAX_GOAL_DAYS.
+// Peut valoir 0 le jour de l'échéance d'un objectif de 365 jours : il n'est
+// alors plus prolongeable, et l'écran affiche l'erreur.
+export function maxRemainingDays(elapsedDays: number): number {
+  return Math.max(0, MAX_GOAL_DAYS - elapsedDays);
+}
+
 // Retourne le nombre de jours saisi, ou null si la saisie ne peut pas donner
 // une échéance postérieure au jour de création.
 //

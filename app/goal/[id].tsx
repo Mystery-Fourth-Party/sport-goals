@@ -16,7 +16,7 @@ import { longDateLabel } from '../../src/dateLabels';
 import { useGoals } from '../../src/goals-context';
 import { parsePositiveNumber } from '../../src/goalValidation';
 import { useSettings } from '../../src/settings-context';
-import { getGoalStats, parseDate } from '../../src/stats';
+import { getGoalStats, isGoalClosed, isSuccessStatus, parseDate } from '../../src/stats';
 import { useToday } from '../../src/useToday';
 import { colors, fontFamily, radius, spacing, white } from '../../src/theme';
 import { Entry } from '../../src/types';
@@ -63,7 +63,18 @@ export default function GoalDetailScreen() {
 
   const s = getGoalStats(goal, today);
   const remaining = goal.targetValue - s.actual;
-  const showAlmostThere = settings.almostThereNotifs && s.progress >= 0.9 && s.progress < 1;
+  // Objectif clos = archive en lecture seule : ni modification (voir la
+  // garde de EditGoalScreen), ni ajout du jour (voir la garde d'addProgress
+  // dans goals-context.tsx), ni encouragement « presque là ». La modification
+  // est la plus dangereuse : « Jours restants » y est pré-rempli à
+  // max(1, remainingDays) et enregistrer recalcule l'échéance depuis
+  // aujourd'hui, ce qui ressusciterait l'objectif. Correction et suppression
+  // d'entrées, suppression de l'objectif : inchangées.
+  const closed = isGoalClosed(goal, today);
+  // Statut plutôt que `progress < 1` : une somme flottante un epsilon sous
+  // la cible est déjà « atteint » (voir roundProgress dans stats.ts).
+  const showAlmostThere =
+    settings.almostThereNotifs && !closed && s.progress >= 0.9 && !isSuccessStatus(s.status);
 
   const todayEntry = goal.entries.find((e) => e.date === today);
 
@@ -136,7 +147,8 @@ export default function GoalDetailScreen() {
         remaining={remaining}
         showAlmostThere={showAlmostThere}
         onBack={() => router.back()}
-        onEdit={() => router.push(`/goal/${goal.id}/edit`)}
+        onEdit={closed ? undefined : () => router.push(`/goal/${goal.id}/edit`)}
+        closed={closed}
       />
 
       <ScrollView contentContainerStyle={styles.content}>
@@ -156,11 +168,13 @@ export default function GoalDetailScreen() {
         </Pressable>
       </ScrollView>
 
-      <View style={styles.ctaWrap}>
-        <Pressable style={styles.ctaButton} onPress={openAddModal} accessibilityRole="button">
-          <Text style={styles.ctaButtonText}>{t('goalDetail.addProgressCta')}</Text>
-        </Pressable>
-      </View>
+      {!closed && (
+        <View style={styles.ctaWrap}>
+          <Pressable style={styles.ctaButton} onPress={openAddModal} accessibilityRole="button">
+            <Text style={styles.ctaButtonText}>{t('goalDetail.addProgressCta')}</Text>
+          </Pressable>
+        </View>
+      )}
 
       <ProgressEntryModal
         mode={modalMode}

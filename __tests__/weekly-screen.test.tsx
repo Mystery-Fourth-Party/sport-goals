@@ -35,13 +35,14 @@ beforeEach(async () => {
 });
 
 // Objectif à 90 % de progression brute — donc le plus avancé du lot — mais
-// en retard sur son propre rythme attendu : son échéance est passée. C'est
-// exactement le cas que la couleur verte codée en dur rendait trompeur.
+// en retard sur son propre rythme attendu : son échéance tombe aujourd'hui,
+// 100 % sont attendus. C'est exactement le cas que la couleur verte codée
+// en dur rendait trompeur. Échéance aujourd'hui et non hier : un objectif
+// échu est clos, donc « non atteint », et quitte l'écran Hebdo.
 function avanceMaisEnRetard(): Goal {
   const createdAt = new Date();
   createdAt.setDate(createdAt.getDate() - 30);
   const deadline = new Date();
-  deadline.setDate(deadline.getDate() - 1);
   return {
     id: 'avance-en-retard',
     title: 'Presque fini mais en retard',
@@ -80,6 +81,40 @@ describe('WeeklyScreen — carte « le plus avancé »', () => {
 
     expect(style.color).toBe(statusColors.late.text);
     expect(style.color).not.toBe(statusColors.ahead.text);
+  });
+});
+
+describe('WeeklyScreen — liste par objectif', () => {
+  function goal(id: string, title: string, deadlineOffset: number, total: number): Goal {
+    const createdAt = new Date();
+    createdAt.setDate(createdAt.getDate() - 20);
+    const deadline = new Date();
+    deadline.setDate(deadline.getDate() + deadlineOffset);
+    return {
+      id,
+      title,
+      targetValue: 100,
+      unit: 'reps',
+      createdAt: createdAt.toISOString(),
+      deadline: deadline.toISOString(),
+      entries: [{ date: '2026-08-01', value: total }],
+    };
+  }
+
+  it('ne liste que les objectifs non clos, chacun avec son badge de statut', async () => {
+    await renderWeekly([
+      goal('open', 'Ouvert en retard', 10, 5),
+      goal('reached', 'Atteint en avance', 10, 120),
+      goal('closed', 'Échu hier', -1, 5),
+    ]);
+
+    expect(screen.getAllByText('Ouvert en retard').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Atteint en avance').length).toBeGreaterThan(0);
+    expect(screen.queryByText('Échu hier')).toBeNull();
+    // Badges de la liste : lus par leur libellé parlé (voir StatusBadge).
+    expect(screen.getAllByLabelText(i18n.t('statusSpoken.exceeded')).length).toBeGreaterThan(0);
+    expect(screen.getAllByLabelText(i18n.t('statusSpoken.late')).length).toBeGreaterThan(0);
+    expect(screen.queryByLabelText(i18n.t('statusSpoken.failed'))).toBeNull();
   });
 });
 

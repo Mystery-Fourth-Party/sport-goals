@@ -6,8 +6,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import GoalFields from '../../../src/components/GoalFields';
 import { BackButton } from '../../../src/components/ui';
 import { useGoals } from '../../../src/goals-context';
-import { parseDurationDays, parsePositiveNumber } from '../../../src/goalValidation';
-import { fmt, getGoalStats } from '../../../src/stats';
+import {
+  MAX_GOAL_DAYS,
+  maxRemainingDays,
+  parseDurationDays,
+  parsePositiveNumber,
+} from '../../../src/goalValidation';
+import { fmt, getGoalStats, isGoalClosed } from '../../../src/stats';
 import { colors, fontFamily, radius, spacing, statusColors, white } from '../../../src/theme';
 import { Goal, Unit } from '../../../src/types';
 import { useToday } from '../../../src/useToday';
@@ -20,8 +25,18 @@ export default function EditGoalScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { goals, loaded } = useGoals();
   const goal = goals.find((g) => g.id === id);
+  // Appelé avant les retours anticipés : les Hooks doivent être appelés
+  // dans le même ordre à chaque rendu.
+  const today = useToday();
+  // Garde défensive d'un objectif clos, que l'écran de détail ne propose
+  // déjà plus de modifier (onEdit absent de GoalDetailHeader, voir
+  // GoalDetailScreen) mais qu'un lien profond ou un état obsolète peut
+  // encore atteindre. « Jours restants » y serait pré-rempli à
+  // max(1, remainingDays), et enregistrer recalculerait l'échéance depuis
+  // aujourd'hui : l'objectif ressusciterait.
+  const closed = goal !== undefined && isGoalClosed(goal, today);
 
-  if (!loaded || !goal) {
+  if (!loaded || !goal || closed) {
     return (
       <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
         <View style={styles.header}>
@@ -33,7 +48,11 @@ export default function EditGoalScreen() {
             que faisait l'écran à chaque démarrage à froid sur cette route.
             L'en-tête est rendu dans les deux cas, pour que le bouton retour
             existe aussi pendant l'attente. */}
-        {loaded && <Text style={styles.notFound}>{t('goalDetail.notFound')}</Text>}
+        {loaded && (
+          <Text style={styles.notFound}>
+            {closed ? t('editGoal.closed') : t('goalDetail.notFound')}
+          </Text>
+        )}
       </SafeAreaView>
     );
   }
@@ -78,6 +97,7 @@ function EditGoalForm({ goal }: { goal: Goal }) {
   // jamais explicitement ce champ.
   const [reminderEnabled, setReminderEnabled] = useState(goal.reminderEnabled ?? true);
   const [reminderTime, setReminderTime] = useState<string | undefined>(goal.reminderTime);
+  const [remindAfterReached, setRemindAfterReached] = useState(goal.remindAfterReached ?? false);
 
   // Dès qu'une séance porte une valeur positive, l'unité ne bouge plus :
   // une entrée ne porte qu'un nombre, et la changer relirait les mêmes
@@ -106,7 +126,13 @@ function EditGoalForm({ goal }: { goal: Goal }) {
   // jour même une fois tronquées par setDate.
   const daysValue = parseDurationDays(days);
   const daysNum = daysValue ?? 0;
-  const daysError = daysValue === null ? t('editGoal.daysPositive') : undefined;
+  const maxDays = maxRemainingDays(s.elapsedDays);
+  const daysError =
+    daysValue === null
+      ? t('editGoal.daysPositive')
+      : daysValue > maxDays
+        ? t('editGoal.daysTooMany', { count: maxDays, max: MAX_GOAL_DAYS })
+        : undefined;
   const canSave = !titleError && !targetError && !daysError;
 
   // Recalcul en direct du nouveau rythme quotidien requis, comme le calcul
@@ -134,6 +160,7 @@ function EditGoalForm({ goal }: { goal: Goal }) {
       // personnalisé après l'avoir activé.
       reminderEnabled,
       reminderTime,
+      remindAfterReached,
     });
     router.back();
   }
@@ -183,6 +210,8 @@ function EditGoalForm({ goal }: { goal: Goal }) {
           onReminderEnabledChange={setReminderEnabled}
           reminderTime={reminderTime}
           onReminderTimeChange={setReminderTime}
+          remindAfterReached={remindAfterReached}
+          onRemindAfterReachedChange={setRemindAfterReached}
         />
 
         {newDailyRequired > 0 && (
