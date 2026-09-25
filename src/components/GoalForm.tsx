@@ -3,7 +3,7 @@ import * as Crypto from 'expo-crypto';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Goal, Unit } from '../types';
-import { parseDurationDays, parsePositiveNumber } from '../goalValidation';
+import { MAX_GOAL_DAYS, parseDurationDays, parsePositiveNumber } from '../goalValidation';
 import { fmt } from '../stats';
 import { colors, fontFamily, radius, spacing } from '../theme';
 import GoalFields from './GoalFields';
@@ -38,7 +38,12 @@ export default function GoalForm({ onCreate }: Props) {
   // l'écran Édition et refuse aussi les durées fractionnaires, qui
   // produisaient une échéance le jour même (voir src/goalValidation.ts).
   const durationDaysValue = parseDurationDays(durationDays);
-  const durationError = durationDaysValue === null ? t('goalForm.durationPositive') : undefined;
+  const durationError =
+    durationDaysValue === null
+      ? t('goalForm.durationPositive')
+      : durationDaysValue > MAX_GOAL_DAYS
+        ? t('goalForm.durationTooLong', { max: MAX_GOAL_DAYS })
+        : undefined;
   const canSubmit = !titleError && !targetValueError && !durationError;
 
   // Rythme quotidien requis affiché en direct dès que les 3 champs sont

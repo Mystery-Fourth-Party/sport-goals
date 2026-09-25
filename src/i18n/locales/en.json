@@ -136,6 +136,7 @@
     "titleRequired": "The goal title is required.",
     "targetPositive": "The target value must be a positive number.",
     "durationPositive": "The duration must be a whole number of days, greater than 0.",
+    "durationTooLong": "The duration cannot exceed {{max}} days.",
     "durationLabel": "Duration (days)",
     "dailyAvgRequired": "Required daily pace",
     "perDay": "{{unit}} per day",
@@ -204,6 +205,8 @@
     "targetTooLow": "The target must be ≥ what's already done ({{value}} {{unit}}).",
     "targetPositive": "The target value must be a positive number.",
     "daysPositive": "The days left must be a whole number, greater than 0.",
+    "daysTooMany_one": "A goal lasts at most {{max}} days from its creation: {{count}} day left at most.",
+    "daysTooMany_other": "A goal lasts at most {{max}} days from its creation: {{count}} days left at most.",
     "newPace": "New daily pace",
     "remainingToComplete": "{{unit}}/day · {{value}} {{unitLabel}} left to complete",
     "save": "Save changes"

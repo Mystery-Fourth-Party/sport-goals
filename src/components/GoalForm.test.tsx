@@ -9,6 +9,7 @@
 // t('unit.…') ou t('unitSpoken.…').
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import GoalForm from './GoalForm';
+import { MAX_GOAL_DAYS } from '../goalValidation';
 import i18n from '../i18n';
 
 beforeAll(() => i18n.changeLanguage('fr'));
@@ -81,5 +82,30 @@ describe('GoalForm', () => {
     await flush();
 
     expect(onCreate).not.toHaveBeenCalled();
+  });
+
+  async function submitWithDuration(duration: string) {
+    const onCreate = jest.fn();
+    render(<GoalForm onCreate={onCreate} />);
+    await flush();
+    fireEvent.changeText(screen.getByLabelText(i18n.t('goalFields.name')), 'Pompes');
+    fireEvent.changeText(screen.getByLabelText(i18n.t('goalFields.targetValue')), '100');
+    fireEvent.changeText(screen.getByLabelText(i18n.t('goalForm.durationLabel')), duration);
+    fireEvent.press(screen.getByText(i18n.t('goalForm.submit')));
+    await flush();
+    return onCreate;
+  }
+
+  it('accepts a duration of exactly the maximum', async () => {
+    const onCreate = await submitWithDuration(String(MAX_GOAL_DAYS));
+    expect(onCreate).toHaveBeenCalledTimes(1);
+  });
+
+  it('refuses one day over the maximum, with a message naming the limit', async () => {
+    const onCreate = await submitWithDuration(String(MAX_GOAL_DAYS + 1));
+    expect(onCreate).not.toHaveBeenCalled();
+    expect(
+      screen.getByText(i18n.t('goalForm.durationTooLong', { max: MAX_GOAL_DAYS })),
+    ).toBeTruthy();
   });
 });

@@ -8,6 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import EditGoalScreen from '../app/goal/[id]/edit';
 import { GoalsProvider } from '../src/goals-context';
+import { MAX_GOAL_DAYS, maxRemainingDays } from '../src/goalValidation';
 import i18n from '../src/i18n';
 import { SettingsProvider } from '../src/settings-context';
 import { fmt, getGoalStats, todayStr } from '../src/stats';
@@ -347,5 +348,27 @@ describe('EditGoalScreen — durée hors domaine', () => {
     await flush();
 
     expect(mockedSaveGoals).not.toHaveBeenCalled();
+  });
+
+  // La durée totale reste plafonnée : les jours déjà écoulés sont décomptés
+  // du maximum, puisqu'enregistrer recalcule l'échéance depuis aujourd'hui.
+  it('borne les jours restants à ce qui reste de la durée maximale', async () => {
+    const goal = makeGoal();
+    mockedLoadGoals.mockResolvedValue({ value: [goal], ok: true });
+    render(<Tree show />);
+    await flush();
+    const max = maxRemainingDays(getGoalStats(goal, todayStr()).elapsedDays);
+
+    fireEvent.changeText(screen.getByLabelText(DURATION), String(max + 1));
+    fireEvent.press(screen.getByText(SAVE));
+    await flush();
+    expect(
+      screen.getByText(i18n.t('editGoal.daysTooMany', { count: max, max: MAX_GOAL_DAYS })),
+    ).toBeTruthy();
+
+    mockedSaveGoals.mockClear();
+    fireEvent.changeText(screen.getByLabelText(DURATION), String(max));
+    fireEvent.press(screen.getByText(SAVE));
+    await waitFor(() => expect(mockedSaveGoals).toHaveBeenCalled());
   });
 });

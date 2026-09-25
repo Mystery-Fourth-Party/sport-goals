@@ -6,7 +6,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import GoalFields from '../../../src/components/GoalFields';
 import { BackButton } from '../../../src/components/ui';
 import { useGoals } from '../../../src/goals-context';
-import { parseDurationDays, parsePositiveNumber } from '../../../src/goalValidation';
+import {
+  MAX_GOAL_DAYS,
+  maxRemainingDays,
+  parseDurationDays,
+  parsePositiveNumber,
+} from '../../../src/goalValidation';
 import { fmt, getGoalStats } from '../../../src/stats';
 import { colors, fontFamily, radius, spacing, statusColors, white } from '../../../src/theme';
 import { Goal, Unit } from '../../../src/types';
@@ -106,7 +111,13 @@ function EditGoalForm({ goal }: { goal: Goal }) {
   // jour même une fois tronquées par setDate.
   const daysValue = parseDurationDays(days);
   const daysNum = daysValue ?? 0;
-  const daysError = daysValue === null ? t('editGoal.daysPositive') : undefined;
+  const maxDays = maxRemainingDays(s.elapsedDays);
+  const daysError =
+    daysValue === null
+      ? t('editGoal.daysPositive')
+      : daysValue > maxDays
+        ? t('editGoal.daysTooMany', { count: maxDays, max: MAX_GOAL_DAYS })
+        : undefined;
   const canSave = !titleError && !targetError && !daysError;
 
   // Recalcul en direct du nouveau rythme quotidien requis, comme le calcul
