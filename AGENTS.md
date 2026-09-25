@@ -102,7 +102,7 @@ réelles...) vivent dans Notion, jamais dans ce dépôt. Vérifier ce qui
 existe déjà avant d'en proposer une nouvelle : le système est organisé par
 domaine, avec suivi par cases à cocher.
 
-Ne pas recopier de lien Notion en clair ici — ce dépôt peut devenir public.
+Ne pas recopier de lien Notion en clair ici — ce dépôt est public.
 
 ## Test rouge avant tout correctif
 
