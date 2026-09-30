@@ -126,7 +126,9 @@
     "leastAdvanced": "Objectif le moins avancé",
     "expectedActual": "Attendu {{expected}}% · actuel {{actual}}%",
     "catchUpHint": "↑ {{value}}/jour pour rattraper",
-    "allGoals": "Tous les objectifs",
+    "activeGoals": "Objectifs en cours",
+    "closedThisWeek": "Terminés cette semaine",
+    "finalValue": "{{value}} / {{target}} {{unit}}",
     "weekTotal": "+{{value}} {{unit}}",
     "empty": "Aucun objectif pour l'instant — crée-en un pour voir ton résumé de la semaine."
   },

@@ -5,7 +5,8 @@
 // fichier de app/ devient une route (voir goal-edit-screen.test.tsx).
 import { ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { act, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { router } from 'expo-router';
 import WeeklyScreen from '../app/weekly';
 import { GoalsProvider } from '../src/goals-context';
 import i18n from '../src/i18n';
@@ -110,11 +111,98 @@ describe('WeeklyScreen — liste par objectif', () => {
 
     expect(screen.getAllByText('Ouvert en retard').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Atteint en avance').length).toBeGreaterThan(0);
-    expect(screen.queryByText('Échu hier')).toBeNull();
-    // Badges de la liste : lus par leur libellé parlé (voir StatusBadge).
+    // L'objectif clos n'apparaît qu'une fois : dans « Terminés cette
+    // semaine », pas dans la liste des objectifs en cours.
+    expect(screen.getAllByText('Échu hier')).toHaveLength(1);
+    expect(screen.getByRole('button', { name: /^Échu hier, / })).toBeTruthy();
+    // Badges : lus par leur libellé parlé (voir StatusBadge).
     expect(screen.getAllByLabelText(i18n.t('statusSpoken.exceeded')).length).toBeGreaterThan(0);
     expect(screen.getAllByLabelText(i18n.t('statusSpoken.late')).length).toBeGreaterThan(0);
-    expect(screen.queryByLabelText(i18n.t('statusSpoken.failed'))).toBeNull();
+    expect(screen.getAllByLabelText(i18n.t('statusSpoken.failed'))).toHaveLength(1);
+  });
+});
+
+describe('WeeklyScreen — terminés cette semaine', () => {
+  const TITLE = () => i18n.t('weekly.closedThisWeek');
+
+  // Échéance à `deadlineOffset` jours de la date d'exécution (négatif =
+  // passé), cible 100, total `total`.
+  function goal(id: string, deadlineOffset: number, total: number): Goal {
+    const createdAt = new Date();
+    createdAt.setDate(createdAt.getDate() - 30);
+    const deadline = new Date();
+    deadline.setDate(deadline.getDate() + deadlineOffset);
+    return {
+      id,
+      title: `Objectif ${id}`,
+      targetValue: 100,
+      unit: 'reps',
+      createdAt: createdAt.toISOString(),
+      deadline: deadline.toISOString(),
+      entries: [{ date: '2026-08-01', value: total }],
+    };
+  }
+
+  function flatStyle(element: { props: { style?: unknown } }) {
+    const style = element.props.style;
+    return Array.isArray(style) ? Object.assign({}, ...style.flat().filter(Boolean)) : style;
+  }
+
+  const row = (id: string) => screen.getByRole('button', { name: new RegExp(`^Objectif ${id}, `) });
+
+  it("n'affiche pas la carte quand rien n'a été clos dans la semaine", async () => {
+    await renderWeekly([goal('ouvert', 5, 20), goal('ancien', -10, 20)]);
+
+    expect(screen.queryByText(TITLE())).toBeNull();
+  });
+
+  it('garde la carte quand tous les objectifs sont clos, sans liste en cours', async () => {
+    await renderWeekly([goal('a', -1, 40), goal('b', -3, 100)]);
+
+    expect(screen.getByText(TITLE())).toBeTruthy();
+    expect(screen.queryByText(i18n.t('weekly.activeGoals'))).toBeNull();
+    expect(row('a')).toBeTruthy();
+    expect(row('b')).toBeTruthy();
+  });
+
+  it('borde les lignes dépassées et manquées de la couleur de leur statut, pas les atteintes', async () => {
+    await renderWeekly([
+      goal('exceeded', -1, 150),
+      goal('failed', -2, 40),
+      goal('reached', -3, 100),
+    ]);
+
+    expect(flatStyle(row('exceeded'))).toMatchObject({
+      borderLeftWidth: 3,
+      borderLeftColor: statusColors.exceeded.text,
+    });
+    expect(flatStyle(row('failed'))).toMatchObject({
+      borderLeftWidth: 3,
+      borderLeftColor: statusColors.failed.text,
+    });
+    expect(flatStyle(row('reached')).borderLeftWidth).toBeUndefined();
+  });
+
+  it("ouvre le détail de l'objectif à l'appui", async () => {
+    await renderWeekly([goal('clos', -1, 40)]);
+
+    fireEvent.press(row('clos'));
+
+    expect(router.push).toHaveBeenCalledWith('/goal/clos');
+  });
+
+  it('annonce titre, progression finale et statut parlé, sans symbole', async () => {
+    await renderWeekly([goal('depasse', -1, 150), goal('atteint', -2, 100)]);
+
+    expect(row('depasse').props.accessibilityLabel).toBe(
+      [
+        'Objectif depasse',
+        i18n.t('goalCard.progressA11y', { percent: 150 }),
+        i18n.t('statusSpoken.exceeded'),
+      ].join(', '),
+    );
+    expect(row('atteint').props.accessibilityLabel).not.toMatch(/[✓★]/);
+    expect(row('depasse').props.accessibilityLabel).not.toMatch(/[✓★]/);
   });
 });
 

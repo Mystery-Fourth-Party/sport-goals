@@ -1,14 +1,31 @@
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BackButton, BarChart, ProgressBar, StatusBadge } from '../src/components/ui';
 import { weekdayShort, weekRangeLabel } from '../src/dateLabels';
 import { useGoals } from '../src/goals-context';
-import { fmt, getGoalStats, getWeeklyStats, parseDate, splitGoalsByClosure } from '../src/stats';
+import {
+  fmt,
+  getGoalStats,
+  getWeeklyStats,
+  parseDate,
+  splitGoalsByClosure,
+  Status,
+  statusSpokenLabel,
+} from '../src/stats';
 import { useToday } from '../src/useToday';
 import { colors, fontFamily, radius, spacing, statusColors, white } from '../src/theme';
 import { Goal, UNIT_ICONS } from '../src/types';
+
+// Liseré latéral des lignes « Terminés cette semaine » : il met en avant
+// les deux issues qui s'écartent de la cible, dépassée ou manquée. Une
+// cible atteinte pile n'en a pas. Couleur `text` du statut plutôt que
+// `bar` : celle de failed est trop atténuée pour se voir sur 3 px.
+function edgeStyle(status: Status) {
+  if (status !== 'exceeded' && status !== 'failed') return undefined;
+  return { borderLeftWidth: 3, borderLeftColor: statusColors[status].text };
+}
 
 function weekTotalFor(goal: Goal, weekDates: string[]): number {
   const weekSet = new Set(weekDates);
@@ -19,8 +36,15 @@ export default function WeeklyScreen() {
   const { t } = useTranslation();
   const { goals } = useGoals();
   const today = useToday();
-  const { weekDates, sessionsPerDay, activeDays, totalSessions, mostAdvanced, mostBehind } =
-    getWeeklyStats(goals, today);
+  const {
+    weekDates,
+    sessionsPerDay,
+    activeDays,
+    totalSessions,
+    mostAdvanced,
+    mostBehind,
+    closedThisWeek,
+  } = getWeeklyStats(goals, today);
   // Liste par objectif : objectifs en cours seulement, comme les classements
   // de getWeeklyStats. Les séances des objectifs clos restent comptées dans
   // les cartes du haut et le graphique.
@@ -161,7 +185,7 @@ export default function WeeklyScreen() {
 
         {active.length > 0 && (
           <View style={[styles.card, styles.listCard]}>
-            <Text style={[styles.label, styles.listCardHeader]}>{t('weekly.allGoals')}</Text>
+            <Text style={[styles.label, styles.listCardHeader]}>{t('weekly.activeGoals')}</Text>
             {active.map((g, i) => {
               const stats = getGoalStats(g, today);
               const weekTotal = weekTotalFor(g, weekDates);
@@ -187,6 +211,50 @@ export default function WeeklyScreen() {
                 </View>
               );
             })}
+          </View>
+        )}
+
+        {/* Condition propre, indépendante de la liste en cours : quand tous
+            les objectifs sont clos, celle-ci disparaît et cette carte reste. */}
+        {closedThisWeek.length > 0 && (
+          <View style={[styles.card, styles.listCard]}>
+            <Text style={[styles.label, styles.listCardHeader]}>{t('weekly.closedThisWeek')}</Text>
+            {closedThisWeek.map(({ goal: g, stats }, i) => (
+              <Pressable
+                key={g.id}
+                style={[
+                  styles.goalBreakdownRow,
+                  i < closedThisWeek.length - 1 && styles.rowBorder,
+                  edgeStyle(stats.status),
+                ]}
+                onPress={() => router.push(`/goal/${g.id}`)}
+                accessibilityRole="button"
+                // Phrase unique, composée comme dans GoalCard : le lecteur
+                // d'écran n'entre pas dans les enfants, et la variante parlée
+                // du statut évite de lire ✓ ou ★.
+                accessibilityLabel={[
+                  g.title,
+                  t('goalCard.progressA11y', { percent: Math.round(stats.progress * 100) }),
+                  statusSpokenLabel(stats.status),
+                ].join(', ')}
+              >
+                <View style={styles.goalBreakdownTop}>
+                  <View style={styles.goalRowLeft}>
+                    <Text style={styles.goalBreakdownIcon}>{UNIT_ICONS[g.unit]}</Text>
+                    <Text style={styles.goalTitle}>{g.title}</Text>
+                  </View>
+                  <Text style={styles.goalBreakdownTotal}>
+                    {t('weekly.finalValue', {
+                      value: fmt(stats.actual, g.unit),
+                      target: g.targetValue,
+                      unit: t(`unit.${g.unit}`),
+                    })}
+                  </Text>
+                </View>
+                <StatusBadge status={stats.status} />
+                <ProgressBar value={stats.progress} status={stats.status} />
+              </Pressable>
+            ))}
           </View>
         )}
 

@@ -126,7 +126,9 @@
     "leastAdvanced": "Least advanced goal",
     "expectedActual": "Expected {{expected}}% · actual {{actual}}%",
     "catchUpHint": "↑ {{value}}/day to catch up",
-    "allGoals": "All goals",
+    "activeGoals": "Active goals",
+    "closedThisWeek": "Finished this week",
+    "finalValue": "{{value}} / {{target}} {{unit}}",
     "weekTotal": "+{{value}} {{unit}}",
     "empty": "No goals yet — create one to see your weekly summary."
   },

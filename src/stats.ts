@@ -42,6 +42,9 @@ export interface WeeklyStats {
   totalSessions: number;
   mostAdvanced: { goal: Goal; stats: GoalStats } | undefined;
   mostBehind: { goal: Goal; stats: GoalStats } | undefined;
+  // Clos cette semaine, statut final reached / exceeded / failed ; voir
+  // getWeeklyStats pour la fenêtre et le tri.
+  closedThisWeek: { goal: Goal; stats: GoalStats }[];
 }
 
 // ─── Dates ──────────────────────────────────────────────────────────────
@@ -273,7 +276,29 @@ export function getWeeklyStats(goals: Goal[], today: string): WeeklyStats {
         a.stats.progress - a.stats.expectedProgress - (b.stats.progress - b.stats.expectedProgress),
     )[0];
 
-  return { weekDates, sessionsPerDay, activeDays, totalSessions, mostAdvanced, mostBehind };
+  // Objectifs clos dont le jour local d'échéance tombe dans la fenêtre des
+  // 7 jours. Un objectif reste ouvert pendant tout le jour de son échéance
+  // (isGoalClosed) : échu aujourd'hui, il n'est pas encore ici mais dans la
+  // liste des objectifs en cours ; clos, il y reste 6 jours, de J-1 à J-6.
+  // Tri sur le jour d'échéance, le plus récent d'abord, et non sur
+  // l'instant, comme la clôture. Array.prototype.sort est stable : à jour
+  // égal, l'ordre de `goals` est conservé.
+  const weekSet = new Set(weekDates);
+  const closedThisWeek = splitGoalsByClosure(goals, today)
+    .closed.map((g) => ({ goal: g, day: toDayStr(g.deadline) }))
+    .filter(({ day }) => weekSet.has(day))
+    .sort((a, b) => (a.day === b.day ? 0 : a.day < b.day ? 1 : -1))
+    .map(({ goal }) => ({ goal, stats: getGoalStats(goal, today) }));
+
+  return {
+    weekDates,
+    sessionsPerDay,
+    activeDays,
+    totalSessions,
+    mostAdvanced,
+    mostBehind,
+    closedThisWeek,
+  };
 }
 
 // ─── Formatage / libellés statut ───────────────────────────────────────

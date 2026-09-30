@@ -448,6 +448,63 @@ describe('getWeeklyStats — objectifs clos', () => {
   });
 });
 
+describe('getWeeklyStats — closedThisWeek', () => {
+  // TODAY = 2026-08-20 : la fenêtre va du 14 au 20. Échéances à midi UTC,
+  // même jour local partout entre UTC-11 et UTC+11 (voir `pompes`).
+  function dueOn(id: string, day: string, total: number): Goal {
+    return {
+      ...pompes,
+      id,
+      targetValue: 100,
+      createdAt: '2026-07-01T12:00:00.000Z',
+      deadline: `${day}T12:00:00.000Z`,
+      entries: total > 0 ? [{ date: '2026-07-10', value: total }] : [],
+    };
+  }
+  const ids = (goals: Goal[]) => getWeeklyStats(goals, TODAY).closedThisWeek.map((c) => c.goal.id);
+
+  it('leaves out a goal due today: still open, it belongs to the active list', () => {
+    expect(ids([dueOn('today', '2026-08-20', 50)])).toEqual([]);
+  });
+
+  it('includes a goal due yesterday and one due 6 days ago', () => {
+    expect(ids([dueOn('yesterday', '2026-08-19', 50), dueOn('six', '2026-08-14', 50)])).toEqual([
+      'yesterday',
+      'six',
+    ]);
+  });
+
+  it('leaves out a goal due 7 days ago', () => {
+    expect(ids([dueOn('seven', '2026-08-13', 50)])).toEqual([]);
+  });
+
+  it('sorts by deadline, most recent first, keeping the goals order on the same day', () => {
+    const goals = [
+      dueOn('d16-a', '2026-08-16', 50),
+      dueOn('d18', '2026-08-18', 50),
+      dueOn('d16-b', '2026-08-16', 50),
+      dueOn('d19', '2026-08-19', 50),
+    ];
+    expect(ids(goals)).toEqual(['d19', 'd18', 'd16-a', 'd16-b']);
+  });
+
+  it('carries the final status of each goal', () => {
+    const w = getWeeklyStats(
+      [
+        dueOn('failed', '2026-08-19', 40),
+        dueOn('reached', '2026-08-18', 100),
+        dueOn('exceeded', '2026-08-17', 150),
+      ],
+      TODAY,
+    );
+    expect(w.closedThisWeek.map((c) => [c.goal.id, c.stats.status])).toEqual([
+      ['failed', 'failed'],
+      ['reached', 'reached'],
+      ['exceeded', 'exceeded'],
+    ]);
+  });
+});
+
 describe('getWeeklyStats — objectif sans historique', () => {
   // Même repli que getGoalStats ci-dessus : un objectif enregistré avant
   // l'ajout du champ entries ne doit pas faire planter le résumé.
