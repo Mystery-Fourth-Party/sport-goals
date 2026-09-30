@@ -120,6 +120,14 @@ const NAME = () => i18n.t('goalFields.name');
 const TARGET = () => i18n.t('goalFields.targetValue');
 const DURATION = () => i18n.t('goalForm.durationLabel');
 
+// L'horloge est refigée juste avant l'appui : flush() fait avancer les timers
+// simulés, et createdAt/échéance sont comparés à des valeurs exactes.
+async function submit() {
+  jest.setSystemTime(NOW);
+  fireEvent.press(screen.getByText(i18n.t('goalForm.submit')));
+  await flush();
+}
+
 function fieldValue(label: string): string {
   return screen.getByLabelText(label).props.value;
 }
@@ -188,8 +196,7 @@ describe('CreateGoalScreen — relance depuis un objectif clos', () => {
     const before = structuredClone(source);
     await renderWith([source]);
 
-    fireEvent.press(screen.getByText(i18n.t('goalForm.submit')));
-    await flush();
+    await submit();
 
     const saved = lastSavedGoals();
     expect(saved).toHaveLength(2);
@@ -214,8 +221,7 @@ describe('CreateGoalScreen — relance depuis un objectif clos', () => {
     fireEvent.changeText(screen.getByLabelText(TARGET()), '150');
     fireEvent.changeText(screen.getByLabelText(DURATION()), '45');
     fireEvent.press(unitChip('reps'));
-    fireEvent.press(screen.getByText(i18n.t('goalForm.submit')));
-    await flush();
+    await submit();
 
     expect(lastSavedGoals()).toHaveLength(2);
     const created = lastSavedGoals().find((g) => g.id !== 'src')!;
