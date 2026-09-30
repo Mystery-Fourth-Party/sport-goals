@@ -12,6 +12,7 @@ import { GoalsProvider } from '../src/goals-context';
 import { MAX_GOAL_DAYS } from '../src/goalValidation';
 import i18n from '../src/i18n';
 import { SettingsProvider } from '../src/settings-context';
+import { dateStr } from '../src/stats';
 import { loadGoals, LoadResult, saveGoals } from '../src/storage';
 import { StorageStatusProvider } from '../src/storage-status';
 import { Goal, Unit } from '../src/types';
@@ -227,7 +228,9 @@ describe('CreateGoalScreen — relance depuis un objectif clos', () => {
     const created = lastSavedGoals().find((g) => g.id !== 'src')!;
     expect(created.targetValue).toBe(150);
     expect(created.unit).toBe('reps');
-    expect(created.deadline).toBe('2026-11-14T12:00:00.000Z');
+    // Jour local et non instant : +45 jours franchit la fin de l'heure d'été
+    // américaine (1er novembre), et setDate conserve l'heure locale.
+    expect(dateStr(new Date(created.deadline))).toBe('2026-11-14');
   });
 
   it('ne crée rien quand on revient en arrière sans valider', async () => {
