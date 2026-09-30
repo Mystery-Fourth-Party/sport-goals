@@ -105,7 +105,8 @@
     "viewArchive": "Voir l'archive"
   },
   "create": {
-    "title": "Nouvel Objectif"
+    "title": "Nouvel Objectif",
+    "restartTitle": "Relancer un objectif"
   },
   "archive": {
     "title": "Archive",
@@ -172,6 +173,8 @@
     "notFound": "Objectif introuvable.",
     "deleteGoal": "🗑 Supprimer l'objectif",
     "addProgressCta": "+ Ajouter la progression du jour",
+    "restartCta": "Relancer",
+    "restartA11y": "Relancer l'objectif {{title}}",
     "deleteGoalConfirmTitle": "Supprimer cet objectif ?",
     "deleteEntryConfirmTitle": "Supprimer cette entrée ?",
     "history": {

@@ -105,7 +105,8 @@
     "viewArchive": "View archive"
   },
   "create": {
-    "title": "New Goal"
+    "title": "New Goal",
+    "restartTitle": "Restart a goal"
   },
   "archive": {
     "title": "Archive",
@@ -172,6 +173,8 @@
     "notFound": "Goal not found.",
     "deleteGoal": "🗑 Delete the goal",
     "addProgressCta": "+ Add today's progress",
+    "restartCta": "Restart",
+    "restartA11y": "Restart goal {{title}}",
     "deleteGoalConfirmTitle": "Delete this goal?",
     "deleteEntryConfirmTitle": "Delete this entry?",
     "history": {
