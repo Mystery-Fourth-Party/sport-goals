@@ -3,6 +3,7 @@ import * as Crypto from 'expo-crypto';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Goal, Unit } from '../types';
+import { GoalFormValues } from '../goalFormValues';
 import { MAX_GOAL_DAYS, parseDurationDays, parsePositiveNumber } from '../goalValidation';
 import { fmt } from '../stats';
 import { colors, fontFamily, radius, spacing } from '../theme';
@@ -10,22 +11,29 @@ import GoalFields from './GoalFields';
 
 interface Props {
   onCreate: (goal: Goal) => void;
+  // Valeurs de départ, lues une seule fois au montage (initialiseurs
+  // useState) : un changement de prop ensuite est ignoré. L'appelant ne monte
+  // donc le formulaire qu'une fois ces valeurs connues, avec une `key` qui
+  // change avec la source (voir CreateGoalScreen). Absent = formulaire vierge.
+  initialValues?: GoalFormValues;
 }
 
-export default function GoalForm({ onCreate }: Props) {
+export default function GoalForm({ onCreate, initialValues }: Props) {
   const { t } = useTranslation();
   // Formulaire contrôlé classique (comme en React web) : un useState par champ.
-  const [title, setTitle] = useState('');
-  const [targetValue, setTargetValue] = useState('');
-  const [unit, setUnit] = useState<Unit>('reps');
-  const [durationDays, setDurationDays] = useState('');
+  const [title, setTitle] = useState(initialValues?.title ?? '');
+  const [targetValue, setTargetValue] = useState(initialValues?.targetValue ?? '');
+  const [unit, setUnit] = useState<Unit>(initialValues?.unit ?? 'reps');
+  const [durationDays, setDurationDays] = useState(initialValues?.durationDays ?? '');
   // Actif par défaut (voir types.ts) ; reminderTime absent = hérite de
   // l'horaire global tant que l'utilisateur n'active pas "Horaire
   // personnalisé".
-  const [reminderEnabled, setReminderEnabled] = useState(true);
-  const [reminderTime, setReminderTime] = useState<string | undefined>(undefined);
+  const [reminderEnabled, setReminderEnabled] = useState(initialValues?.reminderEnabled ?? true);
+  const [reminderTime, setReminderTime] = useState<string | undefined>(initialValues?.reminderTime);
   // Absent = false (voir types.ts) : un objectif atteint sort du rappel.
-  const [remindAfterReached, setRemindAfterReached] = useState(false);
+  const [remindAfterReached, setRemindAfterReached] = useState(
+    initialValues?.remindAfterReached ?? false,
+  );
   // Les erreurs ne s'affichent qu'après une première tentative de soumission
   // invalide, pour ne pas asperger l'utilisateur de messages rouges dès
   // qu'il commence à remplir le formulaire.
