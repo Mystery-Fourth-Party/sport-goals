@@ -168,13 +168,25 @@ export default function GoalDetailScreen() {
         </Pressable>
       </ScrollView>
 
-      {!closed && (
-        <View style={styles.ctaWrap}>
+      {/* Même emplacement pour les deux CTA : un objectif clos n'accepte plus
+          d'ajout du jour, il propose d'en relancer un nouveau. La création lit
+          la source par son id (voir CreateGoalScreen). */}
+      <View style={styles.ctaWrap}>
+        {closed ? (
+          <Pressable
+            style={styles.ctaButton}
+            onPress={() => router.push({ pathname: '/create', params: { from: goal.id } })}
+            accessibilityRole="button"
+            accessibilityLabel={t('goalDetail.restartA11y', { title: goal.title })}
+          >
+            <Text style={styles.ctaButtonText}>{t('goalDetail.restartCta')}</Text>
+          </Pressable>
+        ) : (
           <Pressable style={styles.ctaButton} onPress={openAddModal} accessibilityRole="button">
             <Text style={styles.ctaButtonText}>{t('goalDetail.addProgressCta')}</Text>
           </Pressable>
-        </View>
-      )}
+        )}
+      </View>
 
       <ProgressEntryModal
         mode={modalMode}

@@ -13,6 +13,7 @@
 // key/remount de PR3 — cet écran n'a aucun useState initialisé depuis `goal`.
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { router } from 'expo-router';
 import GoalDetailScreen from '../app/goal/[id]';
 import { GoalsProvider } from '../src/goals-context';
 import i18n from '../src/i18n';
@@ -147,6 +148,28 @@ describe('GoalDetailScreen — objectif clos', () => {
     expect(screen.queryByLabelText(i18n.t('goalDetail.header.editA11y'))).toBeNull();
     expect(screen.queryByText(i18n.t('goalDetail.addProgressCta'))).toBeNull();
     expect(screen.getByLabelText(i18n.t('statusSpoken.failed'))).toBeTruthy();
+  });
+
+  it('propose « Relancer » sur un objectif clos et ouvre la création avec sa source', async () => {
+    const goal = closedGoal();
+    await renderWith(goal);
+
+    const restart = screen.getByRole('button', {
+      name: i18n.t('goalDetail.restartA11y', { title: goal.title }),
+    });
+    expect(screen.getByText(i18n.t('goalDetail.restartCta'))).toBeTruthy();
+    expect(screen.queryByText(i18n.t('goalDetail.addProgressCta'))).toBeNull();
+
+    fireEvent.press(restart);
+
+    expect(router.push).toHaveBeenCalledWith({ pathname: '/create', params: { from: goal.id } });
+  });
+
+  it('ne propose pas « Relancer » sur un objectif ouvert', async () => {
+    await renderWith(makeGoal());
+
+    expect(screen.queryByText(i18n.t('goalDetail.restartCta'))).toBeNull();
+    expect(screen.getByText(i18n.t('goalDetail.addProgressCta'))).toBeTruthy();
   });
 
   it('garde la suppression et la correction d entrée sur un objectif clos', async () => {

@@ -9,6 +9,7 @@
 // t('unit.…') ou t('unitSpoken.…').
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import GoalForm from './GoalForm';
+import { GoalFormValues } from '../goalFormValues';
 import { MAX_GOAL_DAYS } from '../goalValidation';
 import i18n from '../i18n';
 
@@ -137,6 +138,76 @@ describe('GoalForm', () => {
 
   it('refuses one day over the maximum, with a message naming the limit', async () => {
     const onCreate = await submitWithDuration(String(MAX_GOAL_DAYS + 1));
+    expect(onCreate).not.toHaveBeenCalled();
+    expect(
+      screen.getByText(i18n.t('goalForm.durationTooLong', { max: MAX_GOAL_DAYS })),
+    ).toBeTruthy();
+  });
+});
+
+describe('GoalForm with initial values', () => {
+  const initialValues: GoalFormValues = {
+    title: 'Courir 100 km',
+    targetValue: '100',
+    unit: 'km',
+    durationDays: '30',
+    reminderEnabled: true,
+    reminderTime: '07:30',
+    remindAfterReached: true,
+  };
+
+  it('starts from the given values', async () => {
+    render(<GoalForm onCreate={jest.fn()} initialValues={initialValues} />);
+    await flush();
+
+    expect(screen.getByLabelText(i18n.t('goalFields.name')).props.value).toBe('Courir 100 km');
+    expect(screen.getByLabelText(i18n.t('goalFields.targetValue')).props.value).toBe('100');
+    expect(screen.getByLabelText(i18n.t('goalForm.durationLabel')).props.value).toBe('30');
+    expect(
+      screen.getByLabelText(i18n.t('goalFields.unitA11y', { unit: i18n.t('unitSpoken.km') })).props
+        .accessibilityState.selected,
+    ).toBe(true);
+  });
+
+  it('submits the values edited on top of the given ones', async () => {
+    const onCreate = jest.fn();
+    render(<GoalForm onCreate={onCreate} initialValues={initialValues} />);
+    await flush();
+
+    fireEvent.changeText(screen.getByLabelText(i18n.t('goalFields.targetValue')), '150');
+    fireEvent.changeText(screen.getByLabelText(i18n.t('goalForm.durationLabel')), '45');
+    fireEvent.press(
+      screen.getByLabelText(i18n.t('goalFields.unitA11y', { unit: i18n.t('unitSpoken.reps') })),
+    );
+    fireEvent.press(screen.getByText(i18n.t('goalForm.submit')));
+    await flush();
+
+    expect(onCreate).toHaveBeenCalledTimes(1);
+    const goal = onCreate.mock.calls[0][0];
+    expect(goal).toMatchObject({
+      title: 'Courir 100 km',
+      targetValue: 150,
+      unit: 'reps',
+      reminderEnabled: true,
+      reminderTime: '07:30',
+      remindAfterReached: true,
+      entries: [],
+    });
+  });
+
+  it('still refuses a given duration over the maximum', async () => {
+    const onCreate = jest.fn();
+    render(
+      <GoalForm
+        onCreate={onCreate}
+        initialValues={{ ...initialValues, durationDays: String(MAX_GOAL_DAYS + 35) }}
+      />,
+    );
+    await flush();
+
+    fireEvent.press(screen.getByText(i18n.t('goalForm.submit')));
+    await flush();
+
     expect(onCreate).not.toHaveBeenCalled();
     expect(
       screen.getByText(i18n.t('goalForm.durationTooLong', { max: MAX_GOAL_DAYS })),
