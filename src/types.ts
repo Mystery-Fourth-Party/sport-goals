@@ -49,6 +49,15 @@ export interface Goal {
   // ongoingGoalsWithoutTodayEntry). reminderEnabled === false garde la
   // priorité.
   remindAfterReached?: boolean;
+  // Absent = false. Porté uniquement par l'occurrence en cours d'une série :
+  // à la création de la suivante, il passe à la nouvelle et quitte l'ancienne,
+  // ce qui empêche de recréer deux fois la même occurrence. Vrai suppose un
+  // seriesId.
+  repeat?: boolean;
+  // Identifiant commun à toutes les occurrences d'une série ; absent = objectif
+  // hors série. Une occurrence archivée le garde, c'est ce qui permet de la
+  // rattacher à ses voisines.
+  seriesId?: string;
 }
 
 // Le libellé affiché à la place des clés techniques ('reps', 'km'...) vit

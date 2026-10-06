@@ -278,7 +278,9 @@
     "invalidEntryValue": "Un objectif a une valeur de progression invalide : elle doit être un nombre positif ou nul.",
     "duplicateGoalIds": "Deux objectifs partagent le même identifiant.",
     "duplicateEntryDates": "L'objectif « {{title}} » a deux entrées pour le {{date}} : une seule par jour est attendue.",
-    "invalidEntryDate": "L'objectif « {{title}} » a une entrée datée « {{date}} », qui n'est pas une date valide au format AAAA-MM-JJ."
+    "invalidEntryDate": "L'objectif « {{title}} » a une entrée datée « {{date}} », qui n'est pas une date valide au format AAAA-MM-JJ.",
+    "emptySeriesId": "L'objectif « {{title}} » a un identifiant de série vide.",
+    "repeatWithoutSeries": "L'objectif « {{title}} » est marqué comme répété mais n'a pas d'identifiant de série."
   },
   "settings": {
     "title": "Paramètres",

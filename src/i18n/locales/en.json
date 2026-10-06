@@ -278,7 +278,9 @@
     "invalidEntryValue": "A goal has an invalid progress value: it must be zero or a positive number.",
     "duplicateGoalIds": "Two goals share the same identifier.",
     "duplicateEntryDates": "The goal \"{{title}}\" has two entries for {{date}}: only one per day is expected.",
-    "invalidEntryDate": "The goal \"{{title}}\" has an entry dated \"{{date}}\", which is not a valid YYYY-MM-DD date."
+    "invalidEntryDate": "The goal \"{{title}}\" has an entry dated \"{{date}}\", which is not a valid YYYY-MM-DD date.",
+    "emptySeriesId": "The goal \"{{title}}\" has an empty series identifier.",
+    "repeatWithoutSeries": "The goal \"{{title}}\" is marked as repeating but has no series identifier."
   },
   "settings": {
     "title": "Settings",
