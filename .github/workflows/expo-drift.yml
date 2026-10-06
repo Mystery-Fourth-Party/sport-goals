@@ -1,0 +1,32 @@
+name: Dérive Expo
+
+# Signale chaque semaine qu'un paquet du SDK a décroché de ce qu'Expo attend.
+# ci.yml ne fait cette vérification que lorsqu'une PR touche aux dépendances,
+# pour qu'une publication d'Expo ne rende pas rouge une PR qui n'a rien à voir.
+# Sans ce passage, la dérive resterait invisible tant qu'aucune PR ne touche
+# package.json. Un échec ici veut dire : lancer `npx expo install --fix` dans
+# une PR dédiée.
+on:
+  schedule:
+    - cron: '0 7 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Même source de version que ci.yml : la vérification lit le lock et le
+      # SDK installés, un autre Node ne dirait pas la même chose.
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+
+      - run: npm ci
+
+      - run: npx expo install --check
