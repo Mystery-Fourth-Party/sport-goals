@@ -207,7 +207,9 @@ describe('CreateGoalScreen — relance depuis un objectif clos', () => {
     expect(created.unit).toBe('km');
     expect(created.entries).toEqual([]);
     expect(created.createdAt).toBe(NOW.toISOString());
-    expect(created.deadline).toBe('2026-10-30T12:00:00.000Z');
+    // Jour local et non instant : +30 jours franchit la fin de l'heure d'été
+    // européenne (25 octobre), et setDate conserve l'heure locale.
+    expect(dateStr(new Date(created.deadline))).toBe('2026-10-30');
     expect(created.reminderEnabled).toBe(true);
     expect(created.reminderTime).toBe('07:30');
     expect(created.remindAfterReached).toBe(true);
