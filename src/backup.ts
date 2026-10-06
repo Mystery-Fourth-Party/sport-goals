@@ -32,6 +32,9 @@ export interface BackupGoal {
   reminderEnabled?: boolean;
   // Reflète Goal.remindAfterReached, même convention : absent si jamais posé.
   remindAfterReached?: boolean;
+  // Reflètent Goal.repeat/seriesId, même convention : absents si jamais posés.
+  repeat?: boolean;
+  seriesId?: string;
   // Instantané dérivé (statut, progression, streak...), calculé au moment
   // de l'export via stats.ts — jamais réimplémenté ici. Purement informatif :
   // ignoré à l'import, voir parseBackupPayload.
@@ -93,6 +96,8 @@ export function buildBackupPayload(
       ...(goal.remindAfterReached !== undefined
         ? { remindAfterReached: goal.remindAfterReached }
         : {}),
+      ...(goal.repeat !== undefined ? { repeat: goal.repeat } : {}),
+      ...(goal.seriesId !== undefined ? { seriesId: goal.seriesId } : {}),
       stats: roundGoalStats(getGoalStats(goal, today)),
     })),
     settings,
@@ -165,6 +170,8 @@ interface RawGoal {
   reminderTime?: string;
   reminderEnabled?: boolean;
   remindAfterReached?: boolean;
+  repeat?: boolean;
+  seriesId?: string;
 }
 
 function isValidGoal(value: unknown): value is RawGoal {
@@ -186,6 +193,10 @@ function isValidGoal(value: unknown): value is RawGoal {
   if (g.remindAfterReached !== undefined && typeof g.remindAfterReached !== 'boolean') {
     return false;
   }
+  // Type seulement ; le contenu (identifiant vide, repeat sans identifiant)
+  // est jugé par findGoalInconsistency, qui seule peut nommer l'objectif.
+  if (g.repeat !== undefined && typeof g.repeat !== 'boolean') return false;
+  if (g.seriesId !== undefined && typeof g.seriesId !== 'string') return false;
   return true;
 }
 
@@ -257,6 +268,18 @@ function findGoalInconsistency(goals: RawGoal[]): string | null {
     // quel objectif corriger.
     if (Math.round((deadline - createdAt) / MS_PER_DAY) > MAX_GOAL_DAYS) {
       return i18n.t('backup.goalTooLong', { title: g.title, max: MAX_GOAL_DAYS });
+    }
+
+    // L'app ne produit ni identifiant de série vide ni occurrence en cours
+    // sans série. Seul le format est contrôlé : plusieurs occurrences en
+    // cours, série incomplète ou identifiant partagé par des objectifs sans
+    // rapport sont acceptés tels quels, la cohérence entre objectifs n'étant
+    // pas vérifiable sans inventer une règle.
+    if (g.seriesId !== undefined && g.seriesId.trim() === '') {
+      return i18n.t('backup.emptySeriesId', { title: g.title });
+    }
+    if (g.repeat === true && g.seriesId === undefined) {
+      return i18n.t('backup.repeatWithoutSeries', { title: g.title });
     }
 
     const seenDates = new Set<string>();
@@ -387,6 +410,8 @@ export function parseBackupPayload(raw: string): ParseBackupResult {
     ...(g.reminderTime !== undefined ? { reminderTime: g.reminderTime } : {}),
     ...(g.reminderEnabled !== undefined ? { reminderEnabled: g.reminderEnabled } : {}),
     ...(g.remindAfterReached !== undefined ? { remindAfterReached: g.remindAfterReached } : {}),
+    ...(g.repeat !== undefined ? { repeat: g.repeat } : {}),
+    ...(g.seriesId !== undefined ? { seriesId: g.seriesId } : {}),
   }));
 
   if (payload.settings === undefined) {
