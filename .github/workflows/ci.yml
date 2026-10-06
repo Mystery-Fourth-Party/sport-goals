@@ -9,7 +9,12 @@ jobs:
   ci:
     runs-on: ubuntu-latest
     steps:
+      # Profondeur 2 : sur une PR, le commit extrait est la fusion de la PR
+      # dans la base, et son premier parent (HEAD^1) est le sommet de la base.
+      # C'est ce que l'étape `changes` compare, sans historique complet.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
       # Version lue dans .nvmrc et non écrite ici : une seule source, que
       # `nvm use` / `fnm use` lisent aussi sur le poste de dev, et qui rend
@@ -28,14 +33,48 @@ jobs:
       # `npm ci` réinstalle le lock à l'identique : un paquet figé sous ce
       # que sa propre plage `~57.0.x` autorise y reste indéfiniment sans que
       # rien ne le signale. C'est ainsi que 12 paquets avaient dérivé, dont
-      # expo, expo-router et expo-notifications. Cette étape sort en erreur
-      # dès qu'un paquet du SDK décroche, pour que la dérive soit un échec
-      # daté plutôt qu'un constat fait des mois après.
-      - run: npx expo install --check
+      # expo, expo-router et expo-notifications. La vérification de dérive
+      # sort en erreur dès qu'un paquet du SDK décroche, pour que la dérive
+      # soit un échec daté plutôt qu'un constat fait des mois après.
+      #
+      # Elle ne tourne ici que si le changement touche package.json ou
+      # package-lock.json : une publication d'Expo ne dit rien du code d'une
+      # PR sans rapport avec les dépendances, et la rendait rouge. Le reste du
+      # temps, la dérive est signalée chaque semaine par expo-drift.yml. Le
+      # fichier est lu dans la fusion de la PR avec sa base, ou, sur un push,
+      # entre l'état d'avant et celui d'après. Un état d'avant introuvable
+      # (premier push d'une branche, historique réécrit) compte comme un
+      # changement : mieux vaut un contrôle de trop qu'un oubli.
+      - id: changes
+        env:
+          EVENT: ${{ github.event_name }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          deps=true
+          if [ "$EVENT" = pull_request ]; then
+            base=HEAD^1
+          elif [ -n "$BEFORE" ] && [ "$BEFORE" != 0000000000000000000000000000000000000000 ] \
+            && git fetch --no-tags --depth=1 origin "$BEFORE"; then
+            base="$BEFORE"
+          fi
+          if [ -n "$base" ]; then
+            files=$(git diff --name-only "$base" HEAD)
+            if printf '%s\n' "$files" | grep -qxE 'package(-lock)?\.json'; then
+              deps=true
+            else
+              deps=false
+            fi
+          fi
+          echo "deps=$deps" >> "$GITHUB_OUTPUT"
+
+      - if: ${{ steps.install.outcome == 'success' && steps.changes.outputs.deps == 'true' }}
+        run: npx expo install --check
 
       # Toutes les étapes suivantes tournent même si la vérification de
       # dérive échoue : une publication d'Expo ne dit rien du code de la PR,
       # et sans ces conditions elle masquerait typecheck, lint et tests.
+      # Aucune ne lit l'issue de la vérification, donc qu'elle soit ignorée
+      # ne change rien pour elles.
       # Elles restent suspendues à ce dont elles dépendent vraiment : rien
       # ne tourne sans `npm ci`, et typecheck exige que `expo customize`
       # ait réussi — sans les types générés, il vérifierait un programme
