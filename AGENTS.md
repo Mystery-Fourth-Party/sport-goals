@@ -104,6 +104,21 @@ domaine, avec suivi par cases à cocher.
 
 Ne pas recopier de lien Notion en clair ici — ce dépôt est public.
 
+## Fuseaux horaires des tests
+
+- La suite se lance sous quatre fuseaux, les mêmes qu'en CI : UTC,
+  America/New_York, Asia/Tokyo, Europe/Paris. UTC et Tokyo ne changent jamais
+  d'heure, New York et Paris changent d'heure à des calendriers différents, et
+  Paris est le fuseau réel d'usage : un calcul qui traverse l'un des deux
+  changements d'heure ne traverse pas forcément l'autre.
+- Sous Windows, lancer ces passages depuis PowerShell (`$env:TZ = '…'`) : sous
+  Git Bash, MSYS réécrit `TZ` et les passages tournent dans un autre fuseau que
+  celui demandé.
+- Une échéance calculée à plusieurs jours d'écart se compare en jour local
+  (`dateStr`), pas en instant exact : `setDate` conserve l'heure locale, donc
+  l'instant UTC bouge d'une heure quand l'intervalle franchit un changement
+  d'heure.
+
 ## Test rouge avant tout correctif
 
 Tout correctif de bug commence par un test qui reproduit le défaut, vu
