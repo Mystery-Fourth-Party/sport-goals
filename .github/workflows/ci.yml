@@ -45,7 +45,8 @@ jobs:
       # entre l'état d'avant et celui d'après. Un état d'avant introuvable
       # (premier push d'une branche, historique réécrit) compte comme un
       # changement : mieux vaut un contrôle de trop qu'un oubli.
-      - id: changes
+      - name: dépendances modifiées ?
+        id: changes
         env:
           EVENT: ${{ github.event_name }}
           BEFORE: ${{ github.event.before }}
@@ -67,7 +68,8 @@ jobs:
           fi
           echo "deps=$deps" >> "$GITHUB_OUTPUT"
 
-      - if: ${{ steps.install.outcome == 'success' && steps.changes.outputs.deps == 'true' }}
+      - name: vérification de dérive Expo
+        if: ${{ steps.install.outcome == 'success' && steps.changes.outputs.deps == 'true' }}
         run: npx expo install --check
 
       # Toutes les étapes suivantes tournent même si la vérification de
