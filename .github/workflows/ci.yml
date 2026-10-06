@@ -15,7 +15,7 @@ jobs:
       # `nvm use` / `fnm use` lisent aussi sur le poste de dev, et qui rend
       # toute montée de majeure visible dans un diff. `lts/*` suivait la LTS
       # du jour, donc la CI changeait de Node sans qu'aucun commit ne le
-      # dise — alors que les trois passages de fuseaux plus bas reposent sur
+      # dise — alors que les quatre passages de fuseaux plus bas reposent sur
       # le comportement de Node face aux dates.
       - uses: actions/setup-node@v4
         with:
@@ -69,10 +69,18 @@ jobs:
       - if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: npm run format:check
 
-      # Trois fuseaux, trois passages de tests. Seuls les tests en dépendent :
+      # Quatre fuseaux, quatre passages de tests. Seuls les tests en dépendent :
       # typecheck/lint/format:check sont insensibles au fuseau, donc une
-      # matrice sur tout le job aurait triplé l'installation et ces trois
+      # matrice sur tout le job aurait quadruplé l'installation et ces trois
       # étapes pour ne rien couvrir de plus.
+      #
+      # Le choix des quatre : UTC et Asia/Tokyo ne changent jamais d'heure
+      # (Tokyo, en plus, est à l'est d'UTC), America/New_York et Europe/Paris
+      # changent d'heure à des dates différentes (deuxième dimanche de mars et
+      # premier dimanche de novembre, contre dernier dimanche de mars et
+      # d'octobre) — un calcul de dates qui traverse l'un des deux
+      # changements d'heure ne traverse pas forcément l'autre —, et Paris est
+      # le fuseau réel d'usage de l'application.
       #
       # Suite complète à chaque fois, et pas seulement src/stats.timezone.test.ts :
       # les régressions de fuseau trouvées en préparant ce commit étaient dans
@@ -80,7 +88,7 @@ jobs:
       # laissées filer.
       #
       # TZ posé explicitement même pour UTC : les runners GitHub y sont déjà,
-      # mais l'écrire fait des trois fuseaux un contrat du dépôt plutôt qu'un
+      # mais l'écrire fait des quatre fuseaux un contrat du dépôt plutôt qu'un
       # effet de bord de la machine d'exécution.
       - name: tests (TZ=UTC)
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
@@ -94,7 +102,7 @@ jobs:
       #
       # !cancelled() : sans lui, le job s'arrête au premier fuseau en échec et
       # les suivants ne tournent jamais, un fuseau cassé masquant le suivant.
-      # Les trois passages doivent pouvoir être comparés en une fois, sinon
+      # Les quatre passages doivent pouvoir être comparés en une fois, sinon
       # chaque fuseau cassé coûte un aller-retour.
       - name: tests (TZ=America/New_York)
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
@@ -107,3 +115,9 @@ jobs:
         run: npx jest
         env:
           TZ: Asia/Tokyo
+
+      - name: tests (TZ=Europe/Paris)
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npx jest
+        env:
+          TZ: Europe/Paris
