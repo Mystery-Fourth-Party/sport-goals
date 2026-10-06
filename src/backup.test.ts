@@ -719,3 +719,106 @@ describe('parseBackupPayload — réglages mal typés', () => {
     );
   });
 });
+
+describe('sauvegarde — champs de série (repeat, seriesId)', () => {
+  function seriesGoal(id: string, extra: Record<string, unknown>): Goal {
+    return { ...goal, id, ...extra } as Goal;
+  }
+
+  function exportedWith(goals: Goal[]) {
+    return JSON.parse(JSON.stringify(buildBackupPayload(goals, settings, '2026-08-20')))
+      .goals as Record<string, unknown>[];
+  }
+
+  function parseGoals(goals: unknown[]) {
+    const payload = buildBackupPayload([goal], settings, '2026-08-20');
+    return parseBackupPayload(JSON.stringify({ ...payload, goals }));
+  }
+
+  function expectRejection(goals: unknown[], key: string, options?: Record<string, unknown>) {
+    expect(parseGoals(goals)).toEqual({ ok: false, error: i18n.t(key, options) });
+  }
+
+  it('exports repeat and seriesId when set, omits them when never set', () => {
+    const [inSeries, archived, standalone] = exportedWith([
+      seriesGoal('s3', { repeat: true, seriesId: 'serie-1' }),
+      seriesGoal('s2', { seriesId: 'serie-1' }),
+      goal,
+    ]);
+
+    expect(inSeries).toMatchObject({ repeat: true, seriesId: 'serie-1' });
+    expect(archived.seriesId).toBe('serie-1');
+    expect(archived).not.toHaveProperty('repeat');
+    expect(standalone).not.toHaveProperty('repeat');
+    expect(standalone).not.toHaveProperty('seriesId');
+  });
+
+  it('round-trips repeat and seriesId, present or absent', () => {
+    const goals = [
+      seriesGoal('s3', { repeat: true, seriesId: 'serie-1' }),
+      seriesGoal('s2', { seriesId: 'serie-1' }),
+      seriesGoal('s1', { repeat: false, seriesId: 'serie-2' }),
+      goal,
+    ];
+    const result = parseBackupPayload(
+      JSON.stringify(buildBackupPayload(goals, settings, '2026-08-20')),
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.goals).toEqual(goals);
+    expect(result.goals[1]).not.toHaveProperty('repeat');
+    expect(result.goals[3]).not.toHaveProperty('repeat');
+    expect(result.goals[3]).not.toHaveProperty('seriesId');
+  });
+
+  it('imports a file written without these fields exactly as before', () => {
+    const [legacy] = exportedWith([goal]);
+    const result = parseGoals([legacy]);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.goals).toEqual([goal]);
+  });
+
+  it('accepts several goals sharing a seriesId, without checking series consistency', () => {
+    const result = parseGoals(
+      exportedWith([
+        seriesGoal('a', { repeat: true, seriesId: 'commune' }),
+        seriesGoal('b', { repeat: true, seriesId: 'commune' }),
+        seriesGoal('c', { seriesId: 'commune' }),
+      ]),
+    );
+
+    expect(result.ok).toBe(true);
+  });
+
+  it.each([
+    ['repeat as a string', { repeat: 'true', seriesId: 'serie-1' }],
+    ['repeat as a number', { repeat: 1, seriesId: 'serie-1' }],
+    ['repeat as null', { repeat: null, seriesId: 'serie-1' }],
+    ['seriesId as a number', { seriesId: 42 }],
+    ['seriesId as null', { seriesId: null }],
+  ])('rejects %s as a malformed goal list', (_label, overrides) => {
+    expectRejection(exportedWith([seriesGoal('x', overrides)]), 'backup.missingGoals');
+  });
+
+  it.each([
+    ['empty', ''],
+    ['blank', '   '],
+  ])('rejects a seriesId that is %s, naming the goal', (_label, seriesId) => {
+    expectRejection(exportedWith([seriesGoal('x', { seriesId })]), 'backup.emptySeriesId', {
+      title: goal.title,
+    });
+  });
+
+  it('rejects repeat true without a seriesId, naming the goal', () => {
+    expectRejection(
+      exportedWith([seriesGoal('x', { repeat: true })]),
+      'backup.repeatWithoutSeries',
+      {
+        title: goal.title,
+      },
+    );
+  });
+});
