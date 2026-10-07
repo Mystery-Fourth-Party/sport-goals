@@ -326,6 +326,28 @@ describe('importSettings — fusion avec les réglages de l’appareil', () => {
     expect(result.current.status.loadFailed).toBe(false);
   });
 
+  // Le rappel importé est déjà actif en mémoire quand l'écriture échoue :
+  // il tourne jusqu'au prochain démarrage sans être sur le disque, et
+  // importSettings rend false pour que DataSection le dise.
+  it('keeps the merge in memory, reports false and flags the save failure when the write fails', async () => {
+    mockedLoadSettings.mockResolvedValue({ value: local, ok: true });
+    const { result } = renderHook(() => useHarness(), { wrapper });
+    await waitFor(() => expect(result.current.settings.loaded).toBe(true));
+    mockedSaveSettings.mockResolvedValue(false);
+
+    let applied: boolean | undefined;
+    await act(async () => {
+      applied = await result.current.settings.importSettings(importedFrom(olderBackup));
+    });
+
+    const expected = { ...local, dailyReminder: true, reminderTime: '07:00' };
+    expect(applied).toBe(false);
+    expect(mockedSaveSettings).toHaveBeenCalledTimes(1);
+    expect(mockedSaveSettings).toHaveBeenCalledWith(expected);
+    expect(result.current.settings.settings).toEqual(expected);
+    expect(result.current.status.saveFailed).toBe(true);
+  });
+
   it('writes nothing and keeps the read failure when the re-read fails too', async () => {
     mockedLoadSettings.mockResolvedValue({ value: DEFAULT_SETTINGS, ok: false });
     const { result } = renderHook(() => useHarness(), { wrapper });

@@ -97,9 +97,13 @@ export default function DataSection() {
         // un toggle touché dans le même état, non.
         replaceAllGoals(result.goals);
         if (result.settings) {
-          // Les objectifs sont déjà remplacés quand le rappel ne peut pas
-          // l'être : sans ce message, l'utilisateur croirait le rappel
-          // restauré alors qu'il garde la valeur d'avant l'import.
+          // Les objectifs sont déjà remplacés quand importSettings rend false,
+          // et le rappel n'est alors pas restauré durablement. Deux cas :
+          // la relecture des réglages échoue, et le rappel garde la valeur
+          // d'avant l'import ; ou l'écriture échoue après une relecture
+          // réussie, et le rappel importé est actif jusqu'au prochain
+          // démarrage sans être sur le disque. Sans ce message, l'utilisateur
+          // croirait le rappel restauré.
           importSettings(result.settings)
             .then((applied) => {
               if (!applied) setDataError(t('data.reminderNotRestored'));
