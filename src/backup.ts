@@ -1,4 +1,4 @@
-// Export/import local des données (objectifs + réglages), au format JSON —
+// Export/import local des données (objectifs + rappel quotidien), au format JSON —
 // pas de backend pour ce projet (voir app/settings.tsx pour le partage/
 // téléchargement et la sélection de fichier). Logique pure ici, testable
 // sans module natif (même approche que notifications.ts) : construction et
@@ -9,7 +9,7 @@
 // restauration interne — voir buildBackupPayload pour sa forme exacte.
 import { MAX_GOAL_DAYS } from './goalValidation';
 import i18n from './i18n';
-import { DEFAULT_SETTINGS, Settings } from './settingsStorage';
+import { BackupSettings, Settings } from './settingsStorage';
 import { getGoalStats, GoalStats } from './stats';
 import { Entry, Goal, Unit, UNITS } from './types';
 
@@ -45,7 +45,7 @@ export interface BackupPayload {
   schemaVersion: typeof SCHEMA_VERSION;
   exportedAt: string;
   goals: BackupGoal[];
-  settings: Settings;
+  settings: BackupSettings;
 }
 
 // L'instantané de stats n'est jamais réimporté (voir parseBackupPayload),
@@ -100,14 +100,17 @@ export function buildBackupPayload(
       ...(goal.seriesId !== undefined ? { seriesId: goal.seriesId } : {}),
       stats: roundGoalStats(getGoalStats(goal, today)),
     })),
-    settings,
+    // Champs copiés un à un et non l'objet entier : langue et interrupteurs
+    // sont des préférences de l'appareil, qu'un fichier partagé ou restauré
+    // ailleurs ne doit pas porter (voir BackupSettings).
+    settings: { dailyReminder: settings.dailyReminder, reminderTime: settings.reminderTime },
   };
 }
 
 // ─── Import : validation stricte des goals, tolérante pour settings ─────
 
 export type ParseBackupResult =
-  { ok: true; goals: Goal[]; settings?: Settings } | { ok: false; error: string };
+  { ok: true; goals: Goal[]; settings?: Partial<BackupSettings> } | { ok: false; error: string };
 
 const VALID_UNITS = new Set<string>(UNITS);
 
@@ -318,32 +321,22 @@ function findGoalInconsistency(goals: RawGoal[]): string | null {
   return null;
 }
 
-// L1-04 — payload.settings n'était vérifié que comme objet, puis fusionné
-// tel quel : un dailyReminder à "oui" ou une langue à "xx" filaient jusqu'à
-// l'usage. Règle inverse de celle des objectifs, et pour une raison :
-// chaque réglage a déjà une valeur par défaut documentée dans
-// DEFAULT_SETTINGS, donc le repli n'invente rien. Rejeter tout le fichier
-// pour une préférence mal typée ferait perdre les objectifs avec, qui sont
-// la partie qui a de la valeur.
-function sanitizeSettings(raw: Record<string, unknown>): Settings {
-  const settings: Settings = { ...DEFAULT_SETTINGS };
+// Ne retient que les deux réglages que la sauvegarde porte (voir
+// BackupSettings) ; les autres clés d'un ancien fichier (langue,
+// interrupteurs) sont ignorées sans rejeter le fichier. Un champ absent ou
+// mal typé n'est pas rempli par une valeur par défaut : il reste absent du
+// résultat, et l'import garde alors la valeur de l'appareil — un défaut
+// écraserait un réglage que l'utilisateur a réellement choisi. Rejeter tout
+// le fichier pour une préférence mal typée ferait perdre les objectifs avec,
+// qui sont la partie qui a de la valeur.
+function sanitizeSettings(raw: Record<string, unknown>): Partial<BackupSettings> {
+  const settings: Partial<BackupSettings> = {};
 
   if (typeof raw.dailyReminder === 'boolean') settings.dailyReminder = raw.dailyReminder;
   // Type vérifié, format non — même arbitrage que pour le reminderTime
   // d'un objectif (voir isValidGoal) : le repli sur l'horaire global se
   // fait à l'usage, et vérifier ici dupliquerait parseReminderTime.
   if (typeof raw.reminderTime === 'string') settings.reminderTime = raw.reminderTime;
-  if (typeof raw.goalReachedNotifs === 'boolean') {
-    settings.goalReachedNotifs = raw.goalReachedNotifs;
-  }
-  if (typeof raw.almostThereNotifs === 'boolean') {
-    settings.almostThereNotifs = raw.almostThereNotifs;
-  }
-  if (typeof raw.streakAlert === 'boolean') settings.streakAlert = raw.streakAlert;
-  // Laissé absent si la valeur n'est pas supportée : absent veut dire
-  // « suit la langue de l'appareil » (voir settingsStorage.ts), ce qui est
-  // le défaut documenté de ce champ — il n'y en a pas d'autre.
-  if (raw.language === 'fr' || raw.language === 'en') settings.language = raw.language;
 
   return settings;
 }

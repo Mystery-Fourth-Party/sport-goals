@@ -38,7 +38,10 @@ describe('buildBackupPayload', () => {
 
     expect(payload.schemaVersion).toBe(1);
     expect(typeof payload.exportedAt).toBe('string');
-    expect(payload.settings).toEqual(settings);
+    expect(payload.settings).toEqual({
+      dailyReminder: settings.dailyReminder,
+      reminderTime: settings.reminderTime,
+    });
     expect(payload.goals).toHaveLength(1);
 
     const g = payload.goals[0];
@@ -98,7 +101,10 @@ describe('parseBackupPayload', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.goals).toEqual([goal]);
-    expect(result.settings).toEqual(settings);
+    expect(result.settings).toEqual({
+      dailyReminder: settings.dailyReminder,
+      reminderTime: settings.reminderTime,
+    });
   });
 
   it('accepts a valid file without settings, leaving settings undefined', () => {
@@ -112,14 +118,14 @@ describe('parseBackupPayload', () => {
     expect(result.settings).toBeUndefined();
   });
 
-  it('merges partial settings with DEFAULT_SETTINGS, tolerating missing keys', () => {
+  it('keeps only the settings keys present, tolerating missing ones', () => {
     const payload = buildBackupPayload([goal], settings, '2026-08-20');
     const raw = JSON.stringify({ ...payload, settings: { dailyReminder: true } });
     const result = parseBackupPayload(raw);
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.settings).toEqual({ ...DEFAULT_SETTINGS, dailyReminder: true });
+    expect(result.settings).toEqual({ dailyReminder: true });
   });
 
   it('preserves entries with and without recordedAt', () => {
@@ -658,12 +664,12 @@ describe('parseBackupPayload — ordre des entrées', () => {
   });
 });
 
-// L1-04 — payload.settings n'était vérifié que comme objet, puis fusionné
-// tel quel. Chaque champ a un défaut documenté dans DEFAULT_SETTINGS : un
-// champ mal typé retombe dessus, plutôt que de faire rejeter le fichier et
-// avec lui les objectifs, qui sont la partie qui a de la valeur.
+// Chaque réglage du fichier est vérifié séparément : un champ mal typé reste
+// absent du résultat (l'import garde alors la valeur de l'appareil) plutôt
+// que de faire rejeter le fichier et avec lui les objectifs, qui sont la
+// partie qui a de la valeur.
 describe('parseBackupPayload — réglages mal typés', () => {
-  function importedSettings(raw: Record<string, unknown>): Settings | undefined {
+  function importedSettings(raw: Record<string, unknown>) {
     const payload = buildBackupPayload([goal], settings, '2026-08-20');
     const result = parseBackupPayload(JSON.stringify({ ...payload, settings: raw }));
     if (!result.ok) {
@@ -672,41 +678,27 @@ describe('parseBackupPayload — réglages mal typés', () => {
     return result.settings;
   }
 
-  it('falls back to the default for each mistyped field', () => {
+  it('leaves each mistyped field out of the result', () => {
+    expect(importedSettings({ dailyReminder: 'oui', reminderTime: 42 })).toEqual({});
+  });
+
+  it('ignores language and notification toggles, valid or not', () => {
     const imported = importedSettings({
-      dailyReminder: 'oui',
-      reminderTime: 42,
-      goalReachedNotifs: 1,
-      almostThereNotifs: null,
-      streakAlert: 'non',
-    });
-
-    expect(imported).toEqual(DEFAULT_SETTINGS);
-  });
-
-  it('drops a language outside the supported set rather than keeping it', () => {
-    const imported = importedSettings({ ...DEFAULT_SETTINGS, language: 'xx' });
-
-    // Absent = suit la langue détectée de l'appareil (voir
-    // settingsStorage.ts), ce qui est le défaut documenté de ce champ.
-    expect(imported?.language).toBeUndefined();
-  });
-
-  it('keeps a supported language', () => {
-    expect(importedSettings({ ...DEFAULT_SETTINGS, language: 'en' })?.language).toBe('en');
-  });
-
-  it('keeps every well-typed value untouched', () => {
-    const custom: Settings = {
       dailyReminder: true,
-      reminderTime: '07:30',
       goalReachedNotifs: true,
       almostThereNotifs: false,
       streakAlert: false,
-      language: 'fr',
-    };
+      language: 'en',
+    });
 
-    expect(importedSettings({ ...custom })).toEqual(custom);
+    expect(imported).toEqual({ dailyReminder: true });
+  });
+
+  it('keeps every well-typed reminder value untouched', () => {
+    expect(importedSettings({ dailyReminder: true, reminderTime: '07:30' })).toEqual({
+      dailyReminder: true,
+      reminderTime: '07:30',
+    });
   });
 
   // Même arbitrage que pour le reminderTime d'un objectif, déjà testé plus
@@ -714,9 +706,7 @@ describe('parseBackupPayload — réglages mal typés', () => {
   // l'horaire global se fait à l'usage (voir notifications.ts), et valider
   // le format ici dupliquerait parseReminderTime.
   it('keeps a malformed reminderTime as long as it is a string', () => {
-    expect(importedSettings({ ...DEFAULT_SETTINGS, reminderTime: '99:99' })?.reminderTime).toBe(
-      '99:99',
-    );
+    expect(importedSettings({ reminderTime: '99:99' })).toEqual({ reminderTime: '99:99' });
   });
 });
 

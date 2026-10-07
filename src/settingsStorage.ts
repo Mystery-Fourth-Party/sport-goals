@@ -18,6 +18,12 @@ export interface Settings {
   language?: 'fr' | 'en';
 }
 
+// Les seuls réglages globaux que la sauvegarde porte (voir backup.ts). Le
+// rappel quotidien en fait partie parce qu'il démarre désactivé : une
+// restauration qui l'oublierait le couperait en silence. Langue et
+// interrupteurs de notification restent des préférences de l'appareil.
+export type BackupSettings = Pick<Settings, 'dailyReminder' | 'reminderTime'>;
+
 // dailyReminder/goalReachedNotifs démarrent désactivés (opt-in), contrairement
 // au prototype (qui les avait à true, mais sans vraies notifications
 // derrière). Maintenant qu'ils déclenchent de vraies notifications système,

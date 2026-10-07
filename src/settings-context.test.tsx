@@ -142,47 +142,53 @@ describe('échecs de persistance', () => {
 // LanguageSection — la faire passer outre readFailed rouvrirait L2-06 pour
 // n'importe quel réglage touché après un échec de lecture.
 describe('importSettings', () => {
-  const imported: Settings = {
-    ...DEFAULT_SETTINGS,
-    dailyReminder: true,
-    reminderTime: '07:00',
-    language: 'en',
-  };
+  const imported = { dailyReminder: true, reminderTime: '07:00' };
+  const merged = { ...DEFAULT_SETTINGS, ...imported };
 
+  // loadOk false : la lecture du démarrage échoue, celle de l'import réussit
+  // (le cas où l'échec est passager). L'échec persistant a son propre test.
   function renderHarnessWith(loadOk: boolean) {
-    mockedLoadSettings.mockResolvedValue({ value: DEFAULT_SETTINGS, ok: loadOk });
+    mockedLoadSettings
+      .mockResolvedValueOnce({ value: DEFAULT_SETTINGS, ok: loadOk })
+      .mockResolvedValue({ value: DEFAULT_SETTINGS, ok: true });
     return renderHook(() => useHarness(), { wrapper });
   }
 
-  // Chemin courant, sans échec de lecture : l'import écrit désormais
-  // lui-même au lieu de laisser faire l'effet, donc ce cas change aussi.
+  // Chemin courant, sans échec de lecture : l'import écrit lui-même au
+  // lieu de laisser faire l'effet.
   it('persists an ordinary import exactly once', async () => {
     const { result } = renderHarnessWith(true);
     await waitFor(() => expect(result.current.settings.loaded).toBe(true));
 
-    act(() => result.current.settings.importSettings(imported));
+    await act(async () => {
+      await result.current.settings.importSettings(imported);
+    });
     await act(async () => {});
 
     expect(mockedSaveSettings).toHaveBeenCalledTimes(1);
-    expect(mockedSaveSettings).toHaveBeenCalledWith(imported);
+    expect(mockedSaveSettings).toHaveBeenCalledWith(merged);
   });
 
   it('writes imported settings even though the initial read failed', async () => {
     const { result } = renderHarnessWith(false);
     await waitFor(() => expect(result.current.settings.loaded).toBe(true));
 
-    act(() => result.current.settings.importSettings(imported));
+    await act(async () => {
+      await result.current.settings.importSettings(imported);
+    });
     await act(async () => {});
 
     expect(mockedSaveSettings).toHaveBeenCalledTimes(1);
-    expect(mockedSaveSettings).toHaveBeenCalledWith(imported);
+    expect(mockedSaveSettings).toHaveBeenCalledWith(merged);
   });
 
   it('clears the read failure once the explicit write succeeds', async () => {
     const { result } = renderHarnessWith(false);
     await waitFor(() => expect(result.current.status.loadFailed).toBe(true));
 
-    act(() => result.current.settings.importSettings(imported));
+    await act(async () => {
+      await result.current.settings.importSettings(imported);
+    });
 
     await waitFor(() => expect(result.current.status.loadFailed).toBe(false));
   });
@@ -191,7 +197,9 @@ describe('importSettings', () => {
     const { result } = renderHarnessWith(false);
     await waitFor(() => expect(result.current.status.loadFailed).toBe(true));
 
-    act(() => result.current.settings.importSettings(imported));
+    await act(async () => {
+      await result.current.settings.importSettings(imported);
+    });
     await waitFor(() => expect(result.current.status.loadFailed).toBe(false));
     expect(mockedSaveSettings).toHaveBeenCalledTimes(1);
 
@@ -205,7 +213,9 @@ describe('importSettings', () => {
     await waitFor(() => expect(result.current.settings.loaded).toBe(true));
     mockedSaveSettings.mockResolvedValue(false);
 
-    act(() => result.current.settings.importSettings(imported));
+    await act(async () => {
+      await result.current.settings.importSettings(imported);
+    });
 
     await waitFor(() => expect(result.current.status.saveFailed).toBe(true));
     expect(result.current.status.loadFailed).toBe(true);
@@ -267,10 +277,9 @@ describe('importSettings — fusion avec les réglages de l’appareil', () => {
     const { result } = renderHook(() => useHarness(), { wrapper });
     await waitFor(() => expect(result.current.settings.loaded).toBe(true));
 
-    act(() => {
-      void result.current.settings.importSettings(importedFrom(olderBackup));
+    await act(async () => {
+      await result.current.settings.importSettings(importedFrom(olderBackup));
     });
-    await act(async () => {});
 
     const expected = { ...local, dailyReminder: true, reminderTime: '07:00' };
     expect(mockedSaveSettings).toHaveBeenCalledTimes(1);
@@ -283,12 +292,11 @@ describe('importSettings — fusion avec les réglages de l’appareil', () => {
     const { result } = renderHook(() => useHarness(), { wrapper });
     await waitFor(() => expect(result.current.settings.loaded).toBe(true));
 
-    act(() => {
-      void result.current.settings.importSettings(
+    await act(async () => {
+      await result.current.settings.importSettings(
         importedFrom({ dailyReminder: 'oui', reminderTime: '07:00' }),
       );
     });
-    await act(async () => {});
 
     expect(mockedSaveSettings).toHaveBeenCalledWith({
       ...local,
@@ -307,10 +315,9 @@ describe('importSettings — fusion avec les réglages de l’appareil', () => {
     const { result } = renderHook(() => useHarness(), { wrapper });
     await waitFor(() => expect(result.current.status.loadFailed).toBe(true));
 
-    act(() => {
-      void result.current.settings.importSettings(importedFrom(olderBackup));
+    await act(async () => {
+      await result.current.settings.importSettings(importedFrom(olderBackup));
     });
-    await act(async () => {});
 
     const expected = { ...local, dailyReminder: true, reminderTime: '07:00' };
     expect(mockedSaveSettings).toHaveBeenCalledTimes(1);
@@ -324,13 +331,30 @@ describe('importSettings — fusion avec les réglages de l’appareil', () => {
     const { result } = renderHook(() => useHarness(), { wrapper });
     await waitFor(() => expect(result.current.status.loadFailed).toBe(true));
 
-    act(() => {
-      void result.current.settings.importSettings(importedFrom(olderBackup));
+    let applied: boolean | undefined;
+    await act(async () => {
+      applied = await result.current.settings.importSettings(importedFrom(olderBackup));
     });
-    await act(async () => {});
 
+    expect(applied).toBe(false);
     expect(mockedSaveSettings).not.toHaveBeenCalled();
     expect(result.current.settings.settings).toEqual(DEFAULT_SETTINGS);
     expect(result.current.status.loadFailed).toBe(true);
+  });
+
+  it('reports success without reading or writing when the file has no reminder to apply', async () => {
+    mockedLoadSettings.mockResolvedValue({ value: local, ok: true });
+    const { result } = renderHook(() => useHarness(), { wrapper });
+    await waitFor(() => expect(result.current.settings.loaded).toBe(true));
+    mockedLoadSettings.mockClear();
+
+    let applied: boolean | undefined;
+    await act(async () => {
+      applied = await result.current.settings.importSettings({});
+    });
+
+    expect(applied).toBe(true);
+    expect(mockedLoadSettings).not.toHaveBeenCalled();
+    expect(mockedSaveSettings).not.toHaveBeenCalled();
   });
 });
