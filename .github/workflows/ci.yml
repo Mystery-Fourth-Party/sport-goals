@@ -12,7 +12,7 @@ jobs:
       # Profondeur 2 : sur une PR, le commit extrait est la fusion de la PR
       # dans la base, et son premier parent (HEAD^1) est le sommet de la base.
       # C'est ce que l'étape `changes` compare, sans historique complet.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 2
 
@@ -22,7 +22,7 @@ jobs:
       # du jour, donc la CI changeait de Node sans qu'aucun commit ne le
       # dise — alors que les quatre passages de fuseaux plus bas reposent sur
       # le comportement de Node face aux dates.
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version-file: '.nvmrc'
           cache: npm
