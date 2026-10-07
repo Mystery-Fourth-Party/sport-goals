@@ -1,5 +1,6 @@
 import { ReactNode } from 'react';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
+import { parseBackupPayload, SCHEMA_VERSION } from './backup';
 import { SettingsProvider, useSettings } from './settings-context';
 import { DEFAULT_SETTINGS, loadSettings, saveSettings, Settings } from './settingsStorage';
 import { LoadResult } from './storage';
@@ -219,5 +220,117 @@ describe('importSettings', () => {
     await act(async () => {});
 
     expect(mockedSaveSettings).not.toHaveBeenCalled();
+  });
+});
+
+// Un import ne remplace pas les réglages : il en fusionne deux (rappel
+// quotidien et son heure) dans ceux de l'appareil, relus au moment de
+// l'import. La langue et les interrupteurs de notification sont des
+// préférences de l'appareil que le fichier ne touche pas. Les fichiers
+// passent par parseBackupPayload, comme dans DataSection.
+describe('importSettings — fusion avec les réglages de l’appareil', () => {
+  const local: Settings = {
+    dailyReminder: false,
+    reminderTime: '20:00',
+    goalReachedNotifs: true,
+    almostThereNotifs: false,
+    streakAlert: false,
+    language: 'fr',
+  };
+
+  function importedFrom(rawSettings: unknown) {
+    const result = parseBackupPayload(
+      JSON.stringify({
+        schemaVersion: SCHEMA_VERSION,
+        exportedAt: '2026-10-07T00:00:00.000Z',
+        goals: [],
+        settings: rawSettings,
+      }),
+    );
+    if (!result.ok || !result.settings) throw new Error('fichier inattendu');
+    return result.settings;
+  }
+
+  // Ancienne sauvegarde : les six réglages, tous différents de ceux de
+  // l'appareil.
+  const olderBackup = {
+    dailyReminder: true,
+    reminderTime: '07:00',
+    goalReachedNotifs: false,
+    almostThereNotifs: true,
+    streakAlert: true,
+    language: 'en',
+  };
+
+  it('applies the reminder and its time, and keeps language and toggles', async () => {
+    mockedLoadSettings.mockResolvedValue({ value: local, ok: true });
+    const { result } = renderHook(() => useHarness(), { wrapper });
+    await waitFor(() => expect(result.current.settings.loaded).toBe(true));
+
+    act(() => {
+      void result.current.settings.importSettings(importedFrom(olderBackup));
+    });
+    await act(async () => {});
+
+    const expected = { ...local, dailyReminder: true, reminderTime: '07:00' };
+    expect(mockedSaveSettings).toHaveBeenCalledTimes(1);
+    expect(mockedSaveSettings).toHaveBeenCalledWith(expected);
+    expect(result.current.settings.settings).toEqual(expected);
+  });
+
+  it('keeps the local value for a mistyped field', async () => {
+    mockedLoadSettings.mockResolvedValue({ value: { ...local, dailyReminder: true }, ok: true });
+    const { result } = renderHook(() => useHarness(), { wrapper });
+    await waitFor(() => expect(result.current.settings.loaded).toBe(true));
+
+    act(() => {
+      void result.current.settings.importSettings(
+        importedFrom({ dailyReminder: 'oui', reminderTime: '07:00' }),
+      );
+    });
+    await act(async () => {});
+
+    expect(mockedSaveSettings).toHaveBeenCalledWith({
+      ...local,
+      dailyReminder: true,
+      reminderTime: '07:00',
+    });
+  });
+
+  // L'état en mémoire vaut DEFAULT_SETTINGS tant que la lecture a échoué,
+  // alors que les vrais réglages sont intacts sur le disque : fusionner sur
+  // la mémoire écraserait langue et interrupteurs par des défauts.
+  it('merges onto the stored settings when the startup read failed but the re-read succeeds', async () => {
+    mockedLoadSettings
+      .mockResolvedValueOnce({ value: DEFAULT_SETTINGS, ok: false })
+      .mockResolvedValue({ value: local, ok: true });
+    const { result } = renderHook(() => useHarness(), { wrapper });
+    await waitFor(() => expect(result.current.status.loadFailed).toBe(true));
+
+    act(() => {
+      void result.current.settings.importSettings(importedFrom(olderBackup));
+    });
+    await act(async () => {});
+
+    const expected = { ...local, dailyReminder: true, reminderTime: '07:00' };
+    expect(mockedSaveSettings).toHaveBeenCalledTimes(1);
+    expect(mockedSaveSettings).toHaveBeenCalledWith(expected);
+    expect(result.current.settings.settings).toEqual(expected);
+    expect(result.current.status.loadFailed).toBe(false);
+  });
+
+  it('writes nothing and keeps the read failure when the re-read fails too', async () => {
+    mockedLoadSettings.mockResolvedValue({ value: DEFAULT_SETTINGS, ok: false });
+    const { result } = renderHook(() => useHarness(), { wrapper });
+    await waitFor(() => expect(result.current.status.loadFailed).toBe(true));
+
+    act(() => {
+      void result.current.settings.importSettings(importedFrom(olderBackup));
+    });
+    await act(async () => {});
+
+    expect(mockedSaveSettings).not.toHaveBeenCalled();
+    expect(result.current.settings.settings).toEqual(DEFAULT_SETTINGS);
+    expect(result.current.status.loadFailed).toBe(true);
   });
 });

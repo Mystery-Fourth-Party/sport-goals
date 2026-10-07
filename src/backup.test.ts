@@ -822,3 +822,51 @@ describe('sauvegarde — champs de série (repeat, seriesId)', () => {
     );
   });
 });
+
+// Le fichier de sauvegarde ne porte, des réglages globaux, que le rappel
+// quotidien et son heure : langue et interrupteurs de notification sont des
+// préférences de l'appareil. Le rappel reste parce qu'il démarre désactivé —
+// une restauration sans lui le couperait en silence.
+describe('sauvegarde — réglages limités au rappel quotidien', () => {
+  const customized: Settings = {
+    dailyReminder: true,
+    reminderTime: '07:30',
+    goalReachedNotifs: true,
+    almostThereNotifs: false,
+    streakAlert: false,
+    language: 'en',
+  };
+
+  // `settings` est écrasé après coup pour rejouer des fichiers que l'export
+  // actuel ne produit plus, comme les anciennes sauvegardes à six réglages.
+  function parseWithSettings(rawSettings: unknown) {
+    const payload = buildBackupPayload([goal], settings, '2026-08-20');
+    const result = parseBackupPayload(JSON.stringify({ ...payload, settings: rawSettings }));
+    if (!result.ok) throw new Error('fichier rejeté : ' + result.error);
+    return result;
+  }
+
+  it('exports only dailyReminder and reminderTime', () => {
+    const payload = buildBackupPayload([goal], customized, '2026-08-20');
+
+    expect(payload.settings).toEqual({ dailyReminder: true, reminderTime: '07:30' });
+  });
+
+  it('applies only dailyReminder and reminderTime from an older six-setting file', () => {
+    const imported = parseWithSettings({ ...customized, reminderTime: '06:15' });
+
+    expect(imported.settings).toEqual({ dailyReminder: true, reminderTime: '06:15' });
+  });
+
+  it('leaves out a mistyped field instead of substituting its default', () => {
+    const imported = parseWithSettings({ dailyReminder: 'oui', reminderTime: '06:15' });
+
+    expect(imported.settings).toEqual({ reminderTime: '06:15' });
+  });
+
+  it('accepts a settings object with no usable key and applies nothing', () => {
+    const imported = parseWithSettings({ language: 'en', streakAlert: false });
+
+    expect(imported.settings).toEqual({});
+  });
+});
