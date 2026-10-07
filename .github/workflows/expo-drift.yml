@@ -18,11 +18,11 @@ jobs:
   drift:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Même source de version que ci.yml : la vérification lit le lock et le
       # SDK installés, un autre Node ne dirait pas la même chose.
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version-file: '.nvmrc'
           cache: npm
