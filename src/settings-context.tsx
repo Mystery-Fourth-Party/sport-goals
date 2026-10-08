@@ -4,17 +4,24 @@
 // doivent être lisibles depuis plusieurs écrans (ex: le toggle "objectif
 // bientôt atteint" de /settings pilote la bannière de /goal/[id]).
 import { createContext, ReactNode, useContext, useEffect, useRef, useState } from 'react';
-import { DEFAULT_SETTINGS, loadSettings, saveSettings, Settings } from './settingsStorage';
+import {
+  BackupSettings,
+  DEFAULT_SETTINGS,
+  loadSettings,
+  saveSettings,
+  Settings,
+} from './settingsStorage';
 import { useStorageStatus } from './storage-status';
 
 interface SettingsContextValue {
   settings: Settings;
   loaded: boolean;
   updateSettings: (updates: Partial<Settings>) => void;
-  // Remplace tous les réglages d'un coup, réservé à la restauration d'une
-  // sauvegarde — voir le commentaire sur l'implémentation pour la raison
-  // d'être d'une fonction séparée d'updateSettings.
-  importSettings: (imported: Settings) => void;
+  // Fusionne le rappel quotidien d'une sauvegarde dans les réglages de
+  // l'appareil, réservé à la restauration — voir le commentaire sur
+  // l'implémentation pour la raison d'être d'une fonction séparée
+  // d'updateSettings. Rend false si le rappel n'a pas pu être appliqué.
+  importSettings: (imported: Partial<BackupSettings>) => Promise<boolean>;
 }
 
 const SettingsContext = createContext<SettingsContextValue | null>(null);
@@ -85,28 +92,34 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   // Restauration d'une sauvegarde (voir DataSection.tsx, seul appelant).
   // Fonction distincte d'updateSettings, et non un paramètre de celle-ci :
   // updateSettings est appelée par tous les toggles de NotificationsSection
-  // et LanguageSection, et lui faire passer readFailed rouvrirait L2-06 pour
-  // n'importe quel réglage touché après un échec de lecture. Ici l'écriture
-  // est volontaire et confirmée, et son contenu vient de l'utilisateur —
-  // même raisonnement que replaceAllGoals dans goals-context.tsx.
+  // et LanguageSection, et lui faire passer readFailed laisserait n'importe
+  // quel réglage touché après un échec de lecture écraser les vrais réglages
+  // de l'utilisateur par des valeurs par défaut. Ici l'écriture est
+  // volontaire et confirmée, et son contenu vient de l'utilisateur — même
+  // raisonnement que replaceAllGoals dans goals-context.tsx.
   //
-  // Remplace au lieu de fusionner : parseBackupPayload rend déjà un Settings
-  // complet, fusionné avec DEFAULT_SETTINGS (voir backup.ts). Pas de
-  // changement observable par rapport à l'updateSettings qu'elle remplace,
-  // mais le remplacement dit ce qu'un import fait.
-  function importSettings(imported: Settings) {
+  // Fusionne dans les réglages de l'appareil, relus ici plutôt que pris dans
+  // l'état : après un échec de lecture, l'état vaut DEFAULT_SETTINGS alors
+  // que les vrais réglages sont intacts sur le disque, et fusionner dessus
+  // écraserait langue et interrupteurs par des valeurs par défaut. Si cette
+  // relecture échoue aussi, rien n'est écrit ni modifié : le signalement
+  // d'échec de lecture reste en place et la fonction rend false.
+  // Un `imported` sans aucun réglage ne relit ni n'écrit rien (rend true).
+  async function importSettings(imported: Partial<BackupSettings>): Promise<boolean> {
+    if (Object.keys(imported).length === 0) return true;
+    const { value, ok } = await loadSettings();
+    if (!ok) return false;
+    const merged: Settings = { ...value, ...imported };
     // Armé avant setSettings, même raison que dans replaceAllGoals.
     skipNextSave.current = true;
-    setSettings(imported);
-    saveSettings(imported)
-      .then((ok) => {
-        reportSaveResult('settings', ok);
-        if (ok) {
-          setReadFailed(false);
-          clearLoadFailure('settings');
-        }
-      })
-      .catch(() => {});
+    setSettings(merged);
+    const saved = await saveSettings(merged);
+    reportSaveResult('settings', saved);
+    if (saved) {
+      setReadFailed(false);
+      clearLoadFailure('settings');
+    }
+    return saved;
   }
 
   return (
