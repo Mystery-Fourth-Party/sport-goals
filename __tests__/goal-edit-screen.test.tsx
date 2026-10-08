@@ -411,3 +411,59 @@ describe('EditGoalScreen — durée hors domaine', () => {
     await waitFor(() => expect(mockedSaveGoals).toHaveBeenCalled());
   });
 });
+
+describe('EditGoalScreen — répétition automatique', () => {
+  const REPEAT = () => i18n.t('goalFields.repeat');
+
+  async function savedAfter(goal: Goal, press: boolean): Promise<Goal> {
+    mockedLoadGoals.mockResolvedValue({ value: [goal], ok: true });
+    render(<Tree show />);
+    await flush();
+    if (press) fireEvent.press(screen.getByRole('switch', { name: REPEAT() }));
+    fireEvent.press(screen.getByText(SAVE));
+    await waitFor(() => expect(mockedSaveGoals).toHaveBeenCalled());
+    return mockedSaveGoals.mock.calls.at(-1)[0][0];
+  }
+
+  it('reprend l état de la coche et l annonce comme un interrupteur', async () => {
+    mockedLoadGoals.mockResolvedValue({
+      value: [{ ...makeGoal(), repeat: true, seriesId: 's1' }],
+      ok: true,
+    });
+    render(<Tree show />);
+    await flush();
+
+    expect(screen.getByRole('switch', { name: REPEAT() }).props.accessibilityState.checked).toBe(
+      true,
+    );
+  });
+
+  it('attribue un identifiant de série en cochant un objectif qui n en avait pas', async () => {
+    const saved = await savedAfter(makeGoal(), true);
+
+    expect(saved.repeat).toBe(true);
+    expect(typeof saved.seriesId).toBe('string');
+    expect(saved.seriesId).not.toBe('');
+  });
+
+  it('réutilise l identifiant de série existant en recochant', async () => {
+    const saved = await savedAfter({ ...makeGoal(), repeat: false, seriesId: 's1' }, true);
+
+    expect(saved.repeat).toBe(true);
+    expect(saved.seriesId).toBe('s1');
+  });
+
+  it('passe repeat à false en décochant et garde l identifiant de série', async () => {
+    const saved = await savedAfter({ ...makeGoal(), repeat: true, seriesId: 's1' }, true);
+
+    expect(saved.repeat).toBe(false);
+    expect(saved.seriesId).toBe('s1');
+  });
+
+  it('n écrit ni repeat ni identifiant de série quand la coche n a pas bougé', async () => {
+    const saved = await savedAfter(makeGoal(), false);
+
+    expect('repeat' in saved).toBe(false);
+    expect('seriesId' in saved).toBe(false);
+  });
+});

@@ -214,3 +214,49 @@ describe('GoalForm with initial values', () => {
     ).toBeTruthy();
   });
 });
+
+// Coche « Répéter automatiquement » : le formulaire ne fait que porter le
+// choix (repeat) ; l'identifiant de série est attribué par le contexte
+// (voir createGoal dans goals-context.tsx).
+describe('GoalForm — répétition automatique', () => {
+  const REPEAT = () => i18n.t('goalFields.repeat');
+
+  async function fillAndSubmit(onCreate: jest.Mock, repeat: boolean) {
+    render(<GoalForm onCreate={onCreate} />);
+    await flush();
+    fireEvent.changeText(screen.getByLabelText(i18n.t('goalFields.name')), 'Pompes');
+    fireEvent.changeText(screen.getByLabelText(i18n.t('goalFields.targetValue')), '100');
+    fireEvent.changeText(screen.getByLabelText(i18n.t('goalForm.durationLabel')), '10');
+    if (repeat) fireEvent.press(screen.getByRole('switch', { name: REPEAT() }));
+    fireEvent.press(screen.getByText(i18n.t('goalForm.submit')));
+    await flush();
+  }
+
+  it('offers the switch unchecked, with its explanation', async () => {
+    render(<GoalForm onCreate={jest.fn()} />);
+    await flush();
+
+    expect(screen.getByRole('switch', { name: REPEAT() }).props.accessibilityState.checked).toBe(
+      false,
+    );
+    expect(screen.getByText(i18n.t('goalFields.repeatNote'))).toBeTruthy();
+  });
+
+  it('creates a repeating goal when the switch is checked', async () => {
+    const onCreate = jest.fn();
+
+    await fillAndSubmit(onCreate, true);
+
+    expect(onCreate).toHaveBeenCalledTimes(1);
+    expect(onCreate.mock.calls[0][0].repeat).toBe(true);
+  });
+
+  it('leaves repeat out of a goal created without the switch', async () => {
+    const onCreate = jest.fn();
+
+    await fillAndSubmit(onCreate, false);
+
+    expect(onCreate).toHaveBeenCalledTimes(1);
+    expect('repeat' in onCreate.mock.calls[0][0]).toBe(false);
+  });
+});
