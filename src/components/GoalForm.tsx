@@ -5,7 +5,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Goal, Unit } from '../types';
 import { GoalFormValues } from '../goalFormValues';
 import { MAX_GOAL_DAYS, parseDurationDays, parsePositiveNumber } from '../goalValidation';
-import { fmt } from '../stats';
+import { deadlineAfterDays, fmt } from '../stats';
 import { colors, fontFamily, radius, spacing } from '../theme';
 import GoalFields from './GoalFields';
 
@@ -69,8 +69,6 @@ export default function GoalForm({ onCreate, initialValues }: Props) {
     }
 
     const now = new Date();
-    const deadline = new Date(now);
-    deadline.setDate(deadline.getDate() + daysNum);
 
     onCreate({
       // Le global crypto.randomUUID() n'est pas garanti sur Hermes (natif) ;
@@ -80,7 +78,7 @@ export default function GoalForm({ onCreate, initialValues }: Props) {
       targetValue: targetNum,
       unit,
       createdAt: now.toISOString(),
-      deadline: deadline.toISOString(),
+      deadline: deadlineAfterDays(now, daysNum),
       entries: [],
       reminderEnabled,
       reminderTime,

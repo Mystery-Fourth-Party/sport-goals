@@ -12,7 +12,7 @@ import {
   parseDurationDays,
   parsePositiveNumber,
 } from '../../../src/goalValidation';
-import { fmt, getGoalStats, isGoalClosed } from '../../../src/stats';
+import { deadlineAfterDays, fmt, getGoalStats, isGoalClosed } from '../../../src/stats';
 import { colors, fontFamily, radius, spacing, statusColors, white } from '../../../src/theme';
 import { Goal, Unit } from '../../../src/types';
 import { useToday } from '../../../src/useToday';
@@ -146,13 +146,11 @@ function EditGoalForm({ goal }: { goal: Goal }) {
       setSaveAttempted(true);
       return;
     }
-    const deadline = new Date();
-    deadline.setDate(deadline.getDate() + daysNum);
     updateGoal(goal.id, {
       title: title.trim(),
       targetValue: targetNum,
       unit,
-      deadline: deadline.toISOString(),
+      deadline: deadlineAfterDays(new Date(), daysNum),
       // Toujours inclus (même quand undefined) : updateGoal merge par
       // spread, donc un champ absent de cet objet laisserait l'ancienne
       // valeur inchangée — ici on veut au contraire pouvoir repasser

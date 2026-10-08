@@ -82,6 +82,19 @@ export function todayStr(): string {
   return dateStr(new Date());
 }
 
+// Échéance ISO située `days` jours calendaires après `now`, à la même heure
+// locale. Seul calcul d'échéance de l'app : création, modification et
+// création automatique d'une occurrence passent tous par ici. setDate plutôt
+// que d'ajouter des millisecondes : un intervalle qui franchit un changement
+// d'heure garde ainsi la même heure locale, donc le même jour local pour
+// isGoalClosed. `days` est un entier validé par l'appelant (voir
+// parseDurationDays) : une valeur démesurée fait lever toISOString.
+export function deadlineAfterDays(now: Date, days: number): string {
+  const deadline = new Date(now);
+  deadline.setDate(deadline.getDate() + days);
+  return deadline.toISOString();
+}
+
 // ─── Clôture et seuil de 100 % ─────────────────────────────────────────
 
 // Seul endroit où se décide qu'un objectif est clos : les écrans, le
@@ -111,6 +124,16 @@ export function isSuccessStatus(status: Status): boolean {
 
 // ─── Calcul principal par objectif ─────────────────────────────────────
 // Débloque : moyenne quotidienne, recalcul dynamique, alerte de retard, streak.
+
+// Durée totale d'un objectif en jours (création → échéance), plancher à 1 pour
+// qu'un objectif dont l'échéance tombe le jour de sa création reste
+// reproductible. Reprise telle quelle par la relance manuelle (voir
+// goalToFormValues) : la durée voulue est celle d'origine, pas les jours
+// restants, qui valent 0 sur un objectif clos. Pas de plafonnement ici : chaque
+// appelant décide quoi faire d'une durée au-delà de MAX_GOAL_DAYS.
+export function goalDurationDays(goal: Goal, today: string): number {
+  return Math.max(1, getGoalStats(goal, today).totalDays);
+}
 
 export function getGoalStats(goal: Goal, today: string): GoalStats {
   const entries = goal.entries ?? [];
