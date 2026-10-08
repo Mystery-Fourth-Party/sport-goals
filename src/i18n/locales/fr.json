@@ -167,7 +167,9 @@
     "remindersEnabled": "Rappels activés",
     "customTime": "Horaire personnalisé",
     "reminderTime": "Heure du rappel",
-    "remindAfterReached": "Continuer le rappel une fois atteint"
+    "remindAfterReached": "Continuer le rappel une fois atteint",
+    "repeat": "Répéter automatiquement",
+    "repeatNote": "Un nouvel objectif identique démarre à la réouverture de l'app après l'échéance."
   },
   "goalDetail": {
     "notFound": "Objectif introuvable.",

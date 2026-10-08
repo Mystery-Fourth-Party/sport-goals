@@ -45,6 +45,11 @@ interface Props {
   // l'emporte de toute façon.
   remindAfterReached: boolean;
   onRemindAfterReachedChange: (v: boolean) => void;
+  // Répétition automatique (voir Goal.repeat dans types.ts). Seule la coche
+  // vit ici : l'identifiant de série est attribué par le contexte, pas par
+  // les écrans (voir createGoal dans goals-context.tsx).
+  repeat: boolean;
+  onRepeatChange: (v: boolean) => void;
 }
 
 // Champs de saisie communs à l'écran Création (app/create.tsx) et à l'écran
@@ -70,6 +75,8 @@ export default function GoalFields({
   onReminderTimeChange,
   remindAfterReached,
   onRemindAfterReachedChange,
+  repeat,
+  onRepeatChange,
 }: Props) {
   const { t } = useTranslation();
 
@@ -196,6 +203,25 @@ export default function GoalFields({
           pas. */}
       {unitLocked && <Text style={styles.lockedNote}>{t('goalFields.unitLocked')}</Text>}
 
+      {/* Même schéma que les rangées de rappel ci-dessous : le libellé est
+          porté par le Toggle, qui annonce aussi son état. La note, elle, reste
+          lisible : elle dit que le rythme se décale si l'app reste fermée. */}
+      <View style={styles.toggleRow}>
+        <Text
+          style={styles.toggleLabel}
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+        >
+          {t('goalFields.repeat')}
+        </Text>
+        <Toggle
+          value={repeat}
+          onChange={onRepeatChange}
+          accessibilityLabel={t('goalFields.repeat')}
+        />
+      </View>
+      <Text style={styles.repeatNote}>{t('goalFields.repeatNote')}</Text>
+
       {/* Le Toggle porte déjà le libellé de la ligne : on masque le Text au
           lecteur d'écran pour n'avoir qu'un seul élément accessible par
           ligne (même principe que GoalCard), TalkBack annonçant sinon le
@@ -319,6 +345,12 @@ const styles = StyleSheet.create({
   // en cours reste lisible, c'est une information, pas un choix offert.
   chipLocked: {
     opacity: 0.4,
+  },
+  repeatNote: {
+    fontFamily: fontFamily.bodyRegular,
+    fontSize: 12,
+    color: white(0.4),
+    marginTop: -4,
   },
   lockedNote: {
     fontFamily: fontFamily.bodyRegular,

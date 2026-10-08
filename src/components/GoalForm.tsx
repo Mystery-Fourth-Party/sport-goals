@@ -34,6 +34,9 @@ export default function GoalForm({ onCreate, initialValues }: Props) {
   const [remindAfterReached, setRemindAfterReached] = useState(
     initialValues?.remindAfterReached ?? false,
   );
+  // Absent = false (voir types.ts). La relance d'un archivé part toujours
+  // décochée : un objectif relancé à la main est indépendant de toute série.
+  const [repeat, setRepeat] = useState(false);
   // Les erreurs ne s'affichent qu'après une première tentative de soumission
   // invalide, pour ne pas asperger l'utilisateur de messages rouges dès
   // qu'il commence à remplir le formulaire.
@@ -83,6 +86,9 @@ export default function GoalForm({ onCreate, initialValues }: Props) {
       reminderEnabled,
       reminderTime,
       remindAfterReached,
+      // Ni repeat ni seriesId sur un objectif hors série ; le seriesId d'une
+      // série est attribué par createGoal (voir goals-context.tsx).
+      ...(repeat ? { repeat: true } : {}),
     });
 
     setTitle('');
@@ -92,6 +98,7 @@ export default function GoalForm({ onCreate, initialValues }: Props) {
     setReminderEnabled(true);
     setReminderTime(undefined);
     setRemindAfterReached(false);
+    setRepeat(false);
     setSubmitAttempted(false);
   }
 
@@ -116,6 +123,8 @@ export default function GoalForm({ onCreate, initialValues }: Props) {
         onReminderTimeChange={setReminderTime}
         remindAfterReached={remindAfterReached}
         onRemindAfterReachedChange={setRemindAfterReached}
+        repeat={repeat}
+        onRepeatChange={setRepeat}
       />
 
       {dailyAvg > 0 && (

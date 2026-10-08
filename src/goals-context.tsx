@@ -2,6 +2,7 @@
 // être accessible depuis tous les écrans (expo-router) plutôt que d'un seul
 // composant racine avec tout en props.
 import { createContext, ReactNode, useContext, useEffect, useRef, useState } from 'react';
+import * as Crypto from 'expo-crypto';
 import { sendGoalReachedNotification } from './notifications';
 import { useSettings } from './settings-context';
 import { loadGoals, saveGoals } from './storage';
@@ -45,6 +46,15 @@ interface GoalsContextValue {
 }
 
 const GoalsContext = createContext<GoalsContextValue | null>(null);
+
+// Un objectif qui répète sans identifiant de série ne pourrait jamais être
+// rattaché à ses occurrences suivantes. Garde de donnée, qui fait foi quel que
+// soit l'appelant : createGoal et updateGoal passent par ici, les écrans se
+// contentent de poser `repeat`. Pure, l'identifiant lui étant fourni — il est
+// tiré hors des updaters, qui peuvent être rejoués par StrictMode.
+function withSeriesId(goal: Goal, seriesId: string): Goal {
+  return goal.repeat === true && !goal.seriesId ? { ...goal, seriesId } : goal;
+}
 
 export function GoalsProvider({ children }: { children: ReactNode }) {
   // Rendu à l'intérieur de SettingsProvider (voir app/_layout.tsx) : lit le
@@ -156,7 +166,8 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
   }, [goals, loaded, readFailed, reportSaveResult]);
 
   function createGoal(goal: Goal) {
-    setGoals((prev) => [goal, ...prev]);
+    const seriesId = Crypto.randomUUID();
+    setGoals((prev) => [withSeriesId(goal, seriesId), ...prev]);
   }
 
   function addProgress(goalId: string, amount: number) {
@@ -260,6 +271,7 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
   // Partial<Goal> : les écrans n'envoient que les champs édités (title,
   // targetValue, unit, deadline), entries et id restent inchangés.
   function updateGoal(goalId: string, updates: Partial<Goal>) {
+    const seriesId = Crypto.randomUUID();
     setGoals((prev) =>
       prev.map((g) => {
         if (g.id !== goalId) return g;
@@ -281,7 +293,9 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
         // L'import ne passe pas par ici (replaceAllGoals remplace le
         // tableau tel quel).
         if (g.entries.some((e) => e.value > 0)) merged.unit = g.unit;
-        return merged;
+        // Cocher « Répéter » sur un objectif sans série lui en attribue une ;
+        // décocher garde l'identifiant, qui rattache l'occurrence à ses voisines.
+        return withSeriesId(merged, seriesId);
       }),
     );
   }

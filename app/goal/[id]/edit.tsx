@@ -98,6 +98,7 @@ function EditGoalForm({ goal }: { goal: Goal }) {
   const [reminderEnabled, setReminderEnabled] = useState(goal.reminderEnabled ?? true);
   const [reminderTime, setReminderTime] = useState<string | undefined>(goal.reminderTime);
   const [remindAfterReached, setRemindAfterReached] = useState(goal.remindAfterReached ?? false);
+  const [repeat, setRepeat] = useState(goal.repeat ?? false);
 
   // Dès qu'une séance porte une valeur positive, l'unité ne bouge plus :
   // une entrée ne porte qu'un nombre, et la changer relirait les mêmes
@@ -159,6 +160,11 @@ function EditGoalForm({ goal }: { goal: Goal }) {
       reminderEnabled,
       reminderTime,
       remindAfterReached,
+      // N'écrit repeat que si la coche a bougé : un objectif hors série ne
+      // reçoit pas `repeat: false` pour avoir enregistré autre chose. Le seriesId
+      // est attribué par updateGoal (voir goals-context.tsx), et gardé quand la
+      // coche est décochée.
+      ...(repeat !== (goal.repeat ?? false) ? { repeat } : {}),
     });
     router.back();
   }
@@ -210,6 +216,8 @@ function EditGoalForm({ goal }: { goal: Goal }) {
           onReminderTimeChange={setReminderTime}
           remindAfterReached={remindAfterReached}
           onRemindAfterReachedChange={setRemindAfterReached}
+          repeat={repeat}
+          onRepeatChange={setRepeat}
         />
 
         {newDailyRequired > 0 && (

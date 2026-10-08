@@ -167,7 +167,9 @@
     "remindersEnabled": "Reminders enabled",
     "customTime": "Custom time",
     "reminderTime": "Reminder time",
-    "remindAfterReached": "Keep reminding once reached"
+    "remindAfterReached": "Keep reminding once reached",
+    "repeat": "Repeat automatically",
+    "repeatNote": "A new identical goal starts when you reopen the app after the deadline."
   },
   "goalDetail": {
     "notFound": "Goal not found.",
