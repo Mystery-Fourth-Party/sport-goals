@@ -69,7 +69,8 @@
       "src/stats.ts",
       "src/backup.ts",
       "src/dateLabels.ts",
-      "src/goalValidation.ts"
+      "src/goalValidation.ts",
+      "src/series.ts"
     ],
     "coverageReporters": [
       "text"
@@ -85,6 +86,9 @@
         "branches": 95
       },
       "./src/goalValidation.ts": {
+        "branches": 95
+      },
+      "./src/series.ts": {
         "branches": 95
       }
     }

@@ -5,10 +5,12 @@ import { createContext, ReactNode, useContext, useEffect, useRef, useState } fro
 import * as Crypto from 'expo-crypto';
 import { sendGoalReachedNotification } from './notifications';
 import { useSettings } from './settings-context';
+import { advanceSeries, removeGoal } from './series';
 import { loadGoals, saveGoals } from './storage';
 import { useStorageStatus } from './storage-status';
 import { getGoalStats, isGoalClosed, isSuccessStatus, todayStr } from './stats';
 import { Goal } from './types';
+import { useToday } from './useToday';
 
 interface GoalsContextValue {
   goals: Goal[];
@@ -63,6 +65,9 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
   // Statut de persistance, dans son propre contexte non persisté (voir
   // storage-status.tsx et AGENTS.md) : lu par StorageStatusBanner.
   const { reportLoadResult, reportSaveResult, clearLoadFailure } = useStorageStatus();
+  // Même horloge que l'archive (voir useToday) : l'occurrence suivante d'une
+  // série est créée au moment où l'écran considère la précédente comme close.
+  const today = useToday();
   const [goals, setGoals] = useState<Goal[]>([]);
   const [loaded, setLoaded] = useState(false);
   // true quand loadGoals n'a pas pu lire le stockage (à ne pas confondre
@@ -164,6 +169,31 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
       .then((ok) => reportSaveResult('goals', ok))
       .catch(() => {});
   }, [goals, loaded, readFailed, reportSaveResult]);
+
+  // Répétition automatique : tourne à chaque changement de `goals`, du jour ou
+  // de l'état de lecture, et pas seulement au chargement. Le retour au premier
+  // plan un autre jour (`today`) couvre le passage de minuit ; réagir à `goals`
+  // couvre l'import (replaceAllGoals), sans appel dédié.
+  // Même garde de lecture que la sauvegarde ci-dessus : une lecture en échec
+  // laisse le disque peut-être intact, et créer puis écrire par-dessus le
+  // détruirait. replaceAllGoals remet readFailed à false, ce qui relance l'effet.
+  // Idempotent : advanceSeries lit le dernier état (updater fonctionnel) et
+  // rend le même tableau quand il n'y a rien à faire ; la création retire la
+  // coche à l'ancienne occurrence dans le même résultat, donc un second passage
+  // ne trouve rien. `now` est pris ici, hors de l'updater, que StrictMode peut
+  // rejouer. Le résultat passe par l'effet de sauvegarde : une seule écriture
+  // pour la nouvelle occurrence et le relais.
+  useEffect(() => {
+    if (!loaded || readFailed) return;
+    const now = new Date();
+    // Seul eslint-disable du dépôt : la règle craint une cascade de rendus, or
+    // ici l'état est synchronisé avec le jour et le stockage (deux sources
+    // extérieures à React) et la cascade s'arrête au premier passage, puisque
+    // advanceSeries rend alors le même tableau. Le faire dans un microtask
+    // pour contourner la règle n'aurait changé que l'apparence.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setGoals((prev) => advanceSeries(prev, today, now, Crypto.randomUUID));
+  }, [goals, loaded, readFailed, today]);
 
   function createGoal(goal: Goal) {
     const seriesId = Crypto.randomUUID();
@@ -301,7 +331,9 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
   }
 
   function deleteGoal(goalId: string) {
-    setGoals((prev) => prev.filter((g) => g.id !== goalId));
+    // removeGoal et non un simple filtre : supprimer l'occurrence en cours
+    // arrête la série (voir series.ts).
+    setGoals((prev) => removeGoal(prev, goalId));
   }
 
   // Écrit elle-même plutôt que de laisser faire l'effet de sauvegarde, et

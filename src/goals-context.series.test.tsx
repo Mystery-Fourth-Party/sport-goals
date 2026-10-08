@@ -96,6 +96,15 @@ async function mount(goals: Goal[], { readOk = true, strict = false }: MountOpti
   return { ...view, appState };
 }
 
+// Les horloges simulées avancent pendant waitFor : la création a lieu quelques
+// dizaines de millisecondes après l'instant posé, d'où une tolérance d'une
+// seconde plutôt qu'une égalité exacte.
+function expectStartsAt(goal: Goal, expected: Date) {
+  const gap = new Date(goal.createdAt).getTime() - expected.getTime();
+  expect(gap).toBeGreaterThanOrEqual(0);
+  expect(gap).toBeLessThan(1000);
+}
+
 function byId(goals: Goal[], id: string): Goal {
   const found = goals.find((g) => g.id === id);
   if (!found) throw new Error(`objectif ${id} introuvable`);
@@ -129,7 +138,7 @@ describe('création de l’occurrence suivante', () => {
     expect(next.reminderTime).toBe('07:30');
     expect(next.remindAfterReached).toBe(true);
     expect(next.entries).toEqual([]);
-    expect(next.createdAt).toBe(OCT_15().toISOString());
+    expectStartsAt(next, OCT_15());
     expect(next.seriesId).toBe('s1');
     expect(next.repeat).toBe(true);
   });
@@ -175,7 +184,7 @@ describe('création de l’occurrence suivante', () => {
 
     expect(result.current.goals).toHaveLength(2);
     const next = result.current.goals.find((g) => g.id !== 'tip')!;
-    expect(next.createdAt).toBe(new Date(2027, 0, 12, 9, 0).toISOString());
+    expectStartsAt(next, new Date(2027, 0, 12, 9, 0));
     expect(dateStr(new Date(next.deadline))).toBe('2027-02-11');
   });
 

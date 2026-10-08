@@ -758,11 +758,15 @@ describe('replaceAllGoals — import explicite', () => {
 // pourrait jamais être rattaché à ses occurrences suivantes. La garde est dans
 // le contexte et non dans les écrans, pour qu'elle tienne quel que soit
 // l'appelant (même principe que la garde d'unité d'updateGoal).
+// Objectif en cours : un objectif clos qui répète se verrait créer sa suite par
+// la répétition automatique, ce qui n'est pas le sujet de ces tests.
+const running = (): Goal => ({ ...baseGoal, deadline: openDeadline() });
+
 describe('seriesId attribué par le contexte', () => {
   it('gives a new seriesId to a goal created with repeat and none', async () => {
     const { result } = await renderHarness();
 
-    act(() => result.current.goals.createGoal({ ...baseGoal, repeat: true }));
+    act(() => result.current.goals.createGoal({ ...running(), repeat: true }));
 
     const goal = result.current.goals.goals[0];
     expect(goal.repeat).toBe(true);
@@ -774,7 +778,7 @@ describe('seriesId attribué par le contexte', () => {
     const { result } = await renderHarness();
 
     act(() =>
-      result.current.goals.createGoal({ ...baseGoal, repeat: true, seriesId: 'serie-existante' }),
+      result.current.goals.createGoal({ ...running(), repeat: true, seriesId: 'serie-existante' }),
     );
 
     expect(result.current.goals.goals[0].seriesId).toBe('serie-existante');
@@ -783,7 +787,7 @@ describe('seriesId attribué par le contexte', () => {
   it('adds neither repeat nor seriesId to a goal created without repeat', async () => {
     const { result } = await renderHarness();
 
-    act(() => result.current.goals.createGoal(baseGoal));
+    act(() => result.current.goals.createGoal(running()));
 
     const goal = result.current.goals.goals[0];
     expect('repeat' in goal).toBe(false);
@@ -792,7 +796,7 @@ describe('seriesId attribué par le contexte', () => {
 
   it('gives a seriesId to a goal that starts repeating through updateGoal', async () => {
     const { result } = await renderHarness();
-    act(() => result.current.goals.createGoal(baseGoal));
+    act(() => result.current.goals.createGoal(running()));
 
     act(() => result.current.goals.updateGoal('g1', { repeat: true }));
 
@@ -804,7 +808,7 @@ describe('seriesId attribué par le contexte', () => {
 
   it('reuses the existing seriesId when a goal starts repeating again', async () => {
     const { result } = await renderHarness();
-    act(() => result.current.goals.createGoal({ ...baseGoal, seriesId: 'serie-existante' }));
+    act(() => result.current.goals.createGoal({ ...running(), seriesId: 'serie-existante' }));
 
     act(() => result.current.goals.updateGoal('g1', { repeat: true }));
 
@@ -814,7 +818,7 @@ describe('seriesId attribué par le contexte', () => {
   it('keeps the seriesId when repeat is switched off', async () => {
     const { result } = await renderHarness();
     act(() =>
-      result.current.goals.createGoal({ ...baseGoal, repeat: true, seriesId: 'serie-existante' }),
+      result.current.goals.createGoal({ ...running(), repeat: true, seriesId: 'serie-existante' }),
     );
 
     act(() => result.current.goals.updateGoal('g1', { repeat: false }));
