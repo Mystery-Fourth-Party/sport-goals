@@ -5,7 +5,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Goal, Unit } from '../types';
 import { GoalFormValues } from '../goalFormValues';
 import { MAX_GOAL_DAYS, parseDurationDays, parsePositiveNumber } from '../goalValidation';
-import { fmt } from '../stats';
+import { deadlineAfterDays, fmt } from '../stats';
 import { colors, fontFamily, radius, spacing } from '../theme';
 import GoalFields from './GoalFields';
 
@@ -34,6 +34,9 @@ export default function GoalForm({ onCreate, initialValues }: Props) {
   const [remindAfterReached, setRemindAfterReached] = useState(
     initialValues?.remindAfterReached ?? false,
   );
+  // Absent = false (voir types.ts). La relance d'un archivé part toujours
+  // décochée : un objectif relancé à la main est indépendant de toute série.
+  const [repeat, setRepeat] = useState(false);
   // Les erreurs ne s'affichent qu'après une première tentative de soumission
   // invalide, pour ne pas asperger l'utilisateur de messages rouges dès
   // qu'il commence à remplir le formulaire.
@@ -69,8 +72,6 @@ export default function GoalForm({ onCreate, initialValues }: Props) {
     }
 
     const now = new Date();
-    const deadline = new Date(now);
-    deadline.setDate(deadline.getDate() + daysNum);
 
     onCreate({
       // Le global crypto.randomUUID() n'est pas garanti sur Hermes (natif) ;
@@ -80,11 +81,14 @@ export default function GoalForm({ onCreate, initialValues }: Props) {
       targetValue: targetNum,
       unit,
       createdAt: now.toISOString(),
-      deadline: deadline.toISOString(),
+      deadline: deadlineAfterDays(now, daysNum),
       entries: [],
       reminderEnabled,
       reminderTime,
       remindAfterReached,
+      // Ni repeat ni seriesId sur un objectif hors série ; le seriesId d'une
+      // série est attribué par createGoal (voir goals-context.tsx).
+      ...(repeat ? { repeat: true } : {}),
     });
 
     setTitle('');
@@ -94,6 +98,7 @@ export default function GoalForm({ onCreate, initialValues }: Props) {
     setReminderEnabled(true);
     setReminderTime(undefined);
     setRemindAfterReached(false);
+    setRepeat(false);
     setSubmitAttempted(false);
   }
 
@@ -118,6 +123,8 @@ export default function GoalForm({ onCreate, initialValues }: Props) {
         onReminderTimeChange={setReminderTime}
         remindAfterReached={remindAfterReached}
         onRemindAfterReachedChange={setRemindAfterReached}
+        repeat={repeat}
+        onRepeatChange={setRepeat}
       />
 
       {dailyAvg > 0 && (

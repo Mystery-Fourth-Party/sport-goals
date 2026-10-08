@@ -3,8 +3,10 @@ import { Goal } from './types';
 import {
   calcStreak,
   dateStr,
+  deadlineAfterDays,
   fmt,
   getGoalStats,
+  goalDurationDays,
   getWeeklyStats,
   parseDate,
   isGoalClosed,
@@ -688,5 +690,47 @@ describe('getWeeklyStats — le plus avancé et le plus en retard', () => {
 
     expect(w.mostAdvanced).toBeUndefined();
     expect(w.mostBehind).toBeUndefined();
+  });
+});
+
+// L'échéance est un jour calendaire local : l'ajouter en millisecondes la
+// ferait glisser d'une heure quand l'intervalle franchit un changement
+// d'heure (25/10 à Paris, 01/11 à New York).
+describe('deadlineAfterDays', () => {
+  it('lands on the same local time and the expected local day across a clock change', () => {
+    const start = new Date(2026, 9, 20, 12, 0, 0);
+
+    const deadline = new Date(deadlineAfterDays(start, 30));
+
+    expect(dateStr(deadline)).toBe('2026-11-19');
+    expect(deadline.getHours()).toBe(12);
+  });
+
+  it('does not modify the date it is given', () => {
+    const start = new Date(2026, 9, 20, 12, 0, 0);
+
+    deadlineAfterDays(start, 30);
+
+    expect(dateStr(start)).toBe('2026-10-20');
+  });
+});
+
+describe('goalDurationDays', () => {
+  const base: Goal = {
+    id: 'd1',
+    title: 'Durée',
+    targetValue: 10,
+    unit: 'km',
+    createdAt: '2026-07-01T12:00:00.000Z',
+    deadline: '2026-07-31T12:00:00.000Z',
+    entries: [],
+  };
+
+  it('returns the total duration of a closed goal, not the days remaining', () => {
+    expect(goalDurationDays(base, '2026-09-30')).toBe(30);
+  });
+
+  it('floors a goal that ends the day it was created at one day', () => {
+    expect(goalDurationDays({ ...base, deadline: base.createdAt }, '2026-07-01')).toBe(1);
   });
 });

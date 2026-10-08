@@ -302,3 +302,51 @@ describe('CreateGoalScreen — relance depuis un objectif clos', () => {
     expect(fieldValue(TARGET())).toBe('');
   });
 });
+
+describe('CreateGoalScreen — répétition automatique', () => {
+  const REPEAT = () => i18n.t('goalFields.repeat');
+
+  async function fillAndSubmit() {
+    fireEvent.changeText(screen.getByLabelText(NAME()), 'Pompes');
+    fireEvent.changeText(screen.getByLabelText(TARGET()), '50');
+    fireEvent.changeText(screen.getByLabelText(DURATION()), '10');
+    await submit();
+  }
+
+  it('crée un objectif de série avec un identifiant de série quand la coche est cochée', async () => {
+    await renderWith([]);
+
+    fireEvent.press(screen.getByRole('switch', { name: REPEAT() }));
+    await fillAndSubmit();
+
+    const created = lastSavedGoals()[0];
+    expect(created.repeat).toBe(true);
+    expect(typeof created.seriesId).toBe('string');
+    expect(created.seriesId).not.toBe('');
+  });
+
+  it('crée un objectif hors série quand la coche reste décochée', async () => {
+    await renderWith([]);
+
+    expect(toggleChecked('goalFields.repeat')).toBe(false);
+    await fillAndSubmit();
+
+    const created = lastSavedGoals()[0];
+    expect('repeat' in created).toBe(false);
+    expect('seriesId' in created).toBe(false);
+  });
+
+  // Relance manuelle depuis un archivé de série : un objectif indépendant,
+  // sans lien avec la série de la source.
+  it('relance un archivé de série avec la coche décochée et sans identifiant de série', async () => {
+    mockParams = { from: 'src' };
+    await renderWith([closedGoal({ repeat: true, seriesId: 'serie-source' })]);
+
+    expect(toggleChecked('goalFields.repeat')).toBe(false);
+    await submit();
+
+    const created = lastSavedGoals().find((g) => g.id !== 'src')!;
+    expect('repeat' in created).toBe(false);
+    expect('seriesId' in created).toBe(false);
+  });
+});
