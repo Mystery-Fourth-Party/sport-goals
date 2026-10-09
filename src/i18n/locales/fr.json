@@ -106,7 +106,8 @@
   },
   "create": {
     "title": "Nouvel Objectif",
-    "restartTitle": "Relancer un objectif"
+    "restartTitle": "Relancer un objectif",
+    "alreadyRepeated": "Cet objectif est répété automatiquement : une occurrence plus récente existe déjà."
   },
   "archive": {
     "title": "Archive",
@@ -177,6 +178,7 @@
     "addProgressCta": "+ Ajouter la progression du jour",
     "restartCta": "Relancer",
     "restartA11y": "Relancer l'objectif {{title}}",
+    "repeatedAutomatically": "Répété automatiquement",
     "deleteGoalConfirmTitle": "Supprimer cet objectif ?",
     "deleteEntryConfirmTitle": "Supprimer cette entrée ?",
     "history": {

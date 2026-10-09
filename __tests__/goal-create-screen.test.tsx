@@ -336,11 +336,13 @@ describe('CreateGoalScreen — répétition automatique', () => {
     expect('seriesId' in created).toBe(false);
   });
 
-  // Relance manuelle depuis un archivé de série : un objectif indépendant,
-  // sans lien avec la série de la source.
-  it('relance un archivé de série avec la coche décochée et sans identifiant de série', async () => {
+  // Relance manuelle depuis la dernière occurrence d'une série arrêtée : un
+  // objectif indépendant, sans lien avec la série de la source. Avec `repeat`
+  // encore à true, la série aurait déjà une suite et la relance serait refusée
+  // (voir « relance d'une occurrence qui a une suite »).
+  it('relance la dernière occurrence d’une série arrêtée avec la coche décochée et sans identifiant de série', async () => {
     mockParams = { from: 'src' };
-    await renderWith([closedGoal({ repeat: true, seriesId: 'serie-source' })]);
+    await renderWith([closedGoal({ repeat: false, seriesId: 'serie-source' })]);
 
     expect(toggleChecked('goalFields.repeat')).toBe(false);
     await submit();
