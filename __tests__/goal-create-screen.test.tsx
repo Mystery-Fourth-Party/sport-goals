@@ -350,3 +350,55 @@ describe('CreateGoalScreen — répétition automatique', () => {
     expect('seriesId' in created).toBe(false);
   });
 });
+
+// Lien direct /create?from=<id> vers une occurrence qui a une suite : le bouton
+// « Relancer » est masqué sur l'écran de détail, le lien ne doit pas le
+// contourner. L'écran refuse, comme l'écran de modification pour un objectif
+// clos, au lieu de proposer un formulaire qui créerait un doublon de la série.
+describe('CreateGoalScreen — relance d’une occurrence qui a une suite', () => {
+  beforeEach(() => {
+    mockParams = { from: 'src' };
+  });
+
+  // Plus récente que 'src' (échéance 31/07), close elle aussi, coche retirée :
+  // rien ne s'y crée tout seul.
+  function laterOccurrence(): Goal {
+    return closedGoal({
+      id: 'later',
+      createdAt: '2026-08-01T12:00:00.000Z',
+      deadline: '2026-09-15T12:00:00.000Z',
+      seriesId: 's1',
+      repeat: false,
+    });
+  }
+
+  it('refuses with a message and offers no form', async () => {
+    await renderWith([closedGoal({ seriesId: 's1' }), laterOccurrence()]);
+
+    expect(screen.getByText(i18n.t('create.alreadyRepeated'))).toBeTruthy();
+    expect(screen.queryByLabelText(NAME())).toBeNull();
+    expect(screen.queryByText(i18n.t('create.restartTitle'))).toBeNull();
+  });
+
+  it('does not announce the refusal before the goals are loaded', async () => {
+    const resolveLoad = deferLoad();
+    render(<Tree />);
+    await flush();
+
+    expect(screen.queryByText(i18n.t('create.alreadyRepeated'))).toBeNull();
+
+    await act(async () =>
+      resolveLoad({ value: [closedGoal({ seriesId: 's1' }), laterOccurrence()], ok: true }),
+    );
+    await flush();
+
+    expect(screen.getByText(i18n.t('create.alreadyRepeated'))).toBeTruthy();
+  });
+
+  it('still prefills the form for the last occurrence of the series', async () => {
+    await renderWith([closedGoal({ seriesId: 's1', repeat: false })]);
+
+    expect(screen.queryByText(i18n.t('create.alreadyRepeated'))).toBeNull();
+    expect(fieldValue(NAME())).toBe('Courir 100 km');
+  });
+});

@@ -11,11 +11,12 @@
 // Contrairement à L3-01, rien n'est perdu ici : c'est un faux message
 // transitoire, pas un écrasement de données. D'où une simple garde, sans le
 // key/remount de PR3 — cet écran n'a aucun useState initialisé depuis `goal`.
+import { useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import GoalDetailScreen from '../app/goal/[id]';
-import { GoalsProvider } from '../src/goals-context';
+import { GoalsProvider, useGoals } from '../src/goals-context';
 import i18n from '../src/i18n';
 import { SettingsProvider } from '../src/settings-context';
 import { dateStr, fmt } from '../src/stats';
@@ -242,5 +243,114 @@ describe('GoalDetailScreen — valeur de séance hors domaine', () => {
 
     expect(errorText()).toBeTruthy();
     expect(savedNonFiniteValues()).toEqual([]);
+  });
+});
+
+// Une occurrence archivée qui a une suite (une occurrence plus récente dans sa
+// série) ne se relance pas à la main : la série continue d'elle-même. Le
+// bouton « Relancer » laisse place à une ligne de texte. La dernière occurrence
+// d'une série arrêtée, elle, se relance.
+describe('GoalDetailScreen — occurrence archivée d’une série', () => {
+  const REPEATED = () => i18n.t('goalDetail.repeatedAutomatically');
+  const RESTART = () => i18n.t('goalDetail.restartCta');
+
+  // Contexte exposé au test, pour supprimer un objectif par le chemin réel.
+  const probe: { current: ReturnType<typeof useGoals> | null } = { current: null };
+  function Probe() {
+    const value = useGoals();
+    useEffect(() => {
+      probe.current = value;
+    });
+    return null;
+  }
+
+  function archived(overrides: Partial<Goal> = {}): Goal {
+    return {
+      ...makeGoal(),
+      createdAt: '2026-08-01T12:00:00.000Z',
+      deadline: '2026-08-31T12:00:00.000Z',
+      entries: [{ date: '2026-08-10', value: 95 }],
+      seriesId: 's1',
+      ...overrides,
+    };
+  }
+
+  // Occurrence en cours de la même série, plus récente que l'archivée g1.
+  function current(overrides: Partial<Goal> = {}): Goal {
+    return { ...makeGoal(), id: 'g2', seriesId: 's1', repeat: true, ...overrides };
+  }
+
+  async function renderWith(goals: Goal[]) {
+    mockedLoadGoals.mockResolvedValue({ value: goals, ok: true });
+    render(
+      <StorageStatusProvider>
+        <SettingsProvider>
+          <GoalsProvider>
+            <GoalDetailScreen />
+            <Probe />
+          </GoalsProvider>
+        </SettingsProvider>
+      </StorageStatusProvider>,
+    );
+    await act(async () => {});
+  }
+
+  it('replaces « Relancer » by the « Répété automatiquement » line when a later occurrence exists', async () => {
+    const goal = archived({ id: 'g1' });
+    await renderWith([goal, current()]);
+
+    expect(screen.queryByText(RESTART())).toBeNull();
+    expect(
+      screen.queryByRole('button', {
+        name: i18n.t('goalDetail.restartA11y', { title: goal.title }),
+      }),
+    ).toBeNull();
+    expect(screen.getByText(REPEATED())).toBeTruthy();
+  });
+
+  it('shows the line as text, not as a button', async () => {
+    await renderWith([archived({ id: 'g1' }), current()]);
+
+    expect(screen.queryByRole('button', { name: REPEATED() })).toBeNull();
+    expect(screen.queryByLabelText(REPEATED())).toBeNull();
+  });
+
+  it('still offers « Relancer » on the last occurrence of a series that was stopped', async () => {
+    const goal = archived({ id: 'g1', repeat: false });
+    await renderWith([goal]);
+
+    expect(screen.getByText(RESTART())).toBeTruthy();
+    expect(screen.queryByText(REPEATED())).toBeNull();
+  });
+
+  it('offers « Relancer » on the last occurrence even when an older one is archived before it', async () => {
+    const older = archived({
+      id: 'g0',
+      createdAt: '2026-06-01T12:00:00.000Z',
+      deadline: '2026-06-30T12:00:00.000Z',
+    });
+    await renderWith([older, archived({ id: 'g1', repeat: false })]);
+
+    expect(screen.getByText(RESTART())).toBeTruthy();
+    expect(screen.queryByText(REPEATED())).toBeNull();
+  });
+
+  it('shows no such line on a closed goal that belongs to no series', async () => {
+    await renderWith([archived({ id: 'g1', seriesId: undefined })]);
+
+    expect(screen.getByText(RESTART())).toBeTruthy();
+    expect(screen.queryByText(REPEATED())).toBeNull();
+  });
+
+  // Supprimer l'occurrence en cours arrête la série : la précédente devient la
+  // dernière, et redevient relançable.
+  it('brings « Relancer » back once the later occurrence is deleted', async () => {
+    await renderWith([archived({ id: 'g1' }), current()]);
+    expect(screen.getByText(REPEATED())).toBeTruthy();
+
+    act(() => probe.current!.deleteGoal('g2'));
+
+    expect(screen.getByText(RESTART())).toBeTruthy();
+    expect(screen.queryByText(REPEATED())).toBeNull();
   });
 });
