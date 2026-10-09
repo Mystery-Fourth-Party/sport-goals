@@ -1,6 +1,7 @@
 // Règles pures de la répétition automatique : quelle occurrence d'une série fait
 // foi, quand en créer la suivante, et ce que devient la coche à la suppression.
-// Utilisé par GoalsProvider (goals-context.tsx) seulement ; aucun accès au
+// Utilisé par GoalsProvider (goals-context.tsx) et par les écrans de détail et de
+// création, pour savoir si une occurrence archivée a une suite. Aucun accès au
 // stockage, à l'horloge ni à un générateur d'id : tout arrive en paramètre.
 // Ne décide pas du moment d'exécution, qui est celui de l'effet du provider.
 import { MAX_GOAL_DAYS } from './goalValidation';
@@ -41,6 +42,17 @@ function seriesTips(goals: Goal[]): Map<string, Goal> {
     if (tip === undefined || isLater(goal, tip)) tips.set(goal.seriesId, goal);
   }
   return tips;
+}
+
+// Vrai quand une occurrence plus récente existe dans la même série, au sens de
+// la pointe (voir seriesTips : même ordre, même fonction de comparaison) —
+// c'est-à-dire quand `goal` n'est pas la pointe de sa série. Sert à ne pas
+// proposer « Relancer » sur une occurrence que la série continue déjà : la
+// relance manuelle fait un objectif indépendant, qui doublerait la série.
+// Dernière occurrence d'une série arrêtée, ou objectif hors série : faux.
+export function hasSuccessor(goals: Goal[], goal: Goal): boolean {
+  if (!goal.seriesId) return false;
+  return goals.some((other) => other.seriesId === goal.seriesId && isLater(other, goal));
 }
 
 function nextOccurrence(

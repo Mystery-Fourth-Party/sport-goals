@@ -186,8 +186,7 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!loaded || readFailed) return;
     const now = new Date();
-    // Seul eslint-disable du dépôt : la règle craint une cascade de rendus, or
-    // ici l'état est synchronisé avec le jour et le stockage (deux sources
+    // La règle craint une cascade de rendus, or ici l'état est synchronisé avec le jour et le stockage (deux sources
     // extérieures à React) et la cascade s'arrête au premier passage, puisque
     // advanceSeries rend alors le même tableau. Le faire dans un microtask
     // pour contourner la règle n'aurait changé que l'apparence.

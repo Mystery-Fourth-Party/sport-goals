@@ -336,11 +336,13 @@ describe('CreateGoalScreen — répétition automatique', () => {
     expect('seriesId' in created).toBe(false);
   });
 
-  // Relance manuelle depuis un archivé de série : un objectif indépendant,
-  // sans lien avec la série de la source.
-  it('relance un archivé de série avec la coche décochée et sans identifiant de série', async () => {
+  // Relance manuelle depuis la dernière occurrence d'une série arrêtée : un
+  // objectif indépendant, sans lien avec la série de la source. Avec `repeat`
+  // encore à true, la série aurait déjà une suite et la relance serait refusée
+  // (voir « relance d'une occurrence qui a une suite »).
+  it('relance la dernière occurrence d’une série arrêtée avec la coche décochée et sans identifiant de série', async () => {
     mockParams = { from: 'src' };
-    await renderWith([closedGoal({ repeat: true, seriesId: 'serie-source' })]);
+    await renderWith([closedGoal({ repeat: false, seriesId: 'serie-source' })]);
 
     expect(toggleChecked('goalFields.repeat')).toBe(false);
     await submit();
@@ -348,5 +350,57 @@ describe('CreateGoalScreen — répétition automatique', () => {
     const created = lastSavedGoals().find((g) => g.id !== 'src')!;
     expect('repeat' in created).toBe(false);
     expect('seriesId' in created).toBe(false);
+  });
+});
+
+// Lien direct /create?from=<id> vers une occurrence qui a une suite : le bouton
+// « Relancer » est masqué sur l'écran de détail, le lien ne doit pas le
+// contourner. L'écran refuse, comme l'écran de modification pour un objectif
+// clos, au lieu de proposer un formulaire qui créerait un doublon de la série.
+describe('CreateGoalScreen — relance d’une occurrence qui a une suite', () => {
+  beforeEach(() => {
+    mockParams = { from: 'src' };
+  });
+
+  // Plus récente que 'src' (échéance 31/07), close elle aussi, coche retirée :
+  // rien ne s'y crée tout seul.
+  function laterOccurrence(): Goal {
+    return closedGoal({
+      id: 'later',
+      createdAt: '2026-08-01T12:00:00.000Z',
+      deadline: '2026-09-15T12:00:00.000Z',
+      seriesId: 's1',
+      repeat: false,
+    });
+  }
+
+  it('refuses with a message and offers no form', async () => {
+    await renderWith([closedGoal({ seriesId: 's1' }), laterOccurrence()]);
+
+    expect(screen.getByText(i18n.t('create.alreadyRepeated'))).toBeTruthy();
+    expect(screen.queryByLabelText(NAME())).toBeNull();
+    expect(screen.queryByText(i18n.t('create.restartTitle'))).toBeNull();
+  });
+
+  it('does not announce the refusal before the goals are loaded', async () => {
+    const resolveLoad = deferLoad();
+    render(<Tree />);
+    await flush();
+
+    expect(screen.queryByText(i18n.t('create.alreadyRepeated'))).toBeNull();
+
+    await act(async () =>
+      resolveLoad({ value: [closedGoal({ seriesId: 's1' }), laterOccurrence()], ok: true }),
+    );
+    await flush();
+
+    expect(screen.getByText(i18n.t('create.alreadyRepeated'))).toBeTruthy();
+  });
+
+  it('still prefills the form for the last occurrence of the series', async () => {
+    await renderWith([closedGoal({ seriesId: 's1', repeat: false })]);
+
+    expect(screen.queryByText(i18n.t('create.alreadyRepeated'))).toBeNull();
+    expect(fieldValue(NAME())).toBe('Courir 100 km');
   });
 });

@@ -3,7 +3,7 @@
 // tableau rendu tel quel quand il n'y a rien à faire, suppression d'une
 // occurrence. Le comportement observable (moment, écriture, import) est dans
 // goals-context.series.test.tsx.
-import { advanceSeries, removeGoal } from './series';
+import { advanceSeries, hasSuccessor, removeGoal } from './series';
 import { dateStr, getGoalStats } from './stats';
 import { Goal } from './types';
 
@@ -236,5 +236,84 @@ describe('removeGoal', () => {
 
   it('returns the goals unchanged in content when the id matches nothing', () => {
     expect(removeGoal([latest], 'absent')).toEqual([latest]);
+  });
+});
+
+// « A une suite » suit l'ordre de la pointe (échéance, puis création, puis id) :
+// une occurrence a une suite exactement quand elle n'est pas la pointe de sa
+// série.
+describe('hasSuccessor', () => {
+  const first = occurrence({
+    id: 'first',
+    repeat: false,
+    createdAt: new Date(2026, 7, 1, 12).toISOString(),
+    deadline: new Date(2026, 7, 31, 12).toISOString(),
+  });
+  const second = occurrence({ id: 'second', repeat: false });
+
+  it('is true for an occurrence followed by a later deadline in its series', () => {
+    expect(hasSuccessor([first, second], first)).toBe(true);
+  });
+
+  it('is false for the latest occurrence of its series', () => {
+    expect(hasSuccessor([first, second], second)).toBe(false);
+  });
+
+  it('does not depend on the order of the array', () => {
+    expect(hasSuccessor([second, first], first)).toBe(true);
+    expect(hasSuccessor([second, first], second)).toBe(false);
+  });
+
+  it('is false for a goal alone in its series', () => {
+    expect(hasSuccessor([second], second)).toBe(false);
+  });
+
+  it('breaks a deadline tie on the creation date', () => {
+    const later = occurrence({
+      id: 'later',
+      createdAt: new Date(2026, 8, 20, 12).toISOString(),
+      repeat: false,
+    });
+
+    expect(hasSuccessor([second, later], second)).toBe(true);
+    expect(hasSuccessor([second, later], later)).toBe(false);
+  });
+
+  it('breaks a full tie on the id', () => {
+    const a = occurrence({ id: 'a', repeat: false });
+    const b = occurrence({ id: 'b', repeat: false });
+
+    expect(hasSuccessor([a, b], a)).toBe(true);
+    expect(hasSuccessor([a, b], b)).toBe(false);
+  });
+
+  it('ignores occurrences of another series', () => {
+    const elsewhere = occurrence({
+      id: 'elsewhere',
+      seriesId: 's2',
+      deadline: new Date(2027, 0, 1, 12).toISOString(),
+    });
+
+    expect(hasSuccessor([second, elsewhere], second)).toBe(false);
+  });
+
+  it('is false for a goal with no seriesId or an empty one, even next to a later goal', () => {
+    const later = occurrence({ id: 'later', seriesId: undefined });
+    const loose = occurrence({ id: 'loose', seriesId: undefined, repeat: undefined });
+    const empty = occurrence({ id: 'empty', seriesId: '' });
+
+    expect(hasSuccessor([loose, later], loose)).toBe(false);
+    expect(hasSuccessor([empty, occurrence({ id: 'z', seriesId: '' })], empty)).toBe(false);
+  });
+
+  it('counts a later occurrence whether or not it still runs or repeats', () => {
+    const running = occurrence({
+      id: 'running',
+      repeat: true,
+      createdAt: new Date(2026, 9, 10, 12).toISOString(),
+      deadline: new Date(2026, 10, 10, 12).toISOString(),
+    });
+
+    expect(hasSuccessor([second, running], second)).toBe(true);
   });
 });

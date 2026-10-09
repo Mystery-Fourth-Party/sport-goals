@@ -6,8 +6,9 @@ import GoalForm from '../src/components/GoalForm';
 import { BackButton } from '../src/components/ui';
 import { goalToFormValues } from '../src/goalFormValues';
 import { useGoals } from '../src/goals-context';
+import { hasSuccessor } from '../src/series';
 import { isGoalClosed } from '../src/stats';
-import { colors, fontFamily, spacing } from '../src/theme';
+import { colors, fontFamily, spacing, white } from '../src/theme';
 import { Goal } from '../src/types';
 import { useToday } from '../src/useToday';
 
@@ -29,6 +30,12 @@ export default function CreateGoalScreen() {
   // chargement le figerait vide pour toute la vie de l'écran (lien profond à
   // froid). Même garde que EditGoalScreen. Sans `from`, rien à attendre.
   const waitingForSource = from !== undefined && !loaded;
+  // Le bouton « Relancer » est masqué sur une occurrence qui a une suite (voir
+  // GoalDetailScreen) : un lien direct ne doit pas le contourner. Même refus que
+  // l'écran de modification pour un objectif clos, plutôt qu'un formulaire qui
+  // créerait un doublon de la série. Lu seulement une fois les objectifs
+  // chargés : avant, la source n'est pas trouvable (voir waitingForSource).
+  const refused = restartFrom !== undefined && hasSuccessor(goals, restartFrom);
 
   function handleCreate(goal: Goal) {
     createGoal(goal);
@@ -43,7 +50,7 @@ export default function CreateGoalScreen() {
     <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
       <View style={styles.header}>
         <BackButton onPress={() => router.back()} />
-        {!waitingForSource && (
+        {!waitingForSource && !refused && (
           <Text style={styles.title}>
             {restartFrom ? t('create.restartTitle') : t('create.title')}
           </Text>
@@ -55,7 +62,8 @@ export default function CreateGoalScreen() {
       >
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           {/* key : deux sources différentes ne partagent pas un état de saisie. */}
-          {!waitingForSource && (
+          {refused && <Text style={styles.refused}>{t('create.alreadyRepeated')}</Text>}
+          {!waitingForSource && !refused && (
             <GoalForm
               key={restartFrom?.id ?? 'blank'}
               onCreate={handleCreate}
@@ -86,6 +94,12 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     color: colors.fg,
+  },
+  refused: {
+    fontFamily: fontFamily.bodyRegular,
+    color: white(0.4),
+    textAlign: 'center',
+    marginTop: 40,
   },
   keyboardAvoider: {
     flex: 1,

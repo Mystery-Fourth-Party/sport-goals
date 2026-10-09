@@ -106,7 +106,8 @@
   },
   "create": {
     "title": "New Goal",
-    "restartTitle": "Restart a goal"
+    "restartTitle": "Restart a goal",
+    "alreadyRepeated": "This goal repeats automatically: a more recent occurrence already exists."
   },
   "archive": {
     "title": "Archive",
@@ -177,6 +178,7 @@
     "addProgressCta": "+ Add today's progress",
     "restartCta": "Restart",
     "restartA11y": "Restart goal {{title}}",
+    "repeatedAutomatically": "Repeated automatically",
     "deleteGoalConfirmTitle": "Delete this goal?",
     "deleteEntryConfirmTitle": "Delete this entry?",
     "history": {

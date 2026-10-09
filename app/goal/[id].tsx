@@ -15,6 +15,7 @@ import { confirmDestructive } from '../../src/confirm';
 import { longDateLabel } from '../../src/dateLabels';
 import { useGoals } from '../../src/goals-context';
 import { parsePositiveNumber } from '../../src/goalValidation';
+import { hasSuccessor } from '../../src/series';
 import { useSettings } from '../../src/settings-context';
 import { getGoalStats, isGoalClosed, isSuccessStatus, parseDate } from '../../src/stats';
 import { useToday } from '../../src/useToday';
@@ -168,11 +169,16 @@ export default function GoalDetailScreen() {
         </Pressable>
       </ScrollView>
 
-      {/* Même emplacement pour les deux CTA : un objectif clos n'accepte plus
+      {/* Même emplacement pour les CTA : un objectif clos n'accepte plus
           d'ajout du jour, il propose d'en relancer un nouveau. La création lit
-          la source par son id (voir CreateGoalScreen). */}
+          la source par son id (voir CreateGoalScreen). Une occurrence close
+          qui a une suite ne se relance pas à la main, la série continue sans
+          elle : une ligne de texte, pas un bouton grisé, que TalkBack lit telle
+          quelle. */}
       <View style={styles.ctaWrap}>
-        {closed ? (
+        {closed && hasSuccessor(goals, goal) ? (
+          <Text style={styles.repeatedLine}>{t('goalDetail.repeatedAutomatically')}</Text>
+        ) : closed ? (
           <Pressable
             style={styles.ctaButton}
             onPress={() => router.push({ pathname: '/create', params: { from: goal.id } })}
@@ -255,6 +261,13 @@ const styles = StyleSheet.create({
     fontSize: 15,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+  },
+  repeatedLine: {
+    fontFamily: fontFamily.bodyRegular,
+    fontSize: 14,
+    color: white(0.5),
+    textAlign: 'center',
+    paddingVertical: 16,
   },
   notFound: {
     fontFamily: fontFamily.bodyRegular,
