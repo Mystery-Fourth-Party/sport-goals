@@ -186,10 +186,11 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!loaded || readFailed) return;
     const now = new Date();
-    // La règle craint une cascade de rendus, or ici l'état est synchronisé avec le jour et le stockage (deux sources
-    // extérieures à React) et la cascade s'arrête au premier passage, puisque
-    // advanceSeries rend alors le même tableau. Le faire dans un microtask
-    // pour contourner la règle n'aurait changé que l'apparence.
+    // La règle craint une cascade de rendus, or ici l'état est synchronisé
+    // avec le jour et le stockage (deux sources extérieures à React) et la
+    // cascade s'arrête au premier passage, puisque advanceSeries rend alors
+    // le même tableau. Le faire dans un microtask pour contourner la règle
+    // n'aurait changé que l'apparence.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setGoals((prev) => advanceSeries(prev, today, now, Crypto.randomUUID));
   }, [goals, loaded, readFailed, today]);
