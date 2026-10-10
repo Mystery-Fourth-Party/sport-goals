@@ -1,7 +1,7 @@
-// L4-04 — le ✓ de la ligne sélectionnée était concaténé au nom de la langue
-// dans le nom accessible de la ligne, faute d'accessibilityLabel explicite
-// sur le Pressable. Même motif que la carte « Archivés » de app/index.tsx,
-// où le chevron avait déjà été écarté de cette façon.
+// Le ✓ de la ligne sélectionnée serait concaténé au nom de la langue dans le
+// nom accessible de la ligne, sans accessibilityLabel explicite sur le
+// Pressable. Même motif que la carte « Archivés » de app/index.tsx, où le
+// chevron est écarté de cette façon.
 import { ReactNode } from 'react';
 import { render, screen, waitFor } from '@testing-library/react-native';
 import LanguageSection from './LanguageSection';

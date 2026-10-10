@@ -1,4 +1,4 @@
-// L1-01 — base de calendrier des dates d'objectif.
+// Base de calendrier des dates d'objectif.
 //
 // getGoalStats compare trois jours : celui de createdAt, celui de deadline,
 // et `today`. Les deux premiers viennent de chaînes ISO écrites par
@@ -19,12 +19,11 @@
 import { getGoalStats, getWeeklyStats, isGoalClosed, todayStr } from './stats';
 import { Goal } from './types';
 
-// Ce que le commentaire ci-dessus décrivait sans que rien ne l'applique :
-// chacun de ces deux tests ne peut rougir que dans une moitié du globe, et
-// passe silencieusement dans l'autre. Sous TZ=UTC — la passe qui porte
-// `--coverage` et fait référence dans ci.yml — les deux passent quoi qu'il
-// arrive. Mesuré le 2026-09-20 en réintroduisant L1-01, `toDayStr` rendu à
-// `iso.slice(0, 10)`, sur ce fichier seul :
+// Sans garde, chacun de ces deux tests ne peut rougir que dans une moitié du
+// globe, et passe silencieusement dans l'autre. Sous TZ=UTC — la passe qui
+// porte `--coverage` et fait référence dans ci.yml — les deux passent quoi
+// qu'il arrive. Mesuré le 2026-09-20 en réintroduisant le défaut de base de
+// calendrier, `toDayStr` rendu à `iso.slice(0, 10)`, sur ce fichier seul :
 //
 //   TZ=UTC     2 passed            les deux passent à vide
 //   TZ=GMT+5   1 failed, 1 passed  à l'est, seul le premier détecte

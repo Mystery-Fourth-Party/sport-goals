@@ -4,7 +4,7 @@ import i18n from './i18n';
 import { DEFAULT_SETTINGS, Settings } from './settingsStorage';
 import { Goal } from './types';
 
-// unitLabel (voir buildBackupPayload) dépend désormais de la langue
+// unitLabel (voir buildBackupPayload) dépend de la langue
 // courante d'i18next — fixée ici pour un test déterministe, indépendant de
 // la langue détectée par défaut dans l'environnement Jest.
 beforeAll(() => i18n.changeLanguage('fr'));
@@ -299,10 +299,10 @@ describe('buildBackupPayload — instantané de stats lisible', () => {
   });
 });
 
-// ─── Branches de validation restées non couvertes (PR B du harnais) ─────
-// isValidEntry/isValidGoal rejetaient déjà ces formes, mais aucune n'était
-// exercée : seules les erreurs de plus haut niveau (fichier, version, unité)
-// avaient un test.
+// ─── Branches de validation : formes malformées ─────────────────────────
+// isValidEntry/isValidGoal rejettent ces formes ; chacune a son test ici,
+// les erreurs de plus haut niveau (fichier, version, unité) étant couvertes
+// plus haut.
 
 describe('parseBackupPayload — formes malformées dans le tableau goals', () => {
   function rejectsGoals(goals: unknown) {
@@ -348,7 +348,7 @@ describe('parseBackupPayload — formes malformées dans le tableau goals', () =
   });
 });
 
-// ─── Validation d'import (L1-04, L1-05, L1-09, L1-12, L2-07, L4-02) ─────
+// ─── Validation d'import ────────────────────────────────────────────────
 //
 // isValidGoal répond « est-ce la bonne forme ». Les règles ci-dessous
 // répondent « est-ce que ça a du sens », et chacune porte son propre
@@ -376,8 +376,8 @@ describe('parseBackupPayload — cohérence des objectifs', () => {
     expect(parseWithGoals(goals)).toEqual({ ok: false, error: i18n.t(key, options) });
   }
 
-  // L1-12 — les deux formulaires imposent déjà une cible strictement
-  // positive ; l'import ne vérifiait que le type.
+  // Les deux formulaires imposent une cible strictement positive ; l'import
+  // l'impose aussi, et pas seulement le type.
   describe('valeur cible', () => {
     it('rejects a target value of zero', () => {
       expectRejection([exportedGoal({ targetValue: 0 })], 'backup.invalidTargetValue');
@@ -407,7 +407,7 @@ describe('parseBackupPayload — cohérence des objectifs', () => {
     });
   });
 
-  // L1-05 — typeof === 'string' laissait passer n'importe quelle chaîne.
+  // typeof === 'string' laisserait passer n'importe quelle chaîne.
   describe('dates', () => {
     it('rejects a createdAt that cannot be parsed as a date', () => {
       expectRejection([exportedGoal({ createdAt: 'pas une date' })], 'backup.invalidGoalDates');
@@ -429,10 +429,10 @@ describe('parseBackupPayload — cohérence des objectifs', () => {
       );
     });
 
-    // Le cas de durée nulle de L1-10, jusqu'ici accepté : il produisait un
-    // objectif dont le statut ne pouvait jamais descendre à « en retard ».
-    // Le garde-fou posé dans stats.ts en PR4 reste en place ; cette règle
-    // ferme la porte en amont plutôt que de le remplacer.
+    // Une échéance égale à la création est une durée nulle, que les
+    // formulaires ne produisent pas. Le garde-fou de durée nulle de stats.ts
+    // (fenêtre d'une seule journée) reste en place ; cette règle ferme la
+    // porte en amont plutôt que de s'y fier.
     it('rejects a deadline equal to createdAt', () => {
       expectRejection(
         [
@@ -480,7 +480,7 @@ describe('parseBackupPayload — cohérence des objectifs', () => {
       });
     });
 
-    // R1 (suite) — le seul contrôle NaN laisse passer tout ce que le moteur
+    // Le seul contrôle NaN laisse passer tout ce que le moteur
     // sait analyser : un nombre nu, un format anglais, une année étendue,
     // un jour impossible qui glisse au mois suivant. Une heure sans zone
     // est lue en heure locale, ce qui rendrait la comparaison avec
@@ -509,7 +509,7 @@ describe('parseBackupPayload — cohérence des objectifs', () => {
     });
   });
 
-  // L1-09 — updateGoal et deleteGoal opèrent par .map/.filter sur l'id
+  // updateGoal et deleteGoal opèrent par .map/.filter sur l'id
   // (voir goals-context.tsx) : deux objectifs au même id sont modifiés ou
   // supprimés ensemble, sans que rien ne le signale.
   describe('identifiants', () => {
@@ -554,9 +554,9 @@ describe('parseBackupPayload — cohérence des objectifs', () => {
     });
   });
 
-  // R1 — isValidEntry ne vérifiait que le type de e.date. Le tri des
+  // isValidEntry ne vérifie que le type de e.date. Le tri des
   // entrées compare des chaînes et calcStreak/getGoalStats lisent le champ
-  // comme un "YYYY-MM-DD" produit par dateStr() : une autre forme cassait
+  // comme un "YYYY-MM-DD" produit par dateStr() : une autre forme casserait
   // l'ordre chronologique sans rien signaler. "2026-02-30" couvre le cas
   // que new Date() ne rejette pas (V8 le fait glisser au 2 mars).
   describe("dates d'entrée", () => {
@@ -583,7 +583,7 @@ describe('parseBackupPayload — cohérence des objectifs', () => {
     });
   });
 
-  // L4-02 — deux entrées à la même date étaient lues de trois façons
+  // Deux entrées à la même date seraient lues de trois façons
   // incompatibles en aval : sommées par getGoalStats, dernière-gagne par
   // calcStreak, première-trouvée par addProgress. Rejet plutôt que
   // réparation : l'app ne sait pas produire ce cas (addProgress fusionne,
@@ -623,9 +623,9 @@ describe('parseBackupPayload — cohérence des objectifs', () => {
   });
 });
 
-// L2-07 — GoalHistoryList fait [...entries].reverse().slice(0, 12) et
+// GoalHistoryList fait [...entries].reverse().slice(0, 12) et
 // RecentSessionsCard .slice(-7) : les deux supposent l'ordre chronologique,
-// que rien ne garantissait pour un fichier importé.
+// que rien ne garantirait pour un fichier importé.
 describe('parseBackupPayload — ordre des entrées', () => {
   function parseWithEntries(entries: unknown[]) {
     const payload = buildBackupPayload([goal], settings, '2026-08-20');

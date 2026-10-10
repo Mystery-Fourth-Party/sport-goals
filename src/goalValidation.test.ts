@@ -50,7 +50,7 @@ describe('parsePositiveNumber', () => {
     expect(parsePositiveNumber('abc')).toBeNull();
   });
 
-  // Le trou de R2 : `Number(x) > 0` laissait passer ces trois saisies.
+  // `Number(x) > 0` laisserait passer ces trois saisies.
   it('rejects values that overflow to Infinity', () => {
     expect(parsePositiveNumber('1e400')).toBeNull();
     expect(parsePositiveNumber('Infinity')).toBeNull();

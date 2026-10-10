@@ -22,9 +22,9 @@ import {
 // 41/j, requis 21/j) — ce test protège contre une régression du portage.
 //
 // Midi UTC et non minuit : startDate/endDate du prototype dénotent des jours
-// calendaires, or getGoalStats en lit désormais le jour *local* (voir toDayStr
-// dans stats.ts). Minuit UTC tombe la veille dès qu'on est à l'ouest d'UTC, ce
-// qui décalait elapsedDays d'un jour. Midi laisse le même jour local partout
+// calendaires, or getGoalStats en lit le jour *local* (voir toDayStr dans
+// stats.ts). Minuit UTC tombe la veille dès qu'on est à l'ouest d'UTC, ce qui
+// décalerait elapsedDays d'un jour. Midi laisse le même jour local partout
 // entre UTC-11 et UTC+11.
 const pompes: Goal = {
   id: '1',
@@ -354,8 +354,8 @@ describe('getGoalStats — seuils de statut et rythme requis', () => {
   });
 });
 
-// ─── Branches restées non couvertes (PR B du harnais) ───────────────────
-// Repérées via le branchMap d'istanbul (coverage-final.json) : la colonne
+// ─── Branches partielles ────────────────────────────────────────────────
+// Le branchMap d'istanbul (coverage-final.json) les signale : la colonne
 // "Uncovered Line #s" du rapport texte ne montre pas les branches partielles
 // sur une ligne par ailleurs exécutée.
 
@@ -392,7 +392,7 @@ describe('getGoalStats — durée nulle', () => {
     expect(Number.isFinite(s.dailyAvg)).toBe(true);
   });
 
-  // Conséquence directe : le statut peut enfin descendre à "late".
+  // Conséquence directe : le statut peut descendre à "late".
   it('lets the status reach late for a zero-duration goal left unfinished', () => {
     const s = getGoalStats(zeroDuration, '2026-08-21');
 
@@ -575,11 +575,11 @@ describe('statusLabel', () => {
   });
 });
 
-// L1-02 — remainingDays est planché à 0, et dailyRequired en dépendait
+// remainingDays est planché à 0, et dailyRequired en dépendrait
 // directement : dès le jour de l'échéance, et tous les jours suivants, le
-// rythme de rattrapage annoncé tombait à 0. Trois composants l'affichent
+// rythme de rattrapage annoncé tomberait à 0. Trois composants l'affichent
 // sans garde-fou (GoalCard, GoalDetailHeader, GoalProgressCard), le
-// quatrième s'en protège déjà (app/weekly.tsx).
+// quatrième s'en protège (app/weekly.tsx).
 describe('getGoalStats — rythme de rattrapage après échéance', () => {
   const enRetard: Goal = {
     id: 'echu',
@@ -615,10 +615,10 @@ describe('getGoalStats — rythme de rattrapage après échéance', () => {
   });
 });
 
-// L1-07 — mostAdvanced et mostBehind sortaient de deux tris indépendants sur
-// la même liste, sans exclusion mutuelle. app/weekly.tsx rend les deux cartes
-// séparément, donc le même objectif pouvait s'afficher deux fois de suite
-// sous deux titres contradictoires.
+// mostAdvanced et mostBehind ne doivent pas sortir de deux tris indépendants
+// sur la même liste, sans exclusion mutuelle. app/weekly.tsx rend les deux
+// cartes séparément, donc le même objectif pourrait s'afficher deux fois de
+// suite sous deux titres contradictoires.
 describe('getWeeklyStats — le plus avancé et le plus en retard', () => {
   // Cet objectif gagne les deux tris à la fois : meilleure progression brute
   // du lot (90 %), et pourtant le plus en retard sur son propre rythme

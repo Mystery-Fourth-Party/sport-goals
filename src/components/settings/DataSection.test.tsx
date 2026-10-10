@@ -1,8 +1,8 @@
-// L4-04 — les deux lignes « Exporter »/« Importer » sont des Pressable avec
-// accessibilityRole="button" mais sans accessibilityLabel : le chevron « › »
-// qu'elles rendent se retrouvait dans ce que le lecteur d'écran annonce.
-// Même motif que la carte « Archivés » de app/index.tsx, où le chevron avait
-// déjà été écarté par un libellé explicite.
+// Les deux lignes « Exporter »/« Importer » sont des Pressable avec
+// accessibilityRole="button" : sans accessibilityLabel explicite, le chevron
+// « › » qu'elles rendent se retrouverait dans ce que le lecteur d'écran
+// annonce. Même motif que la carte « Archivés » de app/index.tsx, où le
+// chevron est écarté par un libellé explicite.
 //
 // Portée de ces tests : ils vérifient que l'attribut existe, pas ce qu'un
 // lecteur d'écran prononce — RNTL ne modélise pas la concaténation des

@@ -180,7 +180,7 @@ describe('updateEntry', () => {
     expect(entry?.value).toBe(20);
   });
 
-  // R2 — la garde `newValue <= 0` laisse passer Infinity (> 0) et NaN
+  // La garde `newValue <= 0` laisse passer Infinity (> 0) et NaN
   // (NaN <= 0 vaut false). La garde de l'écran (parsePositiveNumber) ne
   // couvre que ses propres appels.
   it.each([[Infinity], [NaN]])(
@@ -345,7 +345,7 @@ describe('addProgress', () => {
     expect(entries[0].value).toBe(12);
   });
 
-  // R2 — addProgress ne validait pas amount. Infinity et NaN s'écrivent
+  // addProgress doit valider amount. Infinity et NaN s'écrivent
   // null sur le disque ; -5 retirerait 5 au total du jour ; 0 créerait une
   // entrée à 0, qui fait passer le jour de « pas d'entrée » à « entrée à 0 »
   // pour ongoingGoalsWithoutTodayEntry.
@@ -566,11 +566,10 @@ describe('recordedAt', () => {
   });
 });
 
-// L2-02 et L2-05 : jusqu'ici un échec de lecture ou d'écriture du stockage
-// ne se distinguait de rien du tout. Deux conséquences observables ici :
-// l'app ne doit pas réécrire par-dessus des données qu'elle n'a pas réussi
-// à lire, et un échec doit ressortir quelque part plutôt que de rester dans
-// la console.
+// Un échec de lecture ou d'écriture du stockage doit se distinguer de
+// l'absence de données. Deux conséquences observables ici : l'app ne doit
+// pas réécrire par-dessus des données qu'elle n'a pas réussi à lire, et un
+// échec doit ressortir quelque part plutôt que de rester dans la console.
 //
 // Ces tests passent par les mocks de ./storage (voir le jest.mock en tête de
 // fichier) plutôt que par AsyncStorage : AsyncStorage est déjà un mock
@@ -579,16 +578,16 @@ describe('recordedAt', () => {
 // lui rendent alors son implémentation d'origine, et un détournement fuit
 // sur tous les tests suivants du fichier.
 describe('échecs de persistance', () => {
-  it('does not save over the stored goals after a failed initial read (L2-02)', async () => {
+  it('does not save over the stored goals after a failed initial read', async () => {
     // Lecture en échec alors que le disque contient encore les objectifs de
-    // l'utilisateur : le scénario de L2-02, où l'app affiche « aucun
-    // objectif » par-dessus des données intactes.
+    // l'utilisateur : le scénario où l'app affiche « aucun objectif »
+    // par-dessus des données intactes.
     mockedLoadGoals.mockResolvedValue({ value: [], ok: false });
 
     const { result } = await renderHarness();
     expect(result.current.goals.goals).toEqual([]);
 
-    // La première action de l'utilisateur — c'est elle qui écrasait tout.
+    // La première action de l'utilisateur — c'est elle qui écraserait tout.
     act(() => result.current.goals.createGoal(baseGoal));
     // Laisse passer l'effet de sauvegarde et sa microtâche avant d'affirmer
     // qu'aucune écriture n'a eu lieu.
@@ -597,7 +596,7 @@ describe('échecs de persistance', () => {
     expect(mockedSaveGoals).not.toHaveBeenCalled();
   });
 
-  it('surfaces a failed initial read through the storage status context (L2-02)', async () => {
+  it('surfaces a failed initial read through the storage status context', async () => {
     mockedLoadGoals.mockResolvedValue({ value: [], ok: false });
 
     const { result } = await renderHarness();
@@ -605,7 +604,7 @@ describe('échecs de persistance', () => {
     expect(result.current.status.loadFailed).toBe(true);
   });
 
-  it('surfaces a failed write through the storage status context (L2-05)', async () => {
+  it('surfaces a failed write through the storage status context', async () => {
     const { result } = await renderHarness();
     mockedSaveGoals.mockResolvedValue(false);
 
@@ -627,18 +626,17 @@ describe('échecs de persistance', () => {
   });
 });
 
-// Porte de sortie de l'import, ajoutée après la revue de PR #24 : le blocage
-// posé par readFailed visait les écritures *automatiques* de l'app, pas une
-// restauration de sauvegarde que l'utilisateur a explicitement confirmée
-// (voir le dialogue de confirmDestructive dans DataSection.tsx). Sans cette
-// porte, un import après un échec de lecture s'affichait à l'écran et
-// disparaissait au redémarrage, sans que rien ne le dise.
+// Porte de sortie de l'import : le blocage posé par readFailed vise les
+// écritures *automatiques* de l'app, pas une restauration de sauvegarde que
+// l'utilisateur a explicitement confirmée (voir le dialogue de
+// confirmDestructive dans DataSection.tsx). Sans cette porte, un import après
+// un échec de lecture s'afficherait à l'écran et disparaîtrait au
+// redémarrage, sans que rien ne le dise.
 describe('replaceAllGoals — import explicite', () => {
-  // Chemin courant, sans échec de lecture : jusqu'ici aucun test ne
-  // vérifiait que replaceAllGoals persiste quoi que ce soit (les deux tests
-  // de describe('replaceAllGoals') n'observent que l'état en mémoire). Comme
-  // l'import écrit désormais lui-même au lieu de laisser faire l'effet, ce
-  // cas change aussi : il lui faut son filet.
+  // Chemin courant, sans échec de lecture : les tests de
+  // describe('replaceAllGoals') n'observent que l'état en mémoire, celui-ci
+  // vérifie que replaceAllGoals persiste. Comme l'import écrit lui-même au
+  // lieu de laisser faire l'effet, ce cas a besoin de son propre filet.
   it('persists an ordinary import exactly once', async () => {
     const { result } = await renderHarness();
     const restored: Goal[] = [{ ...baseGoal, id: 'restored-1' }];

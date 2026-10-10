@@ -197,9 +197,9 @@ describe('GoalDetailScreen — objectif clos', () => {
   });
 });
 
-// R2 — handleSave ne gardait que `!value || value <= 0`. Number('1e400')
-// vaut Infinity, qui passe les deux : l'entrée était enregistrée, puis
-// JSON.stringify l'écrivait null, un fichier que l'import rejette en bloc.
+// Un handleSave qui ne garderait que `!value || value <= 0` laisserait passer
+// Number('1e400'), qui vaut Infinity : l'entrée serait enregistrée, puis
+// JSON.stringify l'écrirait null, un fichier que l'import rejette en bloc.
 describe('GoalDetailScreen — valeur de séance hors domaine', () => {
   // Résolus à l'appel et non au chargement du describe : la langue n'est
   // passée en français qu'au beforeAll.
