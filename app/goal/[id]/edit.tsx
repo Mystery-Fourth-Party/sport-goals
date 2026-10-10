@@ -137,8 +137,8 @@ function EditGoalForm({ goal }: { goal: Goal }) {
   const canSave = !titleError && !targetError && !daysError;
 
   // Recalcul en direct du nouveau rythme quotidien requis, comme le calcul
-  // déjà fait dans GoalForm pour la création (voir EditGoalScreen dans le
-  // prototype) — seulement affiché une fois le formulaire valide.
+  // déjà fait dans GoalForm pour la création — seulement affiché une fois le
+  // formulaire valide.
   const remaining = Math.max(0, targetNum - s.actual);
   const newDailyRequired = canSave && daysNum > 0 ? remaining / daysNum : 0;
 

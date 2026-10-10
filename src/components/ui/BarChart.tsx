@@ -32,7 +32,7 @@ interface Props {
 }
 
 // Mini graphique en barres partagé par l'écran Détail ("Dernières séances")
-// et l'écran Résumé hebdomadaire ("Séances par jour") — voir design-tokens.md.
+// et l'écran Résumé hebdomadaire ("Séances par jour").
 export default function BarChart({
   bars,
   height = 64,

@@ -1,6 +1,5 @@
-// Logique de calcul portée depuis le prototype Figma Make
-// (design-reference/stats-logic.ts), adaptée au type Goal réel de
-// sport-goals : `target`/`startDate`/`endDate` du prototype deviennent
+// Logique de calcul portée depuis le prototype Figma Make, adaptée au type
+// Goal réel de sport-goals : `target`/`startDate`/`endDate` du prototype deviennent
 // `targetValue`/`createdAt`/`deadline` (déjà présents sur Goal, voir
 // src/types.ts) plutôt que d'introduire des champs dupliqués. `createdAt`/
 // `deadline` sont des chaînes ISO complètes (`Date.toISOString()`), alors

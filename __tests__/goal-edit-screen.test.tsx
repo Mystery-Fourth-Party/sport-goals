@@ -204,8 +204,8 @@ describe('EditGoalScreen monté avant le chargement des objectifs', () => {
 // makeGoal() porte une séance en km : son unité ne doit plus pouvoir
 // changer, les entries ne portant qu'un nombre qu'on relirait sinon dans
 // une autre grandeur. Verrouillage fonctionnel et annoncé, pas seulement
-// grisé — c'est le reproche déjà fait à d'autres corrections d'affichage
-// de ce dépôt.
+// grisé : une chip seulement estompée resterait pressable au lecteur d'écran
+// (voir le commentaire des chips dans GoalFields.tsx).
 describe('EditGoalScreen — unité verrouillée quand des séances existent', () => {
   it('annonce les chips comme désactivées et ignore un appui', async () => {
     mockedLoadGoals.mockResolvedValue({ value: [makeGoal()], ok: true });

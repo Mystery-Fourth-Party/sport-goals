@@ -15,8 +15,8 @@ import {
   statusSpokenLabel,
 } from './stats';
 
-// Objectif "1000 Pompes" du prototype Figma Make (design-reference/figma-make-source.tsx,
-// SAMPLE_GOALS[0]), avec startDate/endDate portés sur createdAt/deadline (ISO complet).
+// Objectif "1000 Pompes" du prototype Figma Make, avec startDate/endDate
+// portés sur createdAt/deadline (ISO complet).
 // Les résultats attendus ci-dessous ont été relevés en explorant le prototype publié
 // le 21/08/2026 (écran Détail : 770/1000, 77%, attendu 63%, streak 20, rythme actuel
 // 41/j, requis 21/j) — ce test protège contre une régression du portage.

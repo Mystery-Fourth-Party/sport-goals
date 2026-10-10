@@ -65,9 +65,9 @@ export interface Goal {
 // voir src/i18n/locales/*.json), résolu via t() aux points d'usage plutôt
 // que par une table statique ici.
 
-// Icône par unité (voir design-tokens.md § Composants réutilisables —
-// GoalCard). Purement visuel, ici plutôt que dans theme.ts : c'est une
-// table totale sur `Unit`, comme les clés de traduction unit.* ci-dessus.
+// Icône par unité, affichée sur les cartes et les lignes d'objectif.
+// Purement visuel, ici plutôt que dans theme.ts : c'est une table totale sur
+// `Unit`, comme les clés de traduction unit.* ci-dessus.
 export const UNIT_ICONS: Record<Unit, string> = {
   reps: '💪',
   km: '🏃',

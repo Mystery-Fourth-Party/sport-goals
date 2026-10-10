@@ -474,8 +474,8 @@ describe('rescheduleDailyReminder — cycle de vie du rappel', () => {
     expect(mockedSchedule).toHaveBeenCalledTimes(1);
   });
 
-  // Option B retenue : un seul envoi, dont le contenu est régénéré à chaque
-  // reprogrammation. Pas de seconde notification dédiée au streak.
+  // Un seul envoi, dont le contenu est régénéré à chaque reprogrammation. Pas
+  // de seconde notification dédiée au streak.
   it('carries the streak wording in the single recurring reminder, without a second notification', async () => {
     const withStreak = makeGoal({
       id: '1',

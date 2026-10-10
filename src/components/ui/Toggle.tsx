@@ -16,8 +16,7 @@ const TRACK_HEIGHT = 28;
 const THUMB_SIZE = 20;
 const THUMB_MARGIN = 4;
 
-// Switch on/off custom (orange de marque quand actif), voir GoalCard/
-// SettingsScreen dans le prototype pour l'usage.
+// Switch on/off custom (orange de marque quand actif).
 export default function Toggle({ value, onChange, accessibilityLabel }: Props) {
   // useState (initialiseur paresseux) plutôt que useRef : on veut une
   // Animated.Value stable entre les rendus, sans jamais appeler de setter —

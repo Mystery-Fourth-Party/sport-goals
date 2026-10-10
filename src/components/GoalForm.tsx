@@ -60,7 +60,7 @@ export default function GoalForm({ onCreate, initialValues }: Props) {
   const canSubmit = !titleError && !targetValueError && !durationError;
 
   // Rythme quotidien requis affiché en direct dès que les 3 champs sont
-  // valides (voir design-tokens.md § Création : "calcule les dates").
+  // valides.
   const targetNum = targetValueNum ?? 0;
   const daysNum = durationDaysValue ?? 0;
   const dailyAvg = canSubmit ? targetNum / daysNum : 0;

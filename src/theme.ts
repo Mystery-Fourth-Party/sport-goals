@@ -1,6 +1,6 @@
-// Design system partagé, porté depuis design-reference/design-tokens.md
-// (extrait de src/index.css du prototype Figma Make). Le prototype est en
-// Tailwind/web ; ici, valeurs concrètes pour StyleSheet React Native.
+// Design system partagé, porté depuis les design tokens du prototype Figma
+// Make (extraits de son index.css). Le prototype est en Tailwind/web ; ici,
+// valeurs concrètes pour StyleSheet React Native.
 import { useFonts } from 'expo-font';
 import {
   BarlowCondensed_400Regular,
@@ -18,9 +18,10 @@ import {
 import { Status } from './stats';
 
 // ─── Couleurs ─────────────────────────────────────────────────────────────
-// Valeurs telles que listées dans design-tokens.md (--color-*). Note : la
-// barre de progression du statut "dans les temps" utilise l'orange de marque
-// (`brand`), pas le bleu du badge — voir la table "Statuts → couleurs".
+// Valeurs telles que listées dans les design tokens du prototype
+// (--color-*). Note : la barre de progression du statut "dans les temps"
+// utilise l'orange de marque (`brand`), pas le bleu du badge — voir
+// statusColors plus bas.
 
 export const colors = {
   appBg: '#0E0E12',
@@ -54,9 +55,10 @@ export function withAlpha(hex: string, alpha: number): string {
 
 // ─── Statuts → couleurs ─────────────────────────────────────────────────
 // Le prototype distingue des teintes -400 (texte) / -500 (fond) par statut
-// Tailwind ; design-tokens.md ne donne qu'une valeur par statut, donc on la
-// réutilise pour badge/texte/barre plutôt que d'inventer des tons non
-// vérifiés — seule la barre "dans les temps" dévie (orange de marque).
+// Tailwind ; ses design tokens ne donnent qu'une valeur par statut, donc on
+// la réutilise pour badge/texte/barre plutôt que d'inventer des tons que le
+// prototype ne définit pas — seule la barre "dans les temps" dévie (orange de
+// marque).
 export interface StatusPalette {
   badgeBg: string;
   badgeText: string;
