@@ -62,6 +62,8 @@
   },
   "jest": {
     "preset": "jest-expo",
+    "//": "testTimeout : le premier rendu de chaque fichier d'écran charge et transforme à froid les composants de React Native, 2 à 3 s mesurés, 7 s sur une machine saturée avec la couverture. 15 s laissent la marge sans masquer un test qui bloque vraiment.",
+    "testTimeout": 15000,
     "setupFiles": [
       "<rootDir>/jest.setup.js"
     ],
