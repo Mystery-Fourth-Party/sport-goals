@@ -28,11 +28,11 @@ export function maxRemainingDays(elapsedDays: number): number {
 //
 // Le nombre entier est exigé, pas seulement une valeur positive : les deux
 // écrans construisent la deadline avec `date.setDate(date.getDate() + n)`,
-// et setDate tronque la fraction. Une durée de 0.5 passait donc le contrôle
-// `Number(x) > 0` et produisait une échéance le jour même — un objectif de
-// durée nulle, que getGoalStats affiche "en avance" (expectedProgress forcé
-// à 0). C'est le cas C4 du jeu de test, qu'on croyait atteignable seulement
-// par un import.
+// et setDate tronque la fraction. Une durée de 0.5 passerait donc un simple
+// contrôle `Number(x) > 0` et produirait une échéance le jour même — un
+// objectif de durée nulle, que getGoalStats traite comme une fenêtre d'une
+// seule journée (100 % attendu dès ce jour) alors que l'utilisateur croit
+// avoir saisi une durée valide.
 export function parseDurationDays(raw: string): number | null {
   const trimmed = raw.trim();
   if (trimmed === '') return null;

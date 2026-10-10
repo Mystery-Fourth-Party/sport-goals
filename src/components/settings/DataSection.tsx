@@ -40,9 +40,11 @@ export default function DataSection() {
 
     try {
       if (Platform.OS === 'web') {
-        // expo-sharing n'a pas d'équivalent web (comme expo-notifications) :
-        // déclenche un téléchargement via un <a download> créé et cliqué par
-        // script, jamais monté dans le JSX.
+        // expo-sharing n'offre pas d'équivalent web fiable : son module web
+        // repose sur navigator.share, réservé à HTTPS et absent de certains
+        // navigateurs (il lève alors UnavailabilityError). On déclenche donc
+        // un téléchargement via un <a download> créé et cliqué par script,
+        // jamais monté dans le JSX.
         const blob = new Blob([json], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');

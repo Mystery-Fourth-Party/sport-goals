@@ -1,4 +1,4 @@
-// Premier test d'écran du dépôt. Il ne peut pas être colocalisé à côté de
+// Test de l'écran d'édition. Il ne peut pas être colocalisé à côté de
 // app/goal/[id]/edit.tsx : le require.context d'expo-router
 // (node_modules/expo-router/_ctx.js) n'exclut que les fichiers `+api` et
 // `+html`, donc tout autre fichier de app/ devient une route — un

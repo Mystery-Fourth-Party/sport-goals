@@ -18,9 +18,10 @@ const OPTIONS: LanguageOption[] = [
 ];
 
 // 3 choix (Français/English/Système), même esprit visuel (carte + lignes)
-// que NotificationsSection/DataSection. "Français"/"English" ne sont pas
-// traduits via t() : le nom d'une langue s'affiche conventionnellement dans
-// cette langue elle-même, pas dans la langue courante de l'app.
+// que NotificationsSection/DataSection. "Français"/"English" passent par t()
+// comme le reste mais valent la même chaîne dans les deux locales : le nom
+// d'une langue s'affiche conventionnellement dans cette langue elle-même,
+// pas dans la langue courante de l'app. "Système", lui, est traduit.
 export default function LanguageSection() {
   const { t } = useTranslation();
   const { settings, updateSettings } = useSettings();

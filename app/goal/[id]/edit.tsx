@@ -65,15 +65,15 @@ export default function EditGoalScreen() {
   return <EditGoalForm key={goal.id} goal={goal} />;
 }
 
-// Composant séparé, et non un bloc de plus dans la route : ses six champs
-// sont initialisés par des initialiseurs useState lisant `goal`, or un
-// initialiseur ne s'évalue qu'au premier rendu du composant. Tant que
-// l'écran était un composant unique monté dès l'arrivée sur la route, ce
-// premier rendu précédait la résolution de loadGoals et l'état restait figé
-// sur '' / 'reps' / '1' pour toute la vie de l'écran — un enregistrement
-// écrasait alors targetValue, unit et deadline (L3-01). Ici `goal` est
-// présent parce que la route ne monte pas ce composant autrement, et le
-// type le dit plutôt que de le laisser à une convention.
+// Composant séparé, et non un bloc de plus dans la route : ses champs de
+// saisie sont initialisés par des initialiseurs useState lisant `goal`, or un
+// initialiseur ne s'évalue qu'au premier rendu du composant. Monté dès
+// l'arrivée sur la route, ce premier rendu précéderait la résolution de
+// loadGoals et l'état resterait figé sur '' / 'reps' / '1' pour toute la vie
+// de l'écran — un enregistrement écraserait alors targetValue, unit et
+// deadline. Ici `goal` est présent parce que la route ne monte pas ce
+// composant autrement, et le type le dit plutôt que de le laisser à une
+// convention.
 function EditGoalForm({ goal }: { goal: Goal }) {
   const { t } = useTranslation();
   const { updateGoal } = useGoals();
@@ -92,9 +92,9 @@ function EditGoalForm({ goal }: { goal: Goal }) {
   const [unit, setUnit] = useState<Unit>(goal.unit);
   const [days, setDays] = useState(String(Math.max(1, s.remainingDays)));
   const [saveAttempted, setSaveAttempted] = useState(false);
-  // absent = true (voir types.ts) — reflété tel quel plutôt que normalisé,
-  // pour ne pas introduire de valeur inventée pour un objectif qui n'avait
-  // jamais explicitement ce champ.
+  // absent = true (voir types.ts) : la saisie part de true pour un objectif
+  // sans ce champ, et handleSave l'écrit toujours. Enregistrer un tel objectif
+  // lui donne donc reminderEnabled: true, équivalent à l'absence à l'usage.
   const [reminderEnabled, setReminderEnabled] = useState(goal.reminderEnabled ?? true);
   const [reminderTime, setReminderTime] = useState<string | undefined>(goal.reminderTime);
   const [remindAfterReached, setRemindAfterReached] = useState(goal.remindAfterReached ?? false);

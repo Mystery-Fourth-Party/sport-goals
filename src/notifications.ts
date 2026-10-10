@@ -8,12 +8,12 @@
 // `scheduleNotificationAsync` (node_modules/expo-notifications/build/
 // NotificationScheduler.js, résolu à la place de la version .native sur
 // web, est un stub vide) — l'appeler y lève une UnavailabilityError. Donc
-// rien de ce qui programme/déclenche une notification n'est vérifiable
-// depuis l'aperçu navigateur de ce projet ; seule la logique pure ci-dessous
-// (parseReminderTime, ongoingGoalsWithoutTodayEntry,
-// buildReminderContent) est testée (voir notifications.test.ts). Le reste
-// n'a été vérifié que par lecture du code source du SDK, pas par exécution
-// réelle sur appareil/simulateur — à tester sur un vrai build avant mise en prod.
+// rien de ce qui programme/déclenche une notification n'est observable
+// depuis l'aperçu navigateur de ce projet. La logique pure ci-dessous
+// (parseReminderTime, ongoingGoalsWithoutTodayEntry, buildReminderContent)
+// est testée sous Jest, et l'orchestration (rescheduleDailyReminder) avec
+// expo-notifications mocké (voir notifications.test.ts) ; la programmation
+// réelle se constate sur un build EAS.
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import type { TFunction } from 'i18next';
@@ -198,10 +198,10 @@ export interface RescheduleOptions {
 // trigger DAILY est figé, la variante « série en danger » ne peut donc pas
 // se recalculer toute seule d'un jour sur l'autre. Elle est régénérée à
 // chaque appel de cette fonction, c'est-à-dire à chaque fois que l'app
-// tourne (voir ReminderScheduler). Un seul envoi porte les deux messages,
-// générique et personnalisé — pas de seconde notification dédiée au streak,
-// qui ferait arriver deux notifications au même horaire précisément le jour
-// où une série est en jeu.
+// tourne (voir ReminderScheduler). Un seul envoi, dont le contenu est soit
+// le message générique, soit la variante « série en danger » — pas de
+// seconde notification dédiée au streak, qui ferait arriver deux
+// notifications au même horaire précisément le jour où une série est en jeu.
 //
 // Ordre des étapes : toute validation susceptible d'échouer passe AVANT
 // l'annulation. Annuler d'abord, comme avant, détruisait un rappel valide

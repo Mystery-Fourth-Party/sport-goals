@@ -116,8 +116,9 @@ export function roundProgress(progress: number): number {
 }
 
 // Cible atteinte ou dépassée, que l'objectif soit clos ou non. Lu par le
-// rappel quotidien (ongoingGoalsWithoutTodayEntry) et par la détection du
-// franchissement de 100 % (addProgress).
+// rappel quotidien (ongoingGoalsWithoutTodayEntry), par la détection du
+// franchissement de 100 % (addProgress) et par la bannière « presque là » de
+// l'écran Détail.
 export function isSuccessStatus(status: Status): boolean {
   return status === 'reached' || status === 'exceeded';
 }
@@ -150,11 +151,12 @@ export function getGoalStats(goal: Goal, today: string): GoalStats {
   // Le plafonnement visuel de la barre de progression vit dans ProgressBar
   // (largeur à l'écran), pas dans ce calcul.
   const progress = goal.targetValue > 0 ? actual / goal.targetValue : 0;
-  // Sur une durée nulle (createdAt === deadline, atteignable par import),
-  // la fenêtre tient dans une seule journée : elle est entièrement écoulée
-  // dès que ce jour est arrivé, donc 100 % est attendu. Le repli à 0
-  // rendait le statut "late" inatteignable quelle que soit la progression
-  // réelle (L1-10).
+  // Sur une durée nulle (createdAt et deadline au même jour local, ce que
+  // l'import accepte : backup.ts rejette l'égalité stricte mais pas un écart
+  // de quelques heures), la fenêtre tient dans une seule journée : elle est
+  // entièrement écoulée dès que ce jour est arrivé, donc 100 % est attendu.
+  // Un repli à 0 rendrait le statut "late" inatteignable quelle que soit la
+  // progression réelle.
   const expectedProgress =
     totalDays > 0 ? elapsedDays / totalDays : diffDays(start, todayDate) >= 0 ? 1 : 0;
   // Plancher à 0 : au-delà de la cible (ou sur une cible nulle) la

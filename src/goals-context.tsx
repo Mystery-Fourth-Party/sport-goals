@@ -298,8 +298,9 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
     );
   }
 
-  // Partial<Goal> : les écrans n'envoient que les champs édités (title,
-  // targetValue, unit, deadline), entries et id restent inchangés.
+  // Partial<Goal> : les écrans n'envoient que les champs qu'ils éditent
+  // (titre, cible, unité, échéance, réglages de rappel, coche de répétition),
+  // entries et id restent inchangés.
   function updateGoal(goalId: string, updates: Partial<Goal>) {
     const seriesId = Crypto.randomUUID();
     setGoals((prev) =>

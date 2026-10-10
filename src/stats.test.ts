@@ -359,15 +359,15 @@ describe('getGoalStats — seuils de statut et rythme requis', () => {
 // "Uncovered Line #s" du rapport texte ne montre pas les branches partielles
 // sur une ligne par ailleurs exécutée.
 
-// L1-10 — createdAt === deadline : totalDays vaut 0. Les deux divisions par
-// totalDays retombaient alors sur une garde à 0, ce qui rendait le statut
-// "late" inatteignable quelle que soit la progression réelle, et annonçait
-// une moyenne quotidienne requise nulle. Atteignable par import (cas C4 du
-// jeu de test) ; plus depuis les formulaires depuis la PR #19.
-//
-// Ce bloc remplace un test écrit pendant le harnais de couverture (PR #21)
-// qui figeait expectedProgress et dailyAvg à 0 — c'est-à-dire qui
-// verrouillait ce défaut. Voir le corps de la PR pour le détail.
+// Durée nulle — createdAt et deadline au même jour local : totalDays vaut 0.
+// Si les deux divisions par totalDays retombaient sur une garde à 0, le
+// statut "late" serait inatteignable quelle que soit la progression réelle,
+// et la moyenne quotidienne requise serait nulle. Seul un import peut
+// produire ce cas (deux instants du même jour local : backup.ts rejette
+// l'égalité stricte mais pas un écart de quelques heures) ; les formulaires
+// l'excluent (durée entière d'au moins 1 jour, voir parseDurationDays).
+// Figer expectedProgress et dailyAvg à 0 verrouillerait ce défaut : les tests
+// ci-dessous exigent 100 % attendu et la cible entière due dans la journée.
 describe('getGoalStats — durée nulle', () => {
   const zeroDuration: Goal = {
     id: 'zero-duration',

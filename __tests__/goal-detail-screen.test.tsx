@@ -1,16 +1,16 @@
-// Garde de chargement de l'écran Détail — hors tri, repérée en marge de la
-// revue de PR3 (L3-01).
+// Garde de chargement de l'écran Détail.
 //
-// GoalDetailScreen fait goals.find(...) puis affiche « Objectif introuvable »
-// dès que le résultat est undefined, sans lire le booléen `loaded` que
-// GoalsProvider expose pourtant. Si l'écran monte avant que loadGoals ait
-// résolu — lien profond, notification, ou tap rapide après un démarrage à
-// froid — `goals` vaut encore [], donc l'écran annonce un objectif
-// introuvable qui existe très bien, avant de basculer sur le vrai contenu.
+// GoalDetailScreen lit le booléen `loaded` que GoalsProvider expose avant
+// d'afficher « Objectif introuvable ». Si l'écran monte avant que loadGoals
+// ait résolu — lien profond, notification, ou tap rapide après un démarrage
+// à froid — `goals` vaut encore [] : sans cette garde, l'écran annoncerait un
+// objectif introuvable alors qu'il existe, avant de basculer sur le vrai
+// contenu.
 //
-// Contrairement à L3-01, rien n'est perdu ici : c'est un faux message
-// transitoire, pas un écrasement de données. D'où une simple garde, sans le
-// key/remount de PR3 — cet écran n'a aucun useState initialisé depuis `goal`.
+// Rien ne se perd si la garde manque : c'est un faux message transitoire,
+// pas un écrasement de données. D'où une simple garde, sans le key/remount
+// de l'écran d'édition — cet écran n'a aucun useState initialisé depuis
+// `goal`.
 import { useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';

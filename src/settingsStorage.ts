@@ -28,10 +28,11 @@ export type BackupSettings = Pick<Settings, 'dailyReminder' | 'reminderTime'>;
 // dailyReminder/goalReachedNotifs démarrent désactivés (opt-in), contrairement
 // au prototype (qui les avait à true, mais sans vraies notifications
 // derrière). Maintenant qu'ils déclenchent de vraies notifications système,
-// les laisser à true par défaut demanderait la permission dès le premier
-// lancement de l'app (ReminderScheduler tourne en fond dès que dailyReminder
-// est actif) — l'inverse de ce qu'on veut (demander au moment où
-// l'utilisateur active le toggle, voir NotificationsSection). almostThereNotifs
+// les laisser à true par défaut ferait demander la permission sans geste de
+// l'utilisateur : dès le premier lancement pour dailyReminder
+// (ReminderScheduler tourne en fond dès qu'il est actif), au premier objectif
+// atteint pour goalReachedNotifs — l'inverse de ce qu'on veut (demander au
+// moment où l'utilisateur active le toggle, voir NotificationsSection). almostThereNotifs
 // ne pilote qu'une bannière in-app (aucune permission requise) et
 // streakAlert ne fait que changer le contenu du rappel quotidien une fois
 // que celui-ci est déjà actif : les deux peuvent rester à true sans ce souci.
