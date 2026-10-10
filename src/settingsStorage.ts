@@ -3,7 +3,8 @@ import type { LoadResult } from './storage';
 
 export interface Settings {
   dailyReminder: boolean;
-  // "HH:mm", éditée en texte libre (pas de vrai time picker pour l'instant).
+  // "HH:mm". Saisie via TimeField : un sélecteur natif sur iOS/Android, un
+  // champ texte libre sur le web seulement (voir NotificationsSection).
   reminderTime: string;
   goalReachedNotifs: boolean;
   // Pilote la bannière "Presque là !" de l'écran Détail (voir
@@ -27,10 +28,11 @@ export type BackupSettings = Pick<Settings, 'dailyReminder' | 'reminderTime'>;
 // dailyReminder/goalReachedNotifs démarrent désactivés (opt-in), contrairement
 // au prototype (qui les avait à true, mais sans vraies notifications
 // derrière). Maintenant qu'ils déclenchent de vraies notifications système,
-// les laisser à true par défaut demanderait la permission dès le premier
-// lancement de l'app (ReminderScheduler tourne en fond dès que dailyReminder
-// est actif) — l'inverse de ce qu'on veut (demander au moment où
-// l'utilisateur active le toggle, voir app/settings.tsx). almostThereNotifs
+// les laisser à true par défaut ferait demander la permission sans geste de
+// l'utilisateur : dès le premier lancement pour dailyReminder
+// (ReminderScheduler tourne en fond dès qu'il est actif), au premier objectif
+// atteint pour goalReachedNotifs — l'inverse de ce qu'on veut (demander au
+// moment où l'utilisateur active le toggle, voir NotificationsSection). almostThereNotifs
 // ne pilote qu'une bannière in-app (aucune permission requise) et
 // streakAlert ne fait que changer le contenu du rappel quotidien une fois
 // que celui-ci est déjà actif : les deux peuvent rester à true sans ce souci.

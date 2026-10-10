@@ -1,4 +1,4 @@
-// Premier test d'écran du dépôt. Il ne peut pas être colocalisé à côté de
+// Test de l'écran d'édition. Il ne peut pas être colocalisé à côté de
 // app/goal/[id]/edit.tsx : le require.context d'expo-router
 // (node_modules/expo-router/_ctx.js) n'exclut que les fichiers `+api` et
 // `+html`, donc tout autre fichier de app/ devient une route — un
@@ -204,8 +204,8 @@ describe('EditGoalScreen monté avant le chargement des objectifs', () => {
 // makeGoal() porte une séance en km : son unité ne doit plus pouvoir
 // changer, les entries ne portant qu'un nombre qu'on relirait sinon dans
 // une autre grandeur. Verrouillage fonctionnel et annoncé, pas seulement
-// grisé — c'est le reproche déjà fait à d'autres corrections d'affichage
-// de ce dépôt.
+// grisé : une chip seulement estompée resterait pressable au lecteur d'écran
+// (voir le commentaire des chips dans GoalFields.tsx).
 describe('EditGoalScreen — unité verrouillée quand des séances existent', () => {
   it('annonce les chips comme désactivées et ignore un appui', async () => {
     mockedLoadGoals.mockResolvedValue({ value: [makeGoal()], ok: true });
@@ -277,10 +277,10 @@ describe('EditGoalScreen — unité verrouillée quand des séances existent', (
   });
 });
 
-// L4-01 — t('editGoal.remainingToComplete', ...) mélangeait dans le même
-// appel un `unit` brut (non traduit) et un `unitLabel` correctement traduit,
-// pour une clé qui vaut « {{unit}}/jour · encore {{value}} {{unitLabel}} à
-// accomplir ». Rendu : « reps/jour · encore 5 répétitions à accomplir ».
+// t('editGoal.remainingToComplete', ...) ne doit pas mélanger dans le même
+// appel un `unit` brut (non traduit) et un `unitLabel` traduit, pour une clé
+// qui vaut « {{unit}}/jour · encore {{value}} {{unitLabel}} à accomplir ».
+// Rendu fautif : « reps/jour · encore 5 répétitions à accomplir ».
 //
 // L'unité du fixture est volontairement 'min' : c'est, avec 'h', la seule
 // dont le libellé diffère de sa clé technique dans les *deux* langues
@@ -312,9 +312,10 @@ describe('EditGoalScreen — libellé du rythme restant', () => {
   });
 });
 
-// R2 — la cible n'était gardée que par `targetNum > 0`. Number('1e400')
-// vaut Infinity, qui passe : l'objectif était enregistré avec une cible que
-// JSON.stringify écrit null, et l'import rejette alors tout le fichier.
+// Une cible gardée par le seul `targetNum > 0` laisserait passer
+// Number('1e400'), qui vaut Infinity : l'objectif serait enregistré avec une
+// cible que JSON.stringify écrit null, et l'import rejetterait tout le
+// fichier.
 describe('EditGoalScreen — cible hors domaine', () => {
   it('refuse une cible qui déborde en Infinity', async () => {
     mockedLoadGoals.mockResolvedValue({ value: [makeGoal()], ok: true });

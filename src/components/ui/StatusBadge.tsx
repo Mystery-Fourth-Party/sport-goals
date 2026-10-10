@@ -6,7 +6,7 @@ interface Props {
   status: Status;
 }
 
-// Pill de statut coloré (voir design-tokens.md § Statuts → couleurs).
+// Pill de statut coloré (couleurs : statusColors dans theme.ts).
 export default function StatusBadge({ status }: Props) {
   const palette = statusColors[status];
   return (

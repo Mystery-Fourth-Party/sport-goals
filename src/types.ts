@@ -18,6 +18,11 @@ export interface Entry {
   recordedAt?: string;
 }
 
+// Les champs optionnels ci-dessous suivent la convention « absent = valeur
+// par défaut » : la sauvegarde les recopie telle quelle (voir BackupGoal et
+// isValidGoal dans backup.ts) et la relance d'un objectif les reprend (voir
+// goalToFormValues dans goalFormValues.ts). Un nouveau champ optionnel
+// s'ajoute aussi à ces deux endroits.
 export interface Goal {
   id: string;
   title: string;
@@ -31,7 +36,9 @@ export interface Goal {
   // compteur `currentValue` séparé : une seule source de vérité.
   // `createdAt`/`deadline` font déjà office de startDate/endDate (voir
   // stats.ts) : pas de champs dédiés supplémentaires pour éviter de
-  // dupliquer la même information sous deux noms différents.
+  // dupliquer la même information sous deux noms différents. L'ordre est
+  // chronologique, sur quoi s'appuient GoalHistoryList et RecentSessionsCard :
+  // l'import trie les entrées (voir parseBackupPayload dans backup.ts).
   entries: Entry[];
   // "HH:mm" — absent = hérite de settings.reminderTime (voir
   // notifications.ts, groupPendingGoalsByReminderTime).
@@ -61,13 +68,13 @@ export interface Goal {
 }
 
 // Le libellé affiché à la place des clés techniques ('reps', 'km'...) vit
-// désormais dans les traductions (clés unit.reps/unit.km/unit.min/unit.h,
+// dans les traductions (clés unit.reps/unit.km/unit.min/unit.h,
 // voir src/i18n/locales/*.json), résolu via t() aux points d'usage plutôt
 // que par une table statique ici.
 
-// Icône par unité (voir design-tokens.md § Composants réutilisables —
-// GoalCard). Purement visuel, ici plutôt que dans theme.ts : c'est une
-// table totale sur `Unit`, comme les clés de traduction unit.* ci-dessus.
+// Icône par unité, affichée sur les cartes et les lignes d'objectif.
+// Purement visuel, ici plutôt que dans theme.ts : c'est une table totale sur
+// `Unit`, comme les clés de traduction unit.* ci-dessus.
 export const UNIT_ICONS: Record<Unit, string> = {
   reps: '💪',
   km: '🏃',

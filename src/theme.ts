@@ -1,6 +1,6 @@
-// Design system partagé, porté depuis design-reference/design-tokens.md
-// (extrait de src/index.css du prototype Figma Make). Le prototype est en
-// Tailwind/web ; ici, valeurs concrètes pour StyleSheet React Native.
+// Design system partagé, porté depuis les design tokens du prototype Figma
+// Make (extraits de son index.css). Le prototype est en Tailwind/web ; ici,
+// valeurs concrètes pour StyleSheet React Native.
 import { useFonts } from 'expo-font';
 import {
   BarlowCondensed_400Regular,
@@ -18,9 +18,10 @@ import {
 import { Status } from './stats';
 
 // ─── Couleurs ─────────────────────────────────────────────────────────────
-// Valeurs telles que listées dans design-tokens.md (--color-*). Note : la
-// barre de progression du statut "dans les temps" utilise l'orange de marque
-// (`brand`), pas le bleu du badge — voir la table "Statuts → couleurs".
+// Valeurs telles que listées dans les design tokens du prototype
+// (--color-*). Note : la barre de progression du statut "dans les temps"
+// utilise l'orange de marque (`brand`), pas le bleu du badge — voir
+// statusColors plus bas.
 
 export const colors = {
   appBg: '#0E0E12',
@@ -54,9 +55,10 @@ export function withAlpha(hex: string, alpha: number): string {
 
 // ─── Statuts → couleurs ─────────────────────────────────────────────────
 // Le prototype distingue des teintes -400 (texte) / -500 (fond) par statut
-// Tailwind ; design-tokens.md ne donne qu'une valeur par statut, donc on la
-// réutilise pour badge/texte/barre plutôt que d'inventer des tons non
-// vérifiés — seule la barre "dans les temps" dévie (orange de marque).
+// Tailwind ; ses design tokens ne donnent qu'une valeur par statut, donc on
+// la réutilise pour badge/texte/barre plutôt que d'inventer des tons que le
+// prototype ne définit pas — seule la barre "dans les temps" dévie (orange de
+// marque).
 export interface StatusPalette {
   badgeBg: string;
   badgeText: string;
@@ -131,11 +133,11 @@ export const fontFamily = {
   bodyBold: 'Outfit_700Bold',
 } as const;
 
-// Charge les polices Google Fonts nécessaires au design system. Ce hook
-// n'est pas encore appelé depuis App.tsx (hors scope de cette étape) ;
-// l'appelant doit gérer l'état de chargement (ex: ne rien rendre / garder
-// le splash screen tant que `fontsLoaded` est false), voir la doc Expo
-// SDK 57 sur expo-font pour le pattern recommandé.
+// Charge les polices Google Fonts nécessaires au design system. Appelé une
+// seule fois, par RootLayout (app/_layout.tsx), qui gère l'état de
+// chargement : il ne rend rien et garde le splash screen tant que
+// `fontsLoaded` est false. Voir la doc Expo SDK 57 sur expo-font pour le
+// pattern recommandé.
 export function useAppFonts() {
   return useFonts({
     BarlowCondensed_400Regular,

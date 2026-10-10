@@ -1,5 +1,5 @@
 // Export/import local des données (objectifs + rappel quotidien), au format JSON —
-// pas de backend pour ce projet (voir app/settings.tsx pour le partage/
+// pas de backend pour ce projet (voir DataSection pour le partage/
 // téléchargement et la sélection de fichier). Logique pure ici, testable
 // sans module natif (même approche que notifications.ts) : construction et
 // validation du payload uniquement, aucun accès fichier/AsyncStorage.
@@ -51,8 +51,8 @@ export interface BackupPayload {
 // L'instantané de stats n'est jamais réimporté (voir parseBackupPayload),
 // mais le fichier est destiné à être ouvert et exploité tel quel — une somme
 // de décimales accumulée en flottant s'y écrivait brute
-// ("actual": 12.399999999999999 pour 5.3 + 4.1 + 3, constaté sur un export
-// réel). Arrondi ici seulement, pas dans stats.ts : le calcul interne doit
+// ("actual": 12.399999999999999 pour 5.3 + 4.1 + 3 en flottant, constaté sur
+// un export de l'app). Arrondi ici seulement, pas dans stats.ts : le calcul interne doit
 // rester exact. 4 décimales, assez pour rester fidèle aux ratios (progress,
 // expectedProgress) sans laisser d'artefact binaire.
 function roundStat(value: number): number {
@@ -152,8 +152,8 @@ const ISO_TIME_SUFFIX_PATTERN = /^(T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{
 
 // Vrai pour "YYYY-MM-DD" dont le jour existe, suivi en option d'une heure
 // zonée. C'est la forme que toISOString() écrit dans createdAt et deadline
-// (GoalForm.tsx, app/goal/[id]/edit.tsx), la seule que l'app ait jamais
-// écrite dans ces champs. Le jour passe par l'aller-retour de
+// (GoalForm.tsx, app/goal/[id]/edit.tsx, src/series.ts), la seule que l'app
+// écrive dans ces champs. Le jour passe par l'aller-retour de
 // isCanonicalDateStr : le motif seul n'écarte pas "2026-02-30". La zone est
 // exigée dès qu'une heure est présente : sans elle, la chaîne est lue en
 // heure locale et la comparaison avec createdAt dépendrait du fuseau de la
@@ -203,6 +203,8 @@ function isValidGoal(value: unknown): value is RawGoal {
   return true;
 }
 
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
 // Cohérence des objectifs, après isValidGoal. Les deux passes répondent à
 // deux questions distinctes : isValidGoal à « est-ce la bonne forme »,
 // celle-ci à « est-ce que ça a du sens ». Séparées parce qu'isValidGoal est
@@ -218,19 +220,17 @@ function isValidGoal(value: unknown): value is RawGoal {
 // sanitizeSettings plus bas.
 //
 // Renvoie le message de la première règle violée, ou null si tout passe.
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
-
 function findGoalInconsistency(goals: RawGoal[]): string | null {
   const seenIds = new Set<string>();
 
   for (const g of goals) {
-    // L1-09 — updateGoal et deleteGoal opèrent par .map/.filter sur l'id :
+    // updateGoal et deleteGoal opèrent par .map/.filter sur l'id :
     // deux objectifs au même id sont modifiés ou supprimés ensemble, sans
     // que rien ne le signale à l'écran.
     if (seenIds.has(g.id)) return i18n.t('backup.duplicateGoalIds');
     seenIds.add(g.id);
 
-    // L1-12 — Number.isFinite et pas seulement > 0 : Infinity ne s'écrit
+    // Number.isFinite et pas seulement > 0 : Infinity ne s'écrit
     // pas en JSON, mais JSON.parse le rend sur un exposant hors domaine
     // (1e400), et typeof Infinity vaut 'number'. NaN, lui, ne peut pas
     // arriver — JSON.parse refuse le littéral.
@@ -238,8 +238,8 @@ function findGoalInconsistency(goals: RawGoal[]): string | null {
       return i18n.t('backup.invalidTargetValue');
     }
 
-    // L1-05 — isValidGoal ne vérifie que le type de ces deux champs, donc
-    // n'importe quelle chaîne passait. Le contrôle NaN seul laissait encore
+    // isValidGoal ne vérifie que le type de ces deux champs, donc
+    // n'importe quelle chaîne passerait. Le contrôle NaN seul laisserait
     // passer tout ce que le moteur sait analyser ("1", "Oct 1 2026", une
     // année étendue, "2026-02-30" qui glisse au 2 mars) : la forme ISO est
     // exigée d'abord, voir isIsoDateTimeStr. Le contrôle NaN reste, pour
@@ -262,7 +262,8 @@ function findGoalInconsistency(goals: RawGoal[]): string | null {
     if (deadline <= createdAt) return i18n.t('backup.deadlineNotAfterCreatedAt');
 
     // Même plafond qu'à la création et à la modification (MAX_GOAL_DAYS,
-    // goalValidation.ts). Écart en jours arrondi et non comparaison stricte
+    // goalValidation.ts). Écart en jours arrondi (comme diffDays dans
+    // stats.ts, ici sur des instants) et non comparaison stricte
     // des instants : l'app pose l'échéance par setDate en heure locale, et
     // un objectif de 365 jours qui traverse un changement d'heure mesure
     // 365 jours ± 1 h. L'arrondi garde la validation indépendante du fuseau,
@@ -294,7 +295,7 @@ function findGoalInconsistency(goals: RawGoal[]): string | null {
         return i18n.t('backup.invalidEntryValue');
       }
 
-      // R1 — isValidEntry ne vérifie que le type. Le tri plus bas compare
+      // isValidEntry ne vérifie que le type. Le tri plus bas compare
       // des chaînes et calcStreak/getGoalStats lisent la date comme dateStr()
       // la produit : toute autre forme casse l'ordre sans rien signaler.
       // Interpolé pour la même raison que le doublon ci-dessous.
@@ -302,7 +303,7 @@ function findGoalInconsistency(goals: RawGoal[]): string | null {
         return i18n.t('backup.invalidEntryDate', { title: g.title, date: e.date });
       }
 
-      // L4-02 — la même donnée était lue de trois façons incompatibles en
+      // La même donnée serait lue de trois façons incompatibles en
       // aval : sommée par getGoalStats, dernière-gagne par calcStreak
       // (Map par date), première-trouvée par addProgress (findIndex).
       // Rejet plutôt que fusion : l'app ne sait pas produire ce cas —
@@ -383,7 +384,7 @@ export function parseBackupPayload(raw: string): ParseBackupResult {
     unit: g.unit,
     createdAt: g.createdAt,
     deadline: g.deadline,
-    // Trié par date (L2-07) : GoalHistoryList fait
+    // Trié par date : GoalHistoryList fait
     // [...entries].reverse().slice(0, 12) et RecentSessionsCard .slice(-7),
     // deux lectures qui supposent l'ordre chronologique sans que rien ne le
     // garantisse pour un fichier importé. Comparaison de chaînes plutôt que
@@ -391,8 +392,8 @@ export function parseBackupPayload(raw: string): ParseBackupResult {
     // dans l'ordre chronologique, sans parsing ni dépendance au fuseau.
     // Pas de troisième cas dans le comparateur : deux entrées à la même
     // date ont déjà fait rejeter le fichier (voir findGoalInconsistency),
-    // donc il ne rencontre jamais d'égalité. Le laisser aurait été une
-    // branche morte, invérifiable par un test.
+    // donc il ne rencontre jamais d'égalité. Le prévoir serait une branche
+    // morte, invérifiable par un test.
     entries: [...g.entries]
       .sort((a, b) => (a.date < b.date ? -1 : 1))
       .map((e) => ({

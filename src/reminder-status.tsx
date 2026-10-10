@@ -1,9 +1,10 @@
 // Statut de la dernière (re)programmation du rappel quotidien — jamais
-// persisté, contrairement à Settings (voir AGENTS.md : état dérivé, jamais
-// dupliqué). Contexte séparé de settings-context.tsx exprès : `settings` y
+// persisté, contrairement à Settings (voir AGENTS.md : un état transitoire
+// ou dérivé n'a rien à faire dans un contexte auto-persisté). Contexte séparé
+// de settings-context.tsx exprès : `settings` y
 // est auto-sauvegardé sur AsyncStorage à chaque changement (voir son effet
 // de sauvegarde dans settings-context.tsx), un état d'erreur transitoire
-// n'a rien à y faire. Écrit par ReminderScheduler, lu par SettingsScreen.
+// n'a rien à y faire. Écrit par ReminderScheduler, lu par NotificationsSection.
 import { createContext, ReactNode, useContext, useState } from 'react';
 
 interface ReminderStatusContextValue {

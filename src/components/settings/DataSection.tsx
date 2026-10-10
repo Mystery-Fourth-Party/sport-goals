@@ -30,7 +30,7 @@ export default function DataSection() {
 
   // Un seul élément accessible par ligne, titre et sous-titre fusionnés :
   // même principe que rowA11yLabel dans NotificationsSection, où TalkBack
-  // annonçait sinon chaque fragment séparément.
+  // annoncerait sinon chaque fragment séparément.
   const rowA11yLabel = (key: string) => `${t(`data.${key}Title`)}, ${t(`data.${key}Subtitle`)}`;
 
   async function handleExport() {
@@ -40,9 +40,11 @@ export default function DataSection() {
 
     try {
       if (Platform.OS === 'web') {
-        // expo-sharing n'a pas d'équivalent web (comme expo-notifications) :
-        // déclenche un téléchargement via un <a download> créé et cliqué par
-        // script, jamais monté dans le JSX.
+        // expo-sharing n'offre pas d'équivalent web fiable : son module web
+        // repose sur navigator.share, réservé à HTTPS et absent de certains
+        // navigateurs (il lève alors UnavailabilityError). On déclenche donc
+        // un téléchargement via un <a download> créé et cliqué par script,
+        // jamais monté dans le JSX.
         const blob = new Blob([json], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
@@ -156,8 +158,8 @@ export default function DataSection() {
           accessibilityRole="button"
           // Libellé explicite : sans lui, le lecteur d'écran concatène le
           // contenu de la ligne, chevron « › » compris, qui ne veut rien
-          // dire à voix haute (L4-04). Même traitement que la carte
-          // « Terminés » de app/index.tsx. Titre et sous-titre fusionnés
+          // dire à voix haute. Même traitement que la carte
+          // « Archivés » de app/index.tsx. Titre et sous-titre fusionnés
           // comme le fait rowA11yLabel dans NotificationsSection.
           accessibilityLabel={rowA11yLabel('export')}
         >

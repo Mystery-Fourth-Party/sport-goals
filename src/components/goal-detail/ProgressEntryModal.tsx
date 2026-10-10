@@ -57,7 +57,8 @@ export default function ProgressEntryModal({
     >
       {/* Le TextInput a autoFocus : le clavier s'ouvre en même temps que le
           modal et recouvrait la feuille (boutons Annuler/Enregistrer et lien
-          de suppression inaccessibles, constaté sur Android). Même pattern
+          de suppression inaccessibles, constaté sur appareil Android lors d'un
+          test manuel). Même pattern
           que app/create.tsx — 'height' sur Android suffit, la fenêtre étant
           déjà en adjustResize (softwareKeyboardLayoutMode Expo par défaut). */}
       <KeyboardAvoidingView
@@ -98,7 +99,7 @@ export default function ProgressEntryModal({
               {/* Pas de placeholder, même raison que les champs numériques
                   de GoalFields : sur Android TalkBack lit le hint d'un champ
                   éditable et ignore le accessibilityLabel, le champ
-                  s'annonçait donc "0". L'unité est dans le libellé lu parce
+                  s'annoncerait donc "0". L'unité est dans le libellé lu parce
                   qu'elle n'est affichée qu'à côté du champ, dans un encart
                   séparé. unitSpoken et pas unit : "km" est épelé "K M"
                   (voir GoalCard). */}

@@ -1,4 +1,6 @@
-// L3-03 et L4-03, écran Résumé hebdomadaire.
+// Couvre l'écran Résumé hebdomadaire : la couleur du pourcentage du « plus
+// avancé » suit son statut réel, et le graphique « séances par jour »
+// s'annonce en un seul élément.
 //
 // Placé ici et non à côté de app/weekly.tsx : le require.context
 // d'expo-router n'exclut que les fichiers `+api` et `+html`, donc tout autre
@@ -207,11 +209,11 @@ describe('WeeklyScreen — terminés cette semaine', () => {
 });
 
 describe('WeeklyScreen — graphique « séances par jour »', () => {
-  // L4-03 — le graphique de cet écran est la seule représentation de cette
+  // Le graphique de cet écran est la seule représentation de cette
   // donnée (contrairement à celui de l'écran Détail, doublé par la liste
-  // d'historique juste en dessous et masqué exprès au lecteur d'écran depuis
-  // le test terrain du 02/09). Il doit donc s'annoncer, et en un seul
-  // élément : le motif retenu partout dans ce dépôt après tests terrain
+  // d'historique juste en dessous et masqué exprès au lecteur d'écran après
+  // un test manuel sur appareil). Il doit donc s'annoncer, et en un seul
+  // élément : le motif retenu partout dans ce dépôt après tests sur appareil
   // (GoalCard, cartes En cours/Total, GoalFields) est de fusionner les
   // fragments d'une même unité de sens.
   //

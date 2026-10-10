@@ -13,9 +13,11 @@ interface Props {
 }
 
 // Carte "Dernières séances" (BarChart) — seul usage de ce sous-ensemble
-// d'entrées, calcul déplacé ici plutôt que laissé dans l'écran. Rend `null`
+// d'entrées, calculé ici plutôt que dans l'écran. Rend `null`
 // si aucune séance récente : évite au parent de dupliquer la condition
-// (recentEntries.length > 0) déjà connue par ce composant.
+// (recentEntries.length > 0) déjà connue par ce composant. Suppose `entries`
+// triées par date croissante : l'import les trie (voir parseBackupPayload
+// dans backup.ts).
 export default function RecentSessionsCard({ entries, unit, today }: Props) {
   const { t } = useTranslation();
   const recentEntries = entries.filter((e) => e.value > 0).slice(-7);
@@ -23,8 +25,8 @@ export default function RecentSessionsCard({ entries, unit, today }: Props) {
 
   // Carte entière masquée au lecteur d'écran : le graphique n'apporte rien
   // que la liste d'historique juste en dessous ne donne déjà, et il se lit
-  // mal (barres annoncées une à une, hors contexte — constaté au test du
-  // 02/09). Le titre "Dernières séances" est masqué avec, sinon TalkBack
+  // mal (barres annoncées une à une, hors contexte — constaté sur appareil
+  // lors d'un test manuel). Le titre "Dernières séances" est masqué avec, sinon TalkBack
   // annonce une section dont le contenu est introuvable. Même paire
   // d'attributs que les libellés fusionnés de GoalFields : accessibilityElementsHidden
   // pour iOS, importantForAccessibility pour Android.
