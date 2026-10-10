@@ -23,8 +23,8 @@ export default function RecentSessionsCard({ entries, unit, today }: Props) {
 
   // Carte entière masquée au lecteur d'écran : le graphique n'apporte rien
   // que la liste d'historique juste en dessous ne donne déjà, et il se lit
-  // mal (barres annoncées une à une, hors contexte — constaté au test du
-  // 02/09). Le titre "Dernières séances" est masqué avec, sinon TalkBack
+  // mal (barres annoncées une à une, hors contexte — constaté sur appareil
+  // lors d'un test manuel). Le titre "Dernières séances" est masqué avec, sinon TalkBack
   // annonce une section dont le contenu est introuvable. Même paire
   // d'attributs que les libellés fusionnés de GoalFields : accessibilityElementsHidden
   // pour iOS, importantForAccessibility pour Android.

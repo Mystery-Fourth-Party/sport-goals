@@ -29,7 +29,7 @@ export default function GoalCard({ goal, onPress }: Props) {
   // à en faire un unique élément focusable pour le lecteur d'écran, qui
   // n'entre alors pas dans les enfants — pas besoin en plus de
   // accessibilityElementsHidden/importantForAccessibility côté enfants ni de
-  // accessible={false} dessus (vérifié dans la doc RN sur l'accessibilité).
+  // accessible={false} dessus (voir la doc React Native, page Accessibility).
   //
   // Sur un objectif clos, « 0 jour restant » ne dit rien : la ligne
   // annonce l'échéance passée, et le statut final suit.

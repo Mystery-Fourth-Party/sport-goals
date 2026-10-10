@@ -252,11 +252,11 @@ describe('parseBackupPayload', () => {
   });
 });
 
-// ─── Régression du retest terrain du 05/09 ──────────────────────────────
+// ─── Instantané de stats lisible (constaté sur appareil) ─────────────────
 
 describe('buildBackupPayload — instantané de stats lisible', () => {
-  // Confirmé sur un export réel : "actual": 12.399999999999999 pour
-  // 5.3 + 4.1 + 3. Le bloc stats n'est jamais réimporté (voir
+  // Constaté sur un export de l'app : "actual": 12.399999999999999 pour
+  // 5.3 + 4.1 + 3 (somme flottante). Le bloc stats n'est jamais réimporté (voir
   // parseBackupPayload), mais le fichier est ouvrable par l'utilisateur.
   const decimalGoal: Goal = {
     id: 'g-km',

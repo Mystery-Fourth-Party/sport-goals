@@ -51,8 +51,8 @@ export interface BackupPayload {
 // L'instantané de stats n'est jamais réimporté (voir parseBackupPayload),
 // mais le fichier est destiné à être ouvert et exploité tel quel — une somme
 // de décimales accumulée en flottant s'y écrivait brute
-// ("actual": 12.399999999999999 pour 5.3 + 4.1 + 3, constaté sur un export
-// réel). Arrondi ici seulement, pas dans stats.ts : le calcul interne doit
+// ("actual": 12.399999999999999 pour 5.3 + 4.1 + 3 en flottant, constaté sur
+// un export de l'app). Arrondi ici seulement, pas dans stats.ts : le calcul interne doit
 // rester exact. 4 décimales, assez pour rester fidèle aux ratios (progress,
 // expectedProgress) sans laisser d'artefact binaire.
 function roundStat(value: number): number {

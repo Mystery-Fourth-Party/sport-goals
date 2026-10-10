@@ -100,9 +100,9 @@ export default function GoalFields({
       {/* Placeholder posé seulement quand le champ est vide. Sur Android il
           devient le hint de l'EditText, que TalkBack annonce même sur un
           champ déjà rempli : à l'Édition, le titre existant était suivi de
-          l'exemple "ex : 1000 pompes en 30 jours" (constaté au retest du
-          05/09, écran Édition seulement — à la Création le champ est vide,
-          où lire l'exemple est justement ce qu'on veut). Les deux champs
+          l'exemple "ex : 1000 pompes en 30 jours" (constaté sur appareil lors
+          d'un test manuel, écran Édition seulement — à la Création le champ
+          est vide, où lire l'exemple est justement ce qu'on veut). Les deux champs
           numériques n'ont plus de placeholder du tout depuis la PR #18. */}
       <TextInput
         style={styles.input}
@@ -127,8 +127,8 @@ export default function GoalFields({
               Android, TalkBack lit le hint d'un champ éditable (c'est ce
               que devient `placeholder`) et laisse de côté le
               accessibilityLabel, donc le champ s'annonçait "1000" au lieu
-              de "Valeur cible" (constaté au test du 02/09, l'attribut
-              était bien présent). Le libellé visible juste au-dessus rend
+              de "Valeur cible" (constaté sur appareil lors d'un test manuel,
+              l'attribut étant bien présent). Le libellé visible juste au-dessus rend
               l'exemple chiffré redondant à l'écran. */}
           <TextInput
             style={[styles.input, styles.inputDisplay]}

@@ -57,7 +57,8 @@ export default function ProgressEntryModal({
     >
       {/* Le TextInput a autoFocus : le clavier s'ouvre en même temps que le
           modal et recouvrait la feuille (boutons Annuler/Enregistrer et lien
-          de suppression inaccessibles, constaté sur Android). Même pattern
+          de suppression inaccessibles, constaté sur appareil Android lors d'un
+          test manuel). Même pattern
           que app/create.tsx — 'height' sur Android suffit, la fenêtre étant
           déjà en adjustResize (softwareKeyboardLayoutMode Expo par défaut). */}
       <KeyboardAvoidingView

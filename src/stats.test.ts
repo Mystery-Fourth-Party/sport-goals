@@ -283,7 +283,7 @@ describe('date helpers', () => {
   });
 });
 
-// ─── Régressions du retest terrain du 05/09 ─────────────────────────────
+// ─── Seuils de statut (constaté sur appareil) ───────────────────────────
 
 describe('getGoalStats — seuils de statut et rythme requis', () => {
   // La différence progress - expectedProgress vaut ici 0,05 pile sur le
