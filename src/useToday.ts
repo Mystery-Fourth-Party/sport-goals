@@ -9,8 +9,11 @@
 // (L1-08). Écoute AppState plutôt qu'un minuteur dédié : c'est le retour à
 // l'écran qui compte, pas l'instant exact du basculement.
 //
-// À réserver à l'affichage. Une action qui horodate quelque chose doit
-// continuer à appeler todayStr() au moment où elle s'exécute — voir
+// À réserver à l'affichage et aux décisions qui doivent suivre ce que
+// l'écran affiche : GoalsProvider l'utilise pour créer l'occurrence suivante
+// d'une série au moment où l'écran considère la précédente comme close (même
+// horloge que l'archive). Une action qui horodate quelque chose doit en
+// revanche continuer à appeler todayStr() au moment où elle s'exécute — voir
 // addProgress dans goals-context.tsx, qui doit dater l'entrée du jour réel
 // de l'appui, pas d'un jour mémorisé au dernier rendu.
 import { useEffect, useState } from 'react';

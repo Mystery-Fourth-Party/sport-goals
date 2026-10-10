@@ -203,6 +203,8 @@ function isValidGoal(value: unknown): value is RawGoal {
   return true;
 }
 
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
 // Cohérence des objectifs, après isValidGoal. Les deux passes répondent à
 // deux questions distinctes : isValidGoal à « est-ce la bonne forme »,
 // celle-ci à « est-ce que ça a du sens ». Séparées parce qu'isValidGoal est
@@ -218,8 +220,6 @@ function isValidGoal(value: unknown): value is RawGoal {
 // sanitizeSettings plus bas.
 //
 // Renvoie le message de la première règle violée, ou null si tout passe.
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
-
 function findGoalInconsistency(goals: RawGoal[]): string | null {
   const seenIds = new Set<string>();
 
