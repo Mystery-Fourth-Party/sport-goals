@@ -1,5 +1,5 @@
 // Export/import local des données (objectifs + rappel quotidien), au format JSON —
-// pas de backend pour ce projet (voir app/settings.tsx pour le partage/
+// pas de backend pour ce projet (voir DataSection pour le partage/
 // téléchargement et la sélection de fichier). Logique pure ici, testable
 // sans module natif (même approche que notifications.ts) : construction et
 // validation du payload uniquement, aucun accès fichier/AsyncStorage.
@@ -152,8 +152,8 @@ const ISO_TIME_SUFFIX_PATTERN = /^(T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{
 
 // Vrai pour "YYYY-MM-DD" dont le jour existe, suivi en option d'une heure
 // zonée. C'est la forme que toISOString() écrit dans createdAt et deadline
-// (GoalForm.tsx, app/goal/[id]/edit.tsx), la seule que l'app ait jamais
-// écrite dans ces champs. Le jour passe par l'aller-retour de
+// (GoalForm.tsx, app/goal/[id]/edit.tsx, src/series.ts), la seule que l'app
+// écrive dans ces champs. Le jour passe par l'aller-retour de
 // isCanonicalDateStr : le motif seul n'écarte pas "2026-02-30". La zone est
 // exigée dès qu'une heure est présente : sans elle, la chaîne est lue en
 // heure locale et la comparaison avec createdAt dépendrait du fuseau de la

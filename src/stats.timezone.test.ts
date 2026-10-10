@@ -2,10 +2,11 @@
 //
 // getGoalStats compare trois jours : celui de createdAt, celui de deadline,
 // et `today`. Les deux premiers viennent de chaînes ISO écrites par
-// `new Date(...).toISOString()` (voir GoalForm.tsx et app/goal/[id]/edit.tsx),
-// le troisième de `todayStr()`, qui lit le calendrier *local*. Les trois
-// doivent être sur la même base, sinon un objectif créé près de minuit voit
-// sa durée, ses jours restants et son statut décalés d'un jour.
+// `new Date(...).toISOString()` (voir GoalForm.tsx, app/goal/[id]/edit.tsx et
+// src/series.ts), le troisième de `todayStr()`, qui lit le calendrier
+// *local*. Les trois doivent être sur la même base, sinon un objectif créé
+// près de minuit voit sa durée, ses jours restants et son statut décalés
+// d'un jour.
 //
 // Ces deux tests ne peuvent pas être rouges à UTC+0 : le jour UTC et le jour
 // local y coïncident, il n'y a donc rien à détecter. Le premier est rouge

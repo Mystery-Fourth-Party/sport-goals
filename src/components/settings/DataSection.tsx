@@ -157,7 +157,7 @@ export default function DataSection() {
           // Libellé explicite : sans lui, le lecteur d'écran concatène le
           // contenu de la ligne, chevron « › » compris, qui ne veut rien
           // dire à voix haute (L4-04). Même traitement que la carte
-          // « Terminés » de app/index.tsx. Titre et sous-titre fusionnés
+          // « Archivés » de app/index.tsx. Titre et sous-titre fusionnés
           // comme le fait rowA11yLabel dans NotificationsSection.
           accessibilityLabel={rowA11yLabel('export')}
         >

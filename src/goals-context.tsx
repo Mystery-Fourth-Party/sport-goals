@@ -38,7 +38,7 @@ interface GoalsContextValue {
   updateGoal: (goalId: string, updates: Partial<Goal>) => void;
   deleteGoal: (goalId: string) => void;
   // Remplace tout le tableau d'un coup (pas de fusion avec l'existant) —
-  // utilisé par la restauration d'une sauvegarde (voir app/settings.tsx),
+  // utilisé par la restauration d'une sauvegarde (voir DataSection),
   // pas par une opération portant sur un objectif précis. Une restauration
   // n'est pas un événement de complétion : aucune notification n'est
   // déclenchée ici. Le rappel quotidien se reprogramme tout seul ensuite,

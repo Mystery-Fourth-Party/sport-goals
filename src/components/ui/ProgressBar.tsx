@@ -23,7 +23,7 @@ export default function ProgressBar({ value, status, thick }: Props) {
       accessibilityRole="progressbar"
       // Pas de accessibilityLabel ici : le pourcentage est déjà affiché en
       // texte séparé à chaque endroit où ProgressBar est utilisé (GoalCard,
-      // goal/[id].tsx, weekly.tsx) — le rôle progressbar suffit à donner du
+      // GoalProgressCard, weekly.tsx) — le rôle progressbar suffit à donner du
       // sens à cet élément.
       // `text` en plus de min/max/now : sans lui, TalkBack annonce le
       // nombre brut ("15") sans son unité — avec, il lit "15 %".

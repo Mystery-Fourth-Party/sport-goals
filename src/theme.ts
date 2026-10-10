@@ -131,11 +131,11 @@ export const fontFamily = {
   bodyBold: 'Outfit_700Bold',
 } as const;
 
-// Charge les polices Google Fonts nécessaires au design system. Ce hook
-// n'est pas encore appelé depuis App.tsx (hors scope de cette étape) ;
-// l'appelant doit gérer l'état de chargement (ex: ne rien rendre / garder
-// le splash screen tant que `fontsLoaded` est false), voir la doc Expo
-// SDK 57 sur expo-font pour le pattern recommandé.
+// Charge les polices Google Fonts nécessaires au design system. Appelé une
+// seule fois, par RootLayout (app/_layout.tsx), qui gère l'état de
+// chargement : il ne rend rien et garde le splash screen tant que
+// `fontsLoaded` est false. Voir la doc Expo SDK 57 sur expo-font pour le
+// pattern recommandé.
 export function useAppFonts() {
   return useFonts({
     BarlowCondensed_400Regular,

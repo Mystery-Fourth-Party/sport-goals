@@ -12,7 +12,7 @@ describe('DEFAULT_SETTINGS', () => {
   // dailyReminder/goalReachedNotifs doivent rester opt-in : à true par
   // défaut, ReminderScheduler demanderait la permission dès le premier
   // lancement de l'app plutôt qu'au moment où l'utilisateur active le
-  // toggle (voir le commentaire dans settingsStorage.ts et app/settings.tsx).
+  // toggle (voir le commentaire dans settingsStorage.ts et NotificationsSection).
   it('starts dailyReminder and goalReachedNotifs disabled', () => {
     expect(DEFAULT_SETTINGS.dailyReminder).toBe(false);
     expect(DEFAULT_SETTINGS.goalReachedNotifs).toBe(false);
