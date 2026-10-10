@@ -180,18 +180,18 @@ export interface RescheduleResult {
 export interface RescheduleOptions {
   // Consultée juste avant d'annuler puis avant chaque programmation : rend
   // `true` si une exécution plus récente a été déclenchée depuis. Sans elle,
-  // la garde `runId` de ReminderScheduler ne filtrait que l'affichage du
-  // statut, et une exécution obsolète menait quand même son cycle
+  // la garde `runId` de ReminderScheduler ne filtrerait que l'affichage du
+  // statut, et une exécution obsolète mènerait quand même son cycle
   // annulation + programmation jusqu'au bout, par-dessus une exécution plus
-  // récente (L2-04).
+  // récente.
   isStale?: () => boolean;
 }
 
 // Reprogramme le rappel quotidien à partir de l'état courant.
 //
 // Trigger DAILY, pas DATE : DAILY se répète nativement côté OS, sans que
-// l'app ait besoin de tourner. Avec DATE, le rappel n'arrivait qu'une seule
-// fois puis plus rien tant que l'app n'était pas rouverte — c'est-à-dire
+// l'app ait besoin de tourner. Avec DATE, le rappel n'arriverait qu'une seule
+// fois puis plus rien tant que l'app ne serait pas rouverte — c'est-à-dire
 // jamais, pour l'utilisateur que le rappel est justement censé ramener.
 //
 // Le contenu, lui, reste calculé à la programmation : le payload d'un
@@ -204,14 +204,13 @@ export interface RescheduleOptions {
 // notifications au même horaire précisément le jour où une série est en jeu.
 //
 // Ordre des étapes : toute validation susceptible d'échouer passe AVANT
-// l'annulation. Annuler d'abord, comme avant, détruisait un rappel valide
-// déjà programmé quand la reprogrammation échouait ensuite — horaire mal
-// formé, permission révoquée en arrière-plan (L1-06). Et l'annulation n'a
-// jamais lieu sans reprogrammation immédiate derrière : avec un trigger
-// DAILY, annuler sans réarmer supprime aussi tous les jours suivants
-// (L2-01).
+// l'annulation. Annuler d'abord détruirait un rappel valide déjà programmé
+// quand la reprogrammation échoue ensuite — horaire mal formé, permission
+// révoquée en arrière-plan. Et l'annulation n'a jamais lieu sans
+// reprogrammation immédiate derrière : avec un trigger DAILY, annuler sans
+// réarmer supprime aussi tous les jours suivants.
 //
-// Limite connue, hors scope de ce correctif : une notification programmée
+// Limite connue : une notification programmée
 // peut ne pas survivre à un redémarrage de l'appareil sur Android, le
 // comportement variant selon les fabricants. C'est hors du contrôle
 // d'expo-notifications ; l'app la reprogramme de toute façon à sa
@@ -228,7 +227,7 @@ export async function rescheduleDailyReminder(
   }
 
   // La validation de format et la demande de permission ne portent que sur
-  // l'horaire GLOBAL, comme avant : un override par-objectif mal formé
+  // l'horaire GLOBAL : un override par-objectif mal formé
   // retombe silencieusement sur ce même horaire (voir
   // groupPendingGoalsByReminderTime) plutôt que de faire échouer toute la
   // reprogrammation.

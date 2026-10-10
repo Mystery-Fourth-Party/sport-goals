@@ -224,13 +224,13 @@ function findGoalInconsistency(goals: RawGoal[]): string | null {
   const seenIds = new Set<string>();
 
   for (const g of goals) {
-    // L1-09 — updateGoal et deleteGoal opèrent par .map/.filter sur l'id :
+    // updateGoal et deleteGoal opèrent par .map/.filter sur l'id :
     // deux objectifs au même id sont modifiés ou supprimés ensemble, sans
     // que rien ne le signale à l'écran.
     if (seenIds.has(g.id)) return i18n.t('backup.duplicateGoalIds');
     seenIds.add(g.id);
 
-    // L1-12 — Number.isFinite et pas seulement > 0 : Infinity ne s'écrit
+    // Number.isFinite et pas seulement > 0 : Infinity ne s'écrit
     // pas en JSON, mais JSON.parse le rend sur un exposant hors domaine
     // (1e400), et typeof Infinity vaut 'number'. NaN, lui, ne peut pas
     // arriver — JSON.parse refuse le littéral.
@@ -238,8 +238,8 @@ function findGoalInconsistency(goals: RawGoal[]): string | null {
       return i18n.t('backup.invalidTargetValue');
     }
 
-    // L1-05 — isValidGoal ne vérifie que le type de ces deux champs, donc
-    // n'importe quelle chaîne passait. Le contrôle NaN seul laissait encore
+    // isValidGoal ne vérifie que le type de ces deux champs, donc
+    // n'importe quelle chaîne passerait. Le contrôle NaN seul laisserait
     // passer tout ce que le moteur sait analyser ("1", "Oct 1 2026", une
     // année étendue, "2026-02-30" qui glisse au 2 mars) : la forme ISO est
     // exigée d'abord, voir isIsoDateTimeStr. Le contrôle NaN reste, pour
@@ -294,7 +294,7 @@ function findGoalInconsistency(goals: RawGoal[]): string | null {
         return i18n.t('backup.invalidEntryValue');
       }
 
-      // R1 — isValidEntry ne vérifie que le type. Le tri plus bas compare
+      // isValidEntry ne vérifie que le type. Le tri plus bas compare
       // des chaînes et calcStreak/getGoalStats lisent la date comme dateStr()
       // la produit : toute autre forme casse l'ordre sans rien signaler.
       // Interpolé pour la même raison que le doublon ci-dessous.
@@ -302,7 +302,7 @@ function findGoalInconsistency(goals: RawGoal[]): string | null {
         return i18n.t('backup.invalidEntryDate', { title: g.title, date: e.date });
       }
 
-      // L4-02 — la même donnée était lue de trois façons incompatibles en
+      // La même donnée serait lue de trois façons incompatibles en
       // aval : sommée par getGoalStats, dernière-gagne par calcStreak
       // (Map par date), première-trouvée par addProgress (findIndex).
       // Rejet plutôt que fusion : l'app ne sait pas produire ce cas —
@@ -383,7 +383,7 @@ export function parseBackupPayload(raw: string): ParseBackupResult {
     unit: g.unit,
     createdAt: g.createdAt,
     deadline: g.deadline,
-    // Trié par date (L2-07) : GoalHistoryList fait
+    // Trié par date : GoalHistoryList fait
     // [...entries].reverse().slice(0, 12) et RecentSessionsCard .slice(-7),
     // deux lectures qui supposent l'ordre chronologique sans que rien ne le
     // garantisse pour un fichier importé. Comparaison de chaînes plutôt que
@@ -391,8 +391,8 @@ export function parseBackupPayload(raw: string): ParseBackupResult {
     // dans l'ordre chronologique, sans parsing ni dépendance au fuseau.
     // Pas de troisième cas dans le comparateur : deux entrées à la même
     // date ont déjà fait rejeter le fichier (voir findGoalInconsistency),
-    // donc il ne rencontre jamais d'égalité. Le laisser aurait été une
-    // branche morte, invérifiable par un test.
+    // donc il ne rencontre jamais d'égalité. Le prévoir serait une branche
+    // morte, invérifiable par un test.
     entries: [...g.entries]
       .sort((a, b) => (a.date < b.date ? -1 : 1))
       .map((e) => ({

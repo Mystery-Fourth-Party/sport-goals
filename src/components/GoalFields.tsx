@@ -86,7 +86,7 @@ export default function GoalFields({
           principe que les chips d'unité plus bas) et le Text est masqué au
           lecteur d'écran. Indispensable pour les deux champs côte à côte
           ci-dessous — l'algorithme de lecture linéaire d'Android parcourt
-          une grille à 2 colonnes ligne par ligne et annonçait "Valeur
+          une grille à 2 colonnes ligne par ligne et annoncerait "Valeur
           cible, Durée, <champ>, <champ>". Appliqué aussi ici, où le champ
           est pourtant seul sur sa ligne, pour que les 3 champs du
           formulaire se comportent pareil. */}
@@ -103,7 +103,7 @@ export default function GoalFields({
           l'exemple "ex : 1000 pompes en 30 jours" (constaté sur appareil lors
           d'un test manuel, écran Édition seulement — à la Création le champ
           est vide, où lire l'exemple est justement ce qu'on veut). Les deux champs
-          numériques n'ont plus de placeholder du tout depuis la PR #18. */}
+          numériques n'ont pas de placeholder du tout. */}
       <TextInput
         style={styles.input}
         placeholder={title === '' ? t('goalFields.namePlaceholder') : undefined}
@@ -126,7 +126,7 @@ export default function GoalFields({
           {/* Pas de placeholder sur les deux champs numériques : sur
               Android, TalkBack lit le hint d'un champ éditable (c'est ce
               que devient `placeholder`) et laisse de côté le
-              accessibilityLabel, donc le champ s'annonçait "1000" au lieu
+              accessibilityLabel, donc le champ s'annoncerait "1000" au lieu
               de "Valeur cible" (constaté sur appareil lors d'un test manuel,
               l'attribut étant bien présent). Le libellé visible juste au-dessus rend
               l'exemple chiffré redondant à l'écran. */}

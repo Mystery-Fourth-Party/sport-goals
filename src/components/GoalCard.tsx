@@ -10,8 +10,9 @@ interface Props {
   onPress: () => void;
 }
 
-// Carte objectif de l'écran Liste : tap → écran Détail. L'ajout de progression et l'édition/suppression
-// vivent désormais sur l'écran Détail plutôt qu'inline ici.
+// Carte objectif de l'écran Liste : tap → écran Détail. L'ajout de
+// progression et l'édition/suppression vivent sur l'écran Détail, pas inline
+// ici.
 export default function GoalCard({ goal, onPress }: Props) {
   const { t } = useTranslation();
   const today = todayStr();

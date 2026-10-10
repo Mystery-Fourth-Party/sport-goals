@@ -99,7 +99,7 @@ export default function ProgressEntryModal({
               {/* Pas de placeholder, même raison que les champs numériques
                   de GoalFields : sur Android TalkBack lit le hint d'un champ
                   éditable et ignore le accessibilityLabel, le champ
-                  s'annonçait donc "0". L'unité est dans le libellé lu parce
+                  s'annoncerait donc "0". L'unité est dans le libellé lu parce
                   qu'elle n'est affichée qu'à côté du champ, dans un encart
                   séparé. unitSpoken et pas unit : "km" est épelé "K M"
                   (voir GoalCard). */}

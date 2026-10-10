@@ -30,7 +30,7 @@ export default function DataSection() {
 
   // Un seul élément accessible par ligne, titre et sous-titre fusionnés :
   // même principe que rowA11yLabel dans NotificationsSection, où TalkBack
-  // annonçait sinon chaque fragment séparément.
+  // annoncerait sinon chaque fragment séparément.
   const rowA11yLabel = (key: string) => `${t(`data.${key}Title`)}, ${t(`data.${key}Subtitle`)}`;
 
   async function handleExport() {
@@ -158,7 +158,7 @@ export default function DataSection() {
           accessibilityRole="button"
           // Libellé explicite : sans lui, le lecteur d'écran concatène le
           // contenu de la ligne, chevron « › » compris, qui ne veut rien
-          // dire à voix haute (L4-04). Même traitement que la carte
+          // dire à voix haute. Même traitement que la carte
           // « Archivés » de app/index.tsx. Titre et sous-titre fusionnés
           // comme le fait rowA11yLabel dans NotificationsSection.
           accessibilityLabel={rowA11yLabel('export')}

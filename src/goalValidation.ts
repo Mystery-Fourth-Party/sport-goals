@@ -44,11 +44,11 @@ export function parseDurationDays(raw: string): number | null {
 // Retourne le nombre saisi s'il est fini et strictement positif, sinon null.
 // Sert pour la valeur cible d'un objectif et pour la valeur d'une séance.
 //
-// R2 — les trois écrans ne testaient que `Number(x) > 0`. Number('1e400')
-// vaut Infinity, qui passe ce test : la valeur était enregistrée, puis
-// JSON.stringify l'écrivait null à l'export, et l'import rejetait alors le
-// fichier entier (isValidGoal/isValidEntry exigent un number). Même garde
-// que celle posée côté import par L1-12 (voir backup.ts).
+// Un simple `Number(x) > 0` ne suffit pas : Number('1e400') vaut Infinity,
+// qui passe ce test. La valeur serait enregistrée, puis JSON.stringify
+// l'écrirait null à l'export, et l'import rejetterait alors le fichier
+// entier (isValidGoal/isValidEntry exigent un number). Même garde que celle
+// de l'import (voir backup.ts).
 //
 // Pour la valeur d'une séance, cette garde d'écran n'est pas la seule :
 // addProgress et updateEntry (src/goals-context.tsx) appliquent la même

@@ -13,7 +13,7 @@ interface Props {
 }
 
 // Carte "Dernières séances" (BarChart) — seul usage de ce sous-ensemble
-// d'entrées, calcul déplacé ici plutôt que laissé dans l'écran. Rend `null`
+// d'entrées, calculé ici plutôt que dans l'écran. Rend `null`
 // si aucune séance récente : évite au parent de dupliquer la condition
 // (recentEntries.length > 0) déjà connue par ce composant.
 export default function RecentSessionsCard({ entries, unit, today }: Props) {

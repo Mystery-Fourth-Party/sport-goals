@@ -40,7 +40,7 @@ export default function LanguageSection() {
               accessibilityRole="button"
               // Libellé explicite : sans lui, le lecteur d'écran concatène le
               // contenu de la ligne, « ✓ » compris sur la ligne sélectionnée,
-              // qui ne veut rien dire à voix haute (L4-04). L'état
+              // qui ne veut rien dire à voix haute. L'état
               // sélectionné reste porté par accessibilityState ci-dessous,
               // que VoiceOver et TalkBack verbalisent déjà — le répéter dans
               // le libellé ferait une double annonce.

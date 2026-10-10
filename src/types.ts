@@ -61,7 +61,7 @@ export interface Goal {
 }
 
 // Le libellé affiché à la place des clés techniques ('reps', 'km'...) vit
-// désormais dans les traductions (clés unit.reps/unit.km/unit.min/unit.h,
+// dans les traductions (clés unit.reps/unit.km/unit.min/unit.h,
 // voir src/i18n/locales/*.json), résolu via t() aux points d'usage plutôt
 // que par une table statique ici.
 

@@ -43,7 +43,7 @@ export default function GoalForm({ onCreate, initialValues }: Props) {
   const [submitAttempted, setSubmitAttempted] = useState(false);
 
   const titleError = title.trim() === '' ? t('goalForm.titleRequired') : undefined;
-  // parsePositiveNumber plutôt que `Number(x) > 0` : ce test laissait passer
+  // parsePositiveNumber plutôt que `Number(x) > 0` : ce test laisse passer
   // Infinity (saisie "1e400"), voir src/goalValidation.ts.
   const targetValueNum = parsePositiveNumber(targetValue);
   const targetValueError = targetValueNum === null ? t('goalForm.targetPositive') : undefined;

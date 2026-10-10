@@ -27,8 +27,8 @@ function dateToTimeStr(d: Date): string {
 // @react-native-community/datetimepicker n'a pas d'implémentation web, voir
 // son fallback qui log un warning et rend null), iOS (DateTimePicker
 // "compact" inline), Android (bouton + picker à la demande, seule
-// plateforme sans équivalent "compact" inline). Extrait de
-// NotificationsSection pour être réutilisé par le réglage par-objectif (voir
+// plateforme sans équivalent "compact" inline). Partagé entre
+// NotificationsSection (horaire global) et le réglage par-objectif (voir
 // GoalFields) — API volontairement minimale (value/onChange), l'état
 // d'affichage du picker Android reste interne.
 export default function TimeField({ value, onChange }: Props) {

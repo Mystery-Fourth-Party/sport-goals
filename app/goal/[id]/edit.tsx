@@ -42,10 +42,10 @@ export default function EditGoalScreen() {
         <View style={styles.header}>
           <BackButton onPress={() => router.back()} />
         </View>
-        {/* Le message n'apparaît qu'une fois le chargement terminé : avant,
-            on ne sait pas encore si l'objectif existe, et l'annoncer
-            introuvable serait une affirmation gratuite — c'est pourtant ce
-            que faisait l'écran à chaque démarrage à froid sur cette route.
+        {/* Le message n'apparaît qu'une fois le chargement terminé : avant
+            cela, on ne sait pas encore si l'objectif existe, et l'annoncer
+            introuvable serait une affirmation gratuite à chaque démarrage à
+            froid sur cette route.
             L'en-tête est rendu dans les deux cas, pour que le bouton retour
             existe aussi pendant l'attente. */}
         {loaded && (
@@ -79,7 +79,7 @@ function EditGoalForm({ goal }: { goal: Goal }) {
   const { updateGoal } = useGoals();
 
   // useToday et non todayStr() : la carte de résumé se remet à jour au
-  // retour de l'arrière-plan (L1-08). Le champ « Jours restants » ne suit
+  // retour de l'arrière-plan. Le champ « Jours restants » ne suit
   // pas — il est initialisé une seule fois au montage, par construction
   // (voir le commentaire de ce composant) : un passage de minuit pendant
   // que l'écran est ouvert laisse donc l'écran afficher une progression
@@ -112,7 +112,7 @@ function EditGoalForm({ goal }: { goal: Goal }) {
   const unitLocked = goal.entries.some((e) => e.value > 0);
 
   const titleError = title.trim() === '' ? t('editGoal.titleRequired') : undefined;
-  // parsePositiveNumber plutôt que `Number(x) > 0` : ce test laissait passer
+  // parsePositiveNumber plutôt que `Number(x) > 0` : ce test laisse passer
   // Infinity (saisie "1e400"), voir src/goalValidation.ts.
   const parsedTarget = parsePositiveNumber(target);
   const targetNum = parsedTarget ?? 0;
@@ -226,9 +226,9 @@ function EditGoalForm({ goal }: { goal: Goal }) {
             <Text style={styles.dailyAvgValue}>≈ {fmt(newDailyRequired, unit)}</Text>
             <Text style={styles.dailyAvgUnit}>
               {t('editGoal.remainingToComplete', {
-                // Libellé traduit et non la clé technique : la phrase
-                // mélangeait « reps/jour » avec « 5 répétitions » dans le
-                // même appel (L4-01).
+                // Libellé traduit et non la clé technique : sinon la phrase
+                // mélangerait « reps/jour » avec « 5 répétitions » dans le
+                // même appel.
                 unit: t(`unit.${unit}`),
                 value: fmt(remaining, unit),
                 unitLabel: t(`unit.${unit}`),

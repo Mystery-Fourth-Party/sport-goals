@@ -50,12 +50,12 @@ export interface WeeklyStats {
 
 // Jour calendaire *local* de l'instant. createdAt/deadline sont des chaînes
 // ISO écrites par toISOString(), donc en UTC : en trancher les 10 premiers
-// caractères donnait le jour UTC, alors que todayStr() lit le calendrier
-// local. getGoalStats comparait ainsi deux bases différentes, décalant d'un
+// caractères donnerait le jour UTC, alors que todayStr() lit le calendrier
+// local. getGoalStats comparerait ainsi deux bases différentes, décalant d'un
 // jour la durée, les jours restants et le statut d'un objectif créé ou
-// échéant près de minuit (L1-01). Le format stocké ne change pas — seule
-// son interprétation, qui rejoint désormais le jour que l'utilisateur avait
-// sous les yeux au moment de la saisie.
+// échéant près de minuit. Le format stocké ne change pas — seule son
+// interprétation, qui rejoint le jour que l'utilisateur avait sous les yeux
+// au moment de la saisie.
 function toDayStr(iso: string): string {
   return dateStr(new Date(iso));
 }
@@ -164,10 +164,10 @@ export function getGoalStats(goal: Goal, today: string): GoalStats {
   // de la carte (voir GoalCard, goalCard.lateRequiredA11y).
   //
   // Diviseur planché à 1 : à partir du jour de l'échéance, remainingDays
-  // vaut 0 et le rythme de rattrapage retombait à 0 avec lui — un objectif
-  // en retard annonçait 0 par jour au lieu de ce qu'il restait réellement à
-  // faire (L1-02). Échéance atteinte ou dépassée, tout le reste est dû dans
-  // la journée.
+  // vaut 0 et le rythme de rattrapage retomberait à 0 avec lui — un objectif
+  // en retard annoncerait 0 par jour au lieu de ce qu'il reste réellement à
+  // faire. Échéance atteinte ou dépassée, tout le reste est dû dans la
+  // journée.
   const dailyRequired = Math.max(0, (goal.targetValue - actual) / Math.max(1, remainingDays));
   // Même raison que expectedProgress ci-dessus : sur une durée nulle, la
   // cible entière est due dans la seule journée disponible.
@@ -187,7 +187,7 @@ export function getGoalStats(goal: Goal, today: string): GoalStats {
     // Arrondi avant comparaison : une progression pile sur un seuil produit
     // une différence flottante décalée d'un epsilon (0,05 devient
     // 0.050000000000000044, -0,1 devient -0.09999999999999998), ce qui
-    // faisait basculer le statut sans que rien ne change à l'écran, où la
+    // ferait basculer le statut sans que rien ne change à l'écran, où la
     // progression est affichée au point de pourcentage près. 6 décimales :
     // très en dessous de ce que l'utilisateur peut voir, très au-dessus de
     // l'erreur d'arrondi binaire.
@@ -284,10 +284,9 @@ export function getWeeklyStats(goals: Goal[], today: string): WeeklyStats {
   const mostAdvanced = [...withStats].sort((a, b) => b.stats.progress - a.stats.progress)[0];
   // Exclu des candidats au « plus en retard » : les deux cartes de
   // app/weekly.tsx sont rendues l'une sous l'autre, et sans cette exclusion
-  // le même objectif pouvait s'y afficher deux fois sous deux titres
+  // le même objectif pourrait s'y afficher deux fois sous deux titres
   // contradictoires — un objectif très avancé en progression brute peut
-  // parfaitement être le plus en retard sur son propre rythme attendu
-  // (L1-07).
+  // parfaitement être le plus en retard sur son propre rythme attendu.
   //
   // Avec un seul objectif il ne reste aucun candidat, donc mostBehind vaut
   // undefined et la garde {mostBehind && ...} de weekly.tsx fait disparaître

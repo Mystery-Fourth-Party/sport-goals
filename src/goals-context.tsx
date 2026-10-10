@@ -1,6 +1,6 @@
-// État partagé des objectifs + persistance, sorti de l'ancien App.tsx pour
-// être accessible depuis tous les écrans (expo-router) plutôt que d'un seul
-// composant racine avec tout en props.
+// État partagé des objectifs + persistance, accessible depuis tous les écrans
+// (expo-router) plutôt que porté par un seul composant racine avec tout en
+// props.
 import { createContext, ReactNode, useContext, useEffect, useRef, useState } from 'react';
 import * as Crypto from 'expo-crypto';
 import { sendGoalReachedNotification } from './notifications';
@@ -109,9 +109,8 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
     if (pendingGoalReachedTitle.current) {
       const title = pendingGoalReachedTitle.current;
       pendingGoalReachedTitle.current = null;
-      // Comportement inchangé : l'échec d'envoi était déjà silencieux.
-      // notifications.ts ne rattrape rien en interne, donc ce .catch() peut
-      // masquer un vrai rejet — signalé dans le corps de la PR d'outillage.
+      // L'échec d'envoi reste silencieux. notifications.ts ne rattrape rien
+      // en interne, donc ce .catch() peut masquer un vrai rejet.
       sendGoalReachedNotification(title).catch(() => {});
     }
   });
@@ -141,8 +140,8 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
     // La lecture initiale a échoué : le disque contient peut-être encore
     // les objectifs de l'utilisateur, illisibles mais intacts. Sauvegarder
     // l'état courant par-dessus les détruirait pour de bon — c'est
-    // exactement le scénario de L2-02, où la première action de
-    // l'utilisateur (croyant avoir tout perdu) écrase ce qui restait. On
+    // exactement le scénario où la première action de l'utilisateur
+    // (croyant avoir tout perdu) écraserait ce qui restait. On
     // n'écrit plus rien jusqu'au prochain démarrage ; le bandeau posé par
     // reportLoadResult ci-dessus le dit à l'utilisateur.
     if (readFailed) return;
@@ -201,7 +200,7 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
   }
 
   function addProgress(goalId: string, amount: number) {
-    // R2 — garde du contexte : elle fait foi quel que soit l'appelant, celle
+    // Garde du contexte : elle fait foi quel que soit l'appelant, celle
     // de l'écran (parsePositiveNumber dans src/goalValidation.ts, appelée
     // par handleSave dans app/goal/[id].tsx) s'y ajoute. Même principe que
     // l'unité dans updateGoal, et même règle qu'updateEntry ci-dessous.
@@ -269,9 +268,9 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
   }
 
   function updateEntry(goalId: string, date: string, newValue: number) {
-    // R2 — même garde qu'addProgress, et pour la même raison : elle fait foi
+    // Même garde qu'addProgress, et pour la même raison : elle fait foi
     // quel que soit l'appelant, parsePositiveNumber (src/goalValidation.ts)
-    // la double à l'écran. `newValue <= 0` seul laissait passer Infinity, et
+    // la double à l'écran. `newValue <= 0` seul laisserait passer Infinity, et
     // NaN, puisque NaN <= 0 vaut false.
     if (!Number.isFinite(newValue) || newValue <= 0) return;
     // Même raison que dans addProgress : capturé une seule fois ici, pas
@@ -340,10 +339,10 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
   // Écrit elle-même plutôt que de laisser faire l'effet de sauvegarde, et
   // passe outre readFailed : ce blocage protège contre les écritures
   // *automatiques* de l'app par-dessus des données illisibles mais peut-être
-  // intactes (L2-02). Une restauration de sauvegarde est l'inverse — une
+  // intactes. Une restauration de sauvegarde est l'inverse — une
   // écriture volontaire, confirmée par l'utilisateur dans un dialogue (voir
   // confirmDestructive dans DataSection.tsx), et dont le contenu vient de
-  // lui. La laisser bloquée revenait à l'afficher à l'écran sans jamais
+  // lui. La laisser bloquée reviendrait à l'afficher à l'écran sans jamais
   // l'écrire, et à la perdre au redémarrage.
   function replaceAllGoals(newGoals: Goal[]) {
     // Posé avant setGoals : l'effet, réveillé par ce changement d'état, doit
@@ -357,7 +356,7 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
       .then((ok) => {
         reportSaveResult('goals', ok);
         // Une écriture réussie prouve que le stockage répond de nouveau, et
-        // ce qu'il contient est désormais ce que l'utilisateur a choisi :
+        // ce qu'il contient est ce que l'utilisateur a choisi :
         // plus rien à protéger, les sauvegardes automatiques peuvent
         // reprendre sans attendre un redémarrage. Sur échec, on ne touche à
         // rien et reportSaveResult ci-dessus allume le bandeau.
