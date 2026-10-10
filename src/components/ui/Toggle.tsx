@@ -60,11 +60,12 @@ export default function Toggle({ value, onChange, accessibilityLabel }: Props) {
     //    sans effet sur Android, ne mentionne pas "switch").
     // À noter : le <Switch> de RN ne passe pas par ce chemin, il rend un vrai
     // widget natif SwitchCompat — un Pressable ne peut que *déclarer* le
-    // className, c'est ensuite TalkBack qui décide de l'annonce. Piste à
-    // reprendre au prochain test terrain : vérifier si l'état
-    // ("activé"/"désactivé") est bien annoncé — si oui, checked passe et seul
-    // le mot du rôle diffère, ce qui pointe vers le TalkBack de l'appareil
-    // plutôt que vers l'app. À revérifier aussi sous iOS/VoiceOver.
+    // className, c'est ensuite TalkBack qui décide de l'annonce.
+    // TODO(retrait): à retirer après le test TalkBack du prochain build EAS
+    // qui vérifie si l'état ("activé"/"désactivé") est bien annoncé — si oui,
+    // checked passe et seul le mot du rôle diffère, ce qui pointe vers le
+    // TalkBack de l'appareil plutôt que vers l'app. À revérifier aussi sous
+    // iOS/VoiceOver.
     <Pressable
       onPress={() => onChange(!value)}
       hitSlop={8}
