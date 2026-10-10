@@ -9,6 +9,9 @@ import * as Localization from 'expo-localization';
 import en from './locales/en.json';
 import fr from './locales/fr.json';
 
+// Settings.language (settingsStorage.ts) et les options de LanguageSection
+// recopient ces codes : en ajouter un se fait aux trois endroits, plus les
+// locales.
 export const SUPPORTED_LANGUAGES = ['fr', 'en'] as const;
 export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
 

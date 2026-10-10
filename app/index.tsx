@@ -85,7 +85,8 @@ export default function GoalListScreen() {
                   accessibilityRole="button"
                   // Explicite plutôt que laissé à la concaténation par
                   // défaut : le chevron "›" seul ne veut rien dire pour un
-                  // lecteur d'écran.
+                  // lecteur d'écran. DataSection et LanguageSection (Réglages)
+                  // suivent le même motif pour leurs lignes à chevron ou ✓.
                   accessibilityLabel={t('goalList.archivedA11y', { count: closed.length })}
                 >
                   <View style={styles.statLabelRow}>

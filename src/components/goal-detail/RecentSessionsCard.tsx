@@ -15,7 +15,9 @@ interface Props {
 // Carte "Dernières séances" (BarChart) — seul usage de ce sous-ensemble
 // d'entrées, calculé ici plutôt que dans l'écran. Rend `null`
 // si aucune séance récente : évite au parent de dupliquer la condition
-// (recentEntries.length > 0) déjà connue par ce composant.
+// (recentEntries.length > 0) déjà connue par ce composant. Suppose `entries`
+// triées par date croissante : l'import les trie (voir parseBackupPayload
+// dans backup.ts).
 export default function RecentSessionsCard({ entries, unit, today }: Props) {
   const { t } = useTranslation();
   const recentEntries = entries.filter((e) => e.value > 0).slice(-7);

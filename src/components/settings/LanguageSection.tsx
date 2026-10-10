@@ -6,7 +6,8 @@ import { settingsStyles as s } from './styles';
 
 interface LanguageOption {
   // undefined ('system') = pas de valeur stockée, suit la langue détectée
-  // de l'appareil (voir settingsStorage.ts, src/i18n/index.ts).
+  // de l'appareil (voir settingsStorage.ts, src/i18n/index.ts). Les codes
+  // recopient SUPPORTED_LANGUAGES (src/i18n/index.ts).
   value: 'fr' | 'en' | undefined;
   labelKey: string;
 }

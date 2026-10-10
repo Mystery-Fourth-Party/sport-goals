@@ -18,6 +18,11 @@ export interface Entry {
   recordedAt?: string;
 }
 
+// Les champs optionnels ci-dessous suivent la convention « absent = valeur
+// par défaut » : la sauvegarde les recopie telle quelle (voir BackupGoal et
+// isValidGoal dans backup.ts) et la relance d'un objectif les reprend (voir
+// goalToFormValues dans goalFormValues.ts). Un nouveau champ optionnel
+// s'ajoute aussi à ces deux endroits.
 export interface Goal {
   id: string;
   title: string;
@@ -31,7 +36,9 @@ export interface Goal {
   // compteur `currentValue` séparé : une seule source de vérité.
   // `createdAt`/`deadline` font déjà office de startDate/endDate (voir
   // stats.ts) : pas de champs dédiés supplémentaires pour éviter de
-  // dupliquer la même information sous deux noms différents.
+  // dupliquer la même information sous deux noms différents. L'ordre est
+  // chronologique, sur quoi s'appuient GoalHistoryList et RecentSessionsCard :
+  // l'import trie les entrées (voir parseBackupPayload dans backup.ts).
   entries: Entry[];
   // "HH:mm" — absent = hérite de settings.reminderTime (voir
   // notifications.ts, groupPendingGoalsByReminderTime).

@@ -31,6 +31,8 @@ export default function GoalCard({ goal, onPress }: Props) {
   // n'entre alors pas dans les enfants — pas besoin en plus de
   // accessibilityElementsHidden/importantForAccessibility côté enfants ni de
   // accessible={false} dessus (voir la doc React Native, page Accessibility).
+  // Les lignes « Terminés cette semaine » de app/weekly.tsx composent leur
+  // phrase sur le même motif (titre, progression, statut parlé).
   //
   // Sur un objectif clos, « 0 jour restant » ne dit rien : la ligne
   // annonce l'échéance passée, et le statut final suit.

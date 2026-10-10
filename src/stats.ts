@@ -65,6 +65,9 @@ export function parseDate(s: string): Date {
   return new Date(y, m - 1, d);
 }
 
+// Écart en jours arrondi (l'heure d'été fait varier un jour de ± 1 h).
+// findGoalInconsistency (backup.ts) refait le même arrondi sur des instants
+// ISO, pour valider la durée d'un objectif importé.
 export function diffDays(a: Date, b: Date): number {
   return Math.round((b.getTime() - a.getTime()) / (1000 * 60 * 60 * 24));
 }

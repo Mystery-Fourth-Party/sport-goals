@@ -74,6 +74,9 @@ export async function ensureNotificationPermission(): Promise<boolean> {
 
 // ─── Logique pure (testable sans toucher expo-notifications) ────────────
 
+// Valide le format "HH:mm" des horaires de rappel (Settings.reminderTime,
+// Goal.reminderTime). TimeField (components/ui) produit ce format ; la saisie
+// libre du web n'a que ce contrôle (voir NotificationsSection).
 export function parseReminderTime(time: string): { hour: number; minute: number } | null {
   const match = /^([01]?\d|2[0-3]):([0-5]\d)$/.exec(time.trim());
   if (!match) return null;

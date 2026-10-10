@@ -339,7 +339,7 @@ describe('CreateGoalScreen — répétition automatique', () => {
   // Relance manuelle depuis la dernière occurrence d'une série arrêtée : un
   // objectif indépendant, sans lien avec la série de la source. Avec `repeat`
   // encore à true, la série aurait déjà une suite et la relance serait refusée
-  // (voir « relance d'une occurrence qui a une suite »).
+  // (voir « CreateGoalScreen — relance d’une occurrence qui a une suite »).
   it('relance la dernière occurrence d’une série arrêtée avec la coche décochée et sans identifiant de série', async () => {
     mockParams = { from: 'src' };
     await renderWith([closedGoal({ repeat: false, seriesId: 'serie-source' })]);

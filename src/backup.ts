@@ -262,7 +262,8 @@ function findGoalInconsistency(goals: RawGoal[]): string | null {
     if (deadline <= createdAt) return i18n.t('backup.deadlineNotAfterCreatedAt');
 
     // Même plafond qu'à la création et à la modification (MAX_GOAL_DAYS,
-    // goalValidation.ts). Écart en jours arrondi et non comparaison stricte
+    // goalValidation.ts). Écart en jours arrondi (comme diffDays dans
+    // stats.ts, ici sur des instants) et non comparaison stricte
     // des instants : l'app pose l'échéance par setDate en heure locale, et
     // un objectif de 365 jours qui traverse un changement d'heure mesure
     // 365 jours ± 1 h. L'arrondi garde la validation indépendante du fuseau,

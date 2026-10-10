@@ -4,7 +4,8 @@ import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/dat
 import { colors, fontFamily, white } from '../../theme';
 
 interface Props {
-  // "HH:mm" — même format que Settings.reminderTime/Goal.reminderTime.
+  // "HH:mm" — même format que Settings.reminderTime/Goal.reminderTime, dont
+  // parseReminderTime (notifications.ts) valide le format.
   value: string;
   onChange: (v: string) => void;
 }

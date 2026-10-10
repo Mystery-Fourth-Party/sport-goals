@@ -1,5 +1,7 @@
 // Couvre goalToFormValues : les valeurs de départ du formulaire de création
 // tirées d'un objectif existant (durée d'origine, rappel, défauts absents).
+// Ne couvre pas la décision de relancer ni le formulaire lui-même (voir
+// goal-create-screen.test.tsx et GoalForm.test.tsx).
 import { goalToFormValues } from './goalFormValues';
 import { Goal } from './types';
 
