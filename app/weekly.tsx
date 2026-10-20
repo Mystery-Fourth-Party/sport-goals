@@ -90,7 +90,7 @@ export default function WeeklyScreen() {
             // seule représentation de cette donnée sur cet écran (celui de
             // l'écran Détail double la liste d'historique et reste masqué
             // exprès). Le libellé est composé ici parce que weekly.tsx est le
-            // seul à savoir que les barres comptent des séances (L4-03).
+            // seul à savoir que les barres comptent des séances.
             accessibilityLabel={t('weekly.sessionsPerDayA11y', {
               days: sessionsPerDay
                 .map((d) =>
@@ -133,7 +133,7 @@ export default function WeeklyScreen() {
                     styles.goalPercent,
                     // Couleur dérivée du statut réel et non figée sur le vert :
                     // le plus avancé en progression brute peut être en retard
-                    // sur son propre rythme attendu (L3-03). Le ProgressBar
+                    // sur son propre rythme attendu. Le ProgressBar
                     // juste en dessous suit déjà le statut.
                     { color: statusColors[mostAdvanced.stats.status].text },
                   ]}
@@ -431,8 +431,8 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   // flexShrink: 0 — le libellé d'unité traduit ("répétitions", "minutes")
-  // est bien plus long que la clé technique affichée jusqu'ici : sans ça,
-  // "+45 minutes" se coupait en deux face à un titre long. C'est le titre
+  // est bien plus long que la clé technique ('reps', 'min') : sans ça,
+  // "+45 minutes" se couperait en deux face à un titre long. C'est le titre
   // (goalRowLeft, flexShrink: 1) qui absorbe la contrainte.
   goalBreakdownTotal: {
     flexShrink: 0,

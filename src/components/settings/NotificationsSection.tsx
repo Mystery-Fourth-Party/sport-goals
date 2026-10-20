@@ -64,7 +64,7 @@ export default function NotificationsSection() {
   }
 
   // Un seul élément accessible par ligne de toggle (même principe que
-  // GoalCard) : TalkBack annonçait sinon le titre, le sous-titre et le
+  // GoalCard) : TalkBack annoncerait sinon le titre, le sous-titre et le
   // Toggle comme 3 éléments séparés. Le libellé composite va sur le Toggle,
   // seul élément actionnable de la ligne, et les Text de la ligne sont
   // masqués au lecteur d'écran. L'état activé/désactivé n'est pas concaténé

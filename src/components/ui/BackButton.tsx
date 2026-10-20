@@ -8,8 +8,10 @@ interface Props {
 
 // Bouton rond flèche retour. Le prototype utilise une icône SVG custom ;
 // on utilise ici un glyphe texte pour rester sans dépendance supplémentaire
-// (react-native-svg / @expo/vector-icons) à ce stade — à revoir si un vrai
-// jeu d'icônes est introduit plus tard.
+// (react-native-svg / @expo/vector-icons).
+// TODO(retrait): à retirer quand react-native-svg ou @expo/vector-icons est
+// une dépendance du projet : le glyphe texte cède alors la place à une vraie
+// icône.
 export default function BackButton({ onPress }: Props) {
   const { t } = useTranslation();
 

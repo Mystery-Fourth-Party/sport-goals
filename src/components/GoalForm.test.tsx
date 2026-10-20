@@ -1,12 +1,9 @@
-// L4-01 — t('goalForm.perDay', { unit }) recevait la clé technique de
-// l'unité ('reps', 'km') au lieu de son libellé traduit, alors que la clé
-// vaut « {{unit}} par jour ». Rendu : « reps par jour ».
+// t('goalForm.perDay', { unit }) doit recevoir le libellé traduit de l'unité,
+// pas sa clé technique ('reps', 'km'), la clé valant « {{unit}} par jour ».
+// Rendu fautif : « reps par jour ».
 //
-// C'est la troisième fois que ce motif échappe à une correction : le tri
-// citait trois sites, un avait déjà été corrigé en PR #17, et les deux
-// restants n'ont été retrouvés qu'en croisant les clés interpolant
-// {{unit}} avec leurs appels. Les dix autres sites du dépôt passent bien
-// t('unit.…') ou t('unitSpoken.…').
+// Ce motif se retrouve en croisant les clés qui interpolent {{unit}} avec
+// leurs appels : chacun doit passer t('unit.…') ou t('unitSpoken.…').
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import GoalForm from './GoalForm';
 import { GoalFormValues } from '../goalFormValues';
@@ -51,7 +48,7 @@ describe('GoalForm', () => {
     expect(screen.getByText(i18n.t('goalForm.perDay', { unit: i18n.t('unit.reps') }))).toBeTruthy();
   });
 
-  // R2 — même trou qu'à l'édition : `Number(x) > 0` laisse passer
+  // Même trou qu'à l'édition : `Number(x) > 0` laisse passer
   // Infinity, que Number('1e400') produit.
   it('refuses a target value that overflows to Infinity', async () => {
     const onCreate = jest.fn();

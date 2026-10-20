@@ -51,9 +51,9 @@ export default function ReminderScheduler() {
     const thisRun = ++runId.current;
 
     if (!settings.dailyReminder) {
-      // Échec d'annulation laissé silencieux côté UI, décision de la PR du
-      // chantier « rappel quotidien » : seul rescheduleDailyReminder remonte
-      // ses rejets dans ReminderStatusProvider. console.error pour la parité
+      // Échec d'annulation laissé silencieux côté UI, par choix : seul
+      // rescheduleDailyReminder remonte ses rejets dans
+      // ReminderStatusProvider. console.error pour la parité
       // avec storage.ts/settingsStorage.ts, qui tracent leurs échecs.
       cancelDailyReminder().catch((error) => {
         console.error('cancelDailyReminder: échec de l’annulation du rappel.', error);
@@ -63,10 +63,10 @@ export default function ReminderScheduler() {
     }
 
     rescheduleDailyReminder(goals, today, settings.reminderTime, settings.streakAlert, {
-      // La garde ne sert plus seulement à filtrer l'affichage du statut :
-      // elle est consultée à l'intérieur, avant l'annulation et avant chaque
-      // programmation, pour qu'une exécution obsolète n'aille pas défaire ou
-      // doubler ce qu'une exécution plus récente vient de poser (L2-04).
+      // La garde filtre l'affichage du statut et est aussi consultée à
+      // l'intérieur, avant l'annulation et avant chaque programmation, pour
+      // qu'une exécution obsolète n'aille pas défaire ou doubler ce qu'une
+      // exécution plus récente vient de poser.
       isStale: () => runId.current !== thisRun,
     })
       .then((result) => {
@@ -76,7 +76,7 @@ export default function ReminderScheduler() {
       // Rejet imprévu d'expo-notifications : notifications.ts ne rattrape
       // rien en interne. Remonté dans le statut comme un échec de
       // reprogrammation ordinaire — c'est le seul des trois appels de
-      // notification à avoir une UI pour le dire (câblée depuis la PR #10).
+      // notification à avoir une UI pour le dire.
       .catch((error) => {
         console.error('rescheduleDailyReminder: rejet inattendu.', error);
         if (runId.current !== thisRun) return;

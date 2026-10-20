@@ -1,36 +1,37 @@
-// L1-01 — base de calendrier des dates d'objectif.
+// Base de calendrier des dates d'objectif.
 //
 // getGoalStats compare trois jours : celui de createdAt, celui de deadline,
 // et `today`. Les deux premiers viennent de chaînes ISO écrites par
-// `new Date(...).toISOString()` (voir GoalForm.tsx et app/goal/[id]/edit.tsx),
-// le troisième de `todayStr()`, qui lit le calendrier *local*. Les trois
-// doivent être sur la même base, sinon un objectif créé près de minuit voit
-// sa durée, ses jours restants et son statut décalés d'un jour.
+// `new Date(...).toISOString()` (voir GoalForm.tsx, app/goal/[id]/edit.tsx et
+// src/series.ts), le troisième de `todayStr()`, qui lit le calendrier
+// *local*. Les trois doivent être sur la même base, sinon un objectif créé
+// près de minuit voit sa durée, ses jours restants et son statut décalés
+// d'un jour.
 //
 // Ces deux tests ne peuvent pas être rouges à UTC+0 : le jour UTC et le jour
 // local y coïncident, il n'y a donc rien à détecter. Le premier est rouge
 // dans tout fuseau à l'est d'UTC, le second dans tout fuseau à l'ouest. Le
 // fuseau ne peut pas être forcé depuis le test : sous jest, écrire
 // process.env.TZ ne réinitialise plus le cache de fuseau de Node (constaté
-// sur Node 20 — la variable est bien posée, getTimezoneOffset ne bouge pas),
-// contrairement à un process node ordinaire.
+// sous Node 20, non revérifié sous Node 24 — la variable est bien posée,
+// getTimezoneOffset ne bouge pas), contrairement à un process node
+// ordinaire.
 import { getGoalStats, getWeeklyStats, isGoalClosed, todayStr } from './stats';
 import { Goal } from './types';
 
-// Ce que le commentaire ci-dessus décrivait sans que rien ne l'applique :
-// chacun de ces deux tests ne peut rougir que dans une moitié du globe, et
-// passe silencieusement dans l'autre. Sous TZ=UTC — la passe qui porte
-// `--coverage` et fait référence dans ci.yml — les deux passent quoi qu'il
-// arrive. Mesuré le 2026-09-20 en réintroduisant L1-01, `toDayStr` rendu à
-// `iso.slice(0, 10)`, sur ce fichier seul :
+// Sans garde, chacun de ces deux tests ne peut rougir que dans une moitié du
+// globe, et passe silencieusement dans l'autre. Sous TZ=UTC — la passe qui
+// porte `--coverage` et fait référence dans ci.yml — les deux passent quoi
+// qu'il arrive. Mesuré le 2026-09-20 en réintroduisant le défaut de base de
+// calendrier, `toDayStr` rendu à `iso.slice(0, 10)`, sur ce fichier seul :
 //
-//   TZ=UTC     2 passed            les deux vacuux
+//   TZ=UTC     2 passed            les deux passent à vide
 //   TZ=GMT+5   1 failed, 1 passed  à l'est, seul le premier détecte
 //   TZ=GMT-9   1 failed, 1 passed  à l'ouest, seul le second détecte
 //
 // (Formes POSIX et non noms IANA : sous Windows, Node laisse TZ à sa valeur
 // locale pour un « America/New_York ». Sur les runners Ubuntu de ci.yml, les
-// noms IANA de la matrice sont bien pris en compte.)
+// noms IANA des quatre étapes de test sont bien pris en compte.)
 //
 // D'où ces deux sélecteurs : le test qui ne peut rien prouver sous le fuseau
 // courant est marqué `skipped` au lieu d'être compté vert. Un `2 skipped`

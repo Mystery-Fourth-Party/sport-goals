@@ -42,10 +42,10 @@ export default function EditGoalScreen() {
         <View style={styles.header}>
           <BackButton onPress={() => router.back()} />
         </View>
-        {/* Le message n'apparaît qu'une fois le chargement terminé : avant,
-            on ne sait pas encore si l'objectif existe, et l'annoncer
-            introuvable serait une affirmation gratuite — c'est pourtant ce
-            que faisait l'écran à chaque démarrage à froid sur cette route.
+        {/* Le message n'apparaît qu'une fois le chargement terminé : avant
+            cela, on ne sait pas encore si l'objectif existe, et l'annoncer
+            introuvable serait une affirmation gratuite à chaque démarrage à
+            froid sur cette route.
             L'en-tête est rendu dans les deux cas, pour que le bouton retour
             existe aussi pendant l'attente. */}
         {loaded && (
@@ -65,21 +65,21 @@ export default function EditGoalScreen() {
   return <EditGoalForm key={goal.id} goal={goal} />;
 }
 
-// Composant séparé, et non un bloc de plus dans la route : ses six champs
-// sont initialisés par des initialiseurs useState lisant `goal`, or un
-// initialiseur ne s'évalue qu'au premier rendu du composant. Tant que
-// l'écran était un composant unique monté dès l'arrivée sur la route, ce
-// premier rendu précédait la résolution de loadGoals et l'état restait figé
-// sur '' / 'reps' / '1' pour toute la vie de l'écran — un enregistrement
-// écrasait alors targetValue, unit et deadline (L3-01). Ici `goal` est
-// présent parce que la route ne monte pas ce composant autrement, et le
-// type le dit plutôt que de le laisser à une convention.
+// Composant séparé, et non un bloc de plus dans la route : ses champs de
+// saisie sont initialisés par des initialiseurs useState lisant `goal`, or un
+// initialiseur ne s'évalue qu'au premier rendu du composant. Monté dès
+// l'arrivée sur la route, ce premier rendu précéderait la résolution de
+// loadGoals et l'état resterait figé sur '' / 'reps' / '1' pour toute la vie
+// de l'écran — un enregistrement écraserait alors targetValue, unit et
+// deadline. Ici `goal` est présent parce que la route ne monte pas ce
+// composant autrement, et le type le dit plutôt que de le laisser à une
+// convention.
 function EditGoalForm({ goal }: { goal: Goal }) {
   const { t } = useTranslation();
   const { updateGoal } = useGoals();
 
   // useToday et non todayStr() : la carte de résumé se remet à jour au
-  // retour de l'arrière-plan (L1-08). Le champ « Jours restants » ne suit
+  // retour de l'arrière-plan. Le champ « Jours restants » ne suit
   // pas — il est initialisé une seule fois au montage, par construction
   // (voir le commentaire de ce composant) : un passage de minuit pendant
   // que l'écran est ouvert laisse donc l'écran afficher une progression
@@ -92,9 +92,9 @@ function EditGoalForm({ goal }: { goal: Goal }) {
   const [unit, setUnit] = useState<Unit>(goal.unit);
   const [days, setDays] = useState(String(Math.max(1, s.remainingDays)));
   const [saveAttempted, setSaveAttempted] = useState(false);
-  // absent = true (voir types.ts) — reflété tel quel plutôt que normalisé,
-  // pour ne pas introduire de valeur inventée pour un objectif qui n'avait
-  // jamais explicitement ce champ.
+  // absent = true (voir types.ts) : la saisie part de true pour un objectif
+  // sans ce champ, et handleSave l'écrit toujours. Enregistrer un tel objectif
+  // lui donne donc reminderEnabled: true, équivalent à l'absence à l'usage.
   const [reminderEnabled, setReminderEnabled] = useState(goal.reminderEnabled ?? true);
   const [reminderTime, setReminderTime] = useState<string | undefined>(goal.reminderTime);
   const [remindAfterReached, setRemindAfterReached] = useState(goal.remindAfterReached ?? false);
@@ -112,7 +112,7 @@ function EditGoalForm({ goal }: { goal: Goal }) {
   const unitLocked = goal.entries.some((e) => e.value > 0);
 
   const titleError = title.trim() === '' ? t('editGoal.titleRequired') : undefined;
-  // parsePositiveNumber plutôt que `Number(x) > 0` : ce test laissait passer
+  // parsePositiveNumber plutôt que `Number(x) > 0` : ce test laisse passer
   // Infinity (saisie "1e400"), voir src/goalValidation.ts.
   const parsedTarget = parsePositiveNumber(target);
   const targetNum = parsedTarget ?? 0;
@@ -137,8 +137,8 @@ function EditGoalForm({ goal }: { goal: Goal }) {
   const canSave = !titleError && !targetError && !daysError;
 
   // Recalcul en direct du nouveau rythme quotidien requis, comme le calcul
-  // déjà fait dans GoalForm pour la création (voir EditGoalScreen dans le
-  // prototype) — seulement affiché une fois le formulaire valide.
+  // déjà fait dans GoalForm pour la création — seulement affiché une fois le
+  // formulaire valide.
   const remaining = Math.max(0, targetNum - s.actual);
   const newDailyRequired = canSave && daysNum > 0 ? remaining / daysNum : 0;
 
@@ -226,9 +226,9 @@ function EditGoalForm({ goal }: { goal: Goal }) {
             <Text style={styles.dailyAvgValue}>≈ {fmt(newDailyRequired, unit)}</Text>
             <Text style={styles.dailyAvgUnit}>
               {t('editGoal.remainingToComplete', {
-                // Libellé traduit et non la clé technique : la phrase
-                // mélangeait « reps/jour » avec « 5 répétitions » dans le
-                // même appel (L4-01).
+                // Libellé traduit et non la clé technique : sinon la phrase
+                // mélangerait « reps/jour » avec « 5 répétitions » dans le
+                // même appel.
                 unit: t(`unit.${unit}`),
                 value: fmt(remaining, unit),
                 unitLabel: t(`unit.${unit}`),

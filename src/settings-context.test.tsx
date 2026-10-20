@@ -96,13 +96,13 @@ describe('SettingsProvider', () => {
   });
 });
 
-// L2-06 (lecture) et L2-05 (écriture) côté réglages — même famille que les
+// Échecs de lecture et d'écriture côté réglages — même famille que les
 // tests de goals-context.test.tsx, conséquences différentes : ici un repli
 // silencieux sur DEFAULT_SETTINGS rebascule la langue, éteint le rappel
 // quotidien et remet l'heure à 20:00, puis écrase la vraie configuration au
 // premier réglage touché.
 describe('échecs de persistance', () => {
-  it('does not write over the stored settings after a failed initial read (L2-06)', async () => {
+  it('does not write over the stored settings after a failed initial read', async () => {
     mockedLoadSettings.mockResolvedValue({ value: DEFAULT_SETTINGS, ok: false });
     const { result } = renderHook(() => useHarness(), { wrapper });
     await waitFor(() => expect(result.current.settings.loaded).toBe(true));
@@ -114,7 +114,7 @@ describe('échecs de persistance', () => {
     expect(mockedSaveSettings).not.toHaveBeenCalled();
   });
 
-  it('surfaces a failed initial read through the storage status context (L2-06)', async () => {
+  it('surfaces a failed initial read through the storage status context', async () => {
     mockedLoadSettings.mockResolvedValue({ value: DEFAULT_SETTINGS, ok: false });
 
     const { result } = renderHook(() => useHarness(), { wrapper });
@@ -122,7 +122,7 @@ describe('échecs de persistance', () => {
     await waitFor(() => expect(result.current.status.loadFailed).toBe(true));
   });
 
-  it('surfaces a failed write through the storage status context (L2-05)', async () => {
+  it('surfaces a failed write through the storage status context', async () => {
     mockedLoadSettings.mockResolvedValue({ value: DEFAULT_SETTINGS, ok: true });
     mockedSaveSettings.mockResolvedValue(false);
     const { result } = renderHook(() => useHarness(), { wrapper });
@@ -137,10 +137,10 @@ describe('échecs de persistance', () => {
 // Pendant côté réglages de la porte de sortie de l'import (voir
 // describe('replaceAllGoals — import explicite') dans goals-context.test.tsx).
 // importSettings est une fonction distincte d'updateSettings, et pas un
-// paramètre de cette dernière : l'import réutilisait updateSettings, qui est
-// aussi la fonction appelée par tous les toggles de NotificationsSection et
-// LanguageSection — la faire passer outre readFailed rouvrirait L2-06 pour
-// n'importe quel réglage touché après un échec de lecture.
+// paramètre de cette dernière : updateSettings est aussi la fonction appelée
+// par tous les toggles de NotificationsSection et LanguageSection — la faire
+// passer outre readFailed laisserait n'importe quel réglage touché après un
+// échec de lecture écraser la vraie configuration.
 describe('importSettings', () => {
   const imported = { dailyReminder: true, reminderTime: '07:00' };
   const merged = { ...DEFAULT_SETTINGS, ...imported };
@@ -221,7 +221,7 @@ describe('importSettings', () => {
     expect(result.current.status.loadFailed).toBe(true);
   });
 
-  // Le garde-fou de L2-06 : la porte de sortie est réservée à l'import.
+  // Garde-fou : la porte de sortie est réservée à l'import.
   it('leaves updateSettings blocked after a failed read', async () => {
     const { result } = renderHarnessWith(false);
     await waitFor(() => expect(result.current.settings.loaded).toBe(true));

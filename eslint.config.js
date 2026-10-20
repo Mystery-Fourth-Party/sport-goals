@@ -30,10 +30,9 @@ module.exports = defineConfig([
     },
     rules: {
       // Une promesse non attendue échoue en silence : le rejet ne remonte
-      // nulle part et l'ordre d'exécution n'est plus garanti. Adopté le
-      // 01/09 après le tri de revue de code, qui avait trouvé plusieurs
-      // sites de ce type. `await` quand la suite en dépend, `.catch()`
-      // explicite quand l'échec est acceptable — jamais ignoré tacitement.
+      // nulle part et l'ordre d'exécution n'est plus garanti. `await` quand
+      // la suite en dépend, `.catch()` explicite quand l'échec est
+      // acceptable — jamais ignoré tacitement.
       '@typescript-eslint/no-floating-promises': 'error',
     },
   },

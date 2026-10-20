@@ -66,8 +66,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     // réglages affichés sont DEFAULT_SETTINGS, pas ceux de l'utilisateur.
     // Les écrire remplacerait sa configuration réelle — encore intacte sur
     // l'appareil — par des valeurs par défaut qu'il n'a jamais choisies
-    // (scénario de L2-06 : langue, heure du rappel et toggles perdus au
-    // premier réglage touché).
+    // (scénario : langue, heure du rappel et toggles perdus au premier
+    // réglage touché).
     // L'ordre de ces deux gardes est porteur : readFailed doit être testé
     // AVANT skipNextSave, sinon l'import (voir importSettings, qui arme le
     // drapeau puis repasse readFailed à false une fois son écriture

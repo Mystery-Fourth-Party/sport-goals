@@ -11,11 +11,11 @@ interface ConfirmDestructiveOptions {
   onConfirm: () => void;
 }
 
-// Factorise le pattern Alert.alert / window.confirm dupliqué à l'identique
-// dans DataSection.confirmAndImport et app/goal/[id].tsx (handleDelete,
-// handleDeleteEntry). Format web volontairement "title\n\nmessage" (déjà
-// celui de DataSection) : les deux call sites de goal/[id].tsx passaient
-// jusqu'ici une unique chaîne fusionnée, désormais alignés dessus.
+// Pattern Alert.alert / window.confirm partagé par DataSection.confirmAndImport
+// et app/goal/[id].tsx (handleDelete, handleDeleteEntry). Format web
+// volontairement "title\n\nmessage" (celui de DataSection) : les call sites
+// de goal/[id].tsx passent title et message séparément, comme DataSection,
+// et non une unique chaîne fusionnée.
 // title/message restent la responsabilité de chaque appelant (déjà traduits
 // là où ils sont construits) ; seul le chrome de l'alerte (bouton Annuler,
 // libellé de confirmation par défaut) est traduit ici, fonction pure hors

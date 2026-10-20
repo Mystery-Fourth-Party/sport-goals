@@ -122,12 +122,12 @@ describe('weekRangeLabel', () => {
   });
 });
 
-// L1-11 — une Date invalide indexait les tableaux de libellés avec NaN.
-// tableau[NaN] ne lève pas : il renvoie undefined, qui finissait affiché
-// tel quel, et getDate()/getFullYear() ajoutaient des "NaN" au passage. Le
-// chemin réel est parseDate() sur une date corrompue arrivée par import
-// (voir GoalHistoryList, RecentSessionsCard, app/weekly.tsx), avant la
-// validation de format prévue en PR5.
+// Une Date invalide indexe les tableaux de libellés avec NaN. tableau[NaN] ne
+// lève pas : il renvoie undefined, qui serait affiché tel quel, et
+// getDate()/getFullYear() ajouteraient des "NaN" au passage. Le chemin réel
+// est parseDate() sur une date corrompue dans le stockage (voir
+// GoalHistoryList, RecentSessionsCard, app/weekly.tsx) : l'import n'en laisse
+// plus passer, backup.ts exige des dates canoniques.
 describe('date invalide', () => {
   const invalide = new Date('pas une date');
   const valide = new Date(2026, 7, 21);

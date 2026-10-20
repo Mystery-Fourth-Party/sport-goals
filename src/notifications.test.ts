@@ -9,7 +9,7 @@ import {
 } from './notifications';
 import { Goal } from './types';
 
-// buildReminderContent prend désormais `t` en paramètre (voir
+// buildReminderContent prend `t` en paramètre (voir
 // notifications.ts) — langue fixée ici pour un test déterministe,
 // indépendant de la langue détectée par défaut dans l'environnement Jest
 // (même pattern que backup.test.ts).
@@ -284,10 +284,8 @@ describe('rescheduleDailyReminder', () => {
     jest.useRealTimers();
   });
 
-  // Ce test affirmait l'inverse (« ne programme rien quand rien n'est en
-  // attente ») : il encodait L2-01. Correct avec un trigger DATE, où il
-  // fallait de toute façon reprogrammer à la prochaine occasion utile ;
-  // faux avec DAILY, qui tire tous les jours — ce que tout est loggé
+  // Rien en attente aujourd'hui ne veut pas dire « ne rien programmer » :
+  // un trigger DAILY tire tous les jours, et savoir que tout est loggé
   // aujourd'hui ne dit rien de demain.
   it('still schedules a generic recurring reminder when nothing is pending today', async () => {
     const completed = makeGoal({
@@ -338,9 +336,8 @@ describe('rescheduleDailyReminder', () => {
 
     // Horaire par groupe. Un trigger DAILY porte l'heure, pas une date
     // cible : la notion de « aujourd'hui ou demain » disparaît, puisqu'il
-    // tire à cette heure-là tous les jours. Ce test attendait auparavant
-    // deux Date calculées par computeNextReminderDate, fonction supprimée
-    // avec le passage à DAILY.
+    // tire à cette heure-là tous les jours : le trigger se compare à
+    // { type: 'daily', hour, minute }, sans Date calculée.
     expect(defaultCall?.trigger).toEqual({
       type: 'daily',
       hour: 20,
@@ -374,9 +371,7 @@ describe('rescheduleDailyReminder', () => {
   });
 });
 
-// ─── Reproduction des findings L1-03, L1-06, L2-01, L2-04 ───────────────
-// Écrits avant les correctifs, rouges sur le code d'avant (voir AGENTS.md,
-// « Test rouge avant tout correctif »).
+// ─── Cycle de vie du rappel : trigger, annulation, exécution obsolète ───
 
 describe('rescheduleDailyReminder — cycle de vie du rappel', () => {
   const today = '2026-08-21';
@@ -392,8 +387,8 @@ describe('rescheduleDailyReminder — cycle de vie du rappel', () => {
     jest.useRealTimers();
   });
 
-  // L1-03 — le rappel « quotidien » était un trigger DATE à un seul tir :
-  // il arrivait une fois, puis plus rien tant que l'app n'était pas rouverte.
+  // Un rappel « quotidien » en trigger DATE n'aurait qu'un seul tir : il
+  // arriverait une fois, puis plus rien tant que l'app ne serait pas rouverte.
   it('schedules a natively repeating DAILY trigger, not a one-shot DATE', async () => {
     const goal = makeGoal({ id: '1', entries: [] });
 
@@ -408,10 +403,11 @@ describe('rescheduleDailyReminder — cycle de vie du rappel', () => {
     expect(trigger.date).toBeUndefined();
   });
 
-  // L2-01 — l'utilisateur qui logge sa progression sur tous ses objectifs
-  // désarmait son propre rappel : annulation puis retour anticipé sans rien
-  // reprogrammer. Avec un trigger DAILY c'est pire encore, puisque le
-  // trigger annulé aurait tenu tout seul les jours suivants.
+  // L'utilisateur qui logge sa progression sur tous ses objectifs
+  // désarmerait son propre rappel si l'annulation était suivie d'un retour
+  // anticipé sans rien reprogrammer. Avec un trigger DAILY c'est pire
+  // encore, puisque le trigger annulé aurait tenu tout seul les jours
+  // suivants.
   it('never cancels without rescheduling, even when no goal needs a reminder today', async () => {
     const doneToday = makeGoal({
       id: '1',
@@ -425,8 +421,8 @@ describe('rescheduleDailyReminder — cycle de vie du rappel', () => {
     expect(mockedSchedule.mock.calls[0][0].trigger.type).toBe('daily');
   });
 
-  // L1-06 — l'annulation s'exécutait en toute première instruction, donc un
-  // horaire invalide ou une permission révoquée détruisait un rappel valide
+  // L'annulation ne doit pas être la toute première instruction : un
+  // horaire invalide ou une permission révoquée détruirait un rappel valide
   // déjà programmé sans rien mettre à la place.
   it('does not cancel anything when the reminder time is malformed', async () => {
     const goal = makeGoal({ id: '1', entries: [] });
@@ -449,10 +445,10 @@ describe('rescheduleDailyReminder — cycle de vie du rappel', () => {
     expect(mockedSchedule).not.toHaveBeenCalled();
   });
 
-  // L2-04 — la garde runId de ReminderScheduler ne filtrait que l'affichage
-  // du statut : une exécution obsolète menait quand même son cycle
-  // annulation + programmation jusqu'au bout, par-dessus une exécution plus
-  // récente.
+  // La garde runId de ReminderScheduler ne filtre que l'affichage du
+  // statut : sans la sonde isStale, une exécution obsolète mènerait quand
+  // même son cycle annulation + programmation jusqu'au bout, par-dessus une
+  // exécution plus récente.
   it('aborts before cancelling when the run is already stale', async () => {
     const goal = makeGoal({ id: '1', entries: [] });
 
@@ -474,8 +470,8 @@ describe('rescheduleDailyReminder — cycle de vie du rappel', () => {
     expect(mockedSchedule).toHaveBeenCalledTimes(1);
   });
 
-  // Option B retenue : un seul envoi, dont le contenu est régénéré à chaque
-  // reprogrammation. Pas de seconde notification dédiée au streak.
+  // Un seul envoi, dont le contenu est régénéré à chaque reprogrammation. Pas
+  // de seconde notification dédiée au streak.
   it('carries the streak wording in the single recurring reminder, without a second notification', async () => {
     const withStreak = makeGoal({
       id: '1',

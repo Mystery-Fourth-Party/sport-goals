@@ -5,9 +5,9 @@ const GOALS_KEY = 'goals';
 
 // Résultat d'une lecture. `value` est toujours renseignée — les données lues,
 // ou le repli — pour que l'appelant ait quelque chose à afficher dans tous
-// les cas. `ok` porte la distinction que le type de retour précédent (la
-// valeur nue) rendait impossible : « rien de stocké », repli parfaitement
-// légitime, contre « lecture impossible », où le disque contient peut-être
+// les cas. `ok` porte la distinction qu'une valeur nue rendrait impossible :
+// « rien de stocké », repli parfaitement légitime, contre « lecture
+// impossible », où le disque contient peut-être
 // encore des données valides. Sur `ok: false`, l'appelant ne doit pas écrire
 // par-dessus (voir goals-context.tsx / settings-context.tsx).
 export interface LoadResult<T> {

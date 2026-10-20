@@ -124,10 +124,10 @@ it('applies the result of the most recently triggered run, not the most recently
   expect(result.current.error).toBe('erreur de la 2e exécution');
 });
 
-// ─── Reproduction du finding L2-04 ──────────────────────────────────────
-// La garde runId ne filtrait que l'affichage du statut : rien n'empêchait
-// une exécution obsolète de mener son cycle annulation + programmation
-// jusqu'au bout, par-dessus une exécution plus récente.
+// ─── Sonde d'exécution obsolète ─────────────────────────────────────────
+// La garde runId ne filtre que l'affichage du statut : sans la sonde, rien
+// n'empêcherait une exécution obsolète de mener son cycle annulation +
+// programmation jusqu'au bout, par-dessus une exécution plus récente.
 
 it('hands rescheduleDailyReminder a staleness probe so an outdated run can abort', () => {
   mockSettings = { ...DEFAULT_SETTINGS, dailyReminder: true };
@@ -151,7 +151,7 @@ it('reports the run as stale once a newer run has started', async () => {
   const firstProbe = mockedReschedule.mock.calls[0][4].isStale;
 
   // Un changement d'horaire relance l'effet : la sonde de la PREMIÈRE
-  // exécution doit désormais se déclarer obsolète.
+  // exécution doit se déclarer obsolète.
   mockSettings = { ...DEFAULT_SETTINGS, dailyReminder: true, reminderTime: '07:30' };
   await act(async () => {
     rerender(undefined);

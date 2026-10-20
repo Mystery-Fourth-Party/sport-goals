@@ -10,9 +10,9 @@ interface Props {
   onPress: () => void;
 }
 
-// Carte objectif de l'écran Liste (voir GoalCard dans le prototype) :
-// tap → écran Détail. L'ajout de progression et l'édition/suppression
-// vivent désormais sur l'écran Détail plutôt qu'inline ici.
+// Carte objectif de l'écran Liste : tap → écran Détail. L'ajout de
+// progression et l'édition/suppression vivent sur l'écran Détail, pas inline
+// ici.
 export default function GoalCard({ goal, onPress }: Props) {
   const { t } = useTranslation();
   const today = todayStr();
@@ -30,7 +30,9 @@ export default function GoalCard({ goal, onPress }: Props) {
   // à en faire un unique élément focusable pour le lecteur d'écran, qui
   // n'entre alors pas dans les enfants — pas besoin en plus de
   // accessibilityElementsHidden/importantForAccessibility côté enfants ni de
-  // accessible={false} dessus (vérifié dans la doc RN sur l'accessibilité).
+  // accessible={false} dessus (voir la doc React Native, page Accessibility).
+  // Les lignes « Terminés cette semaine » de app/weekly.tsx composent leur
+  // phrase sur le même motif (titre, progression, statut parlé).
   //
   // Sur un objectif clos, « 0 jour restant » ne dit rien : la ligne
   // annonce l'échéance passée, et le statut final suit.

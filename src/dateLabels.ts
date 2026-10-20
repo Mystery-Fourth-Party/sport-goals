@@ -26,13 +26,14 @@ function monthShortList(): string[] {
   return i18n.t('dateLabels.monthShort', { returnObjects: true }) as unknown as string[];
 }
 
-// Une Date invalide (issue de parseDate sur une date corrompue arrivée par
-// import, voir GoalHistoryList/RecentSessionsCard/app/weekly.tsx) renvoyait
-// NaN sur getDay()/getMonth(). tableau[NaN] ne lève pas : il rend undefined,
-// qui finissait affiché tel quel, et getDate()/getFullYear() ajoutaient des
-// "NaN" dans les libellés composés (L1-11). Garder seulement les quatre
-// indexations ne suffisait donc pas — les trois libellés composés basculent
-// eux aussi en bloc sur le repli.
+// Une Date invalide (issue de parseDate sur une date corrompue dans le
+// stockage, voir GoalHistoryList/RecentSessionsCard/app/weekly.tsx : l'import
+// n'en laisse plus passer, backup.ts exige des dates canoniques) donne NaN
+// sur getDay()/getMonth(). tableau[NaN] ne lève pas : il rend undefined, qui
+// serait affiché tel quel, et getDate()/getFullYear() ajouteraient des "NaN"
+// dans les libellés composés. Garder seulement les quatre indexations ne
+// suffit donc pas — les trois libellés composés basculent eux aussi en bloc
+// sur le repli.
 function isValidDate(d: Date): boolean {
   return !Number.isNaN(d.getTime());
 }

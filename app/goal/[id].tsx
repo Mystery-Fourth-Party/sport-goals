@@ -48,14 +48,14 @@ export default function GoalDetailScreen() {
         <View style={styles.header}>
           <BackButton onPress={() => router.back()} />
         </View>
-        {/* Le message n'apparaît qu'une fois le chargement terminé. Avant, on
-            ne sait pas encore si l'objectif existe : l'écran annonçait un
-            objectif introuvable qui existait très bien, le temps que
-            loadGoals résolve — visible sur un lien profond, une notification
-            ou un tap rapide après un démarrage à froid. Même garde que celle
-            posée sur l'écran d'édition en PR #25, sans le remount : aucun
-            useState de cet écran n'est initialisé depuis `goal`, les quatre
-            servent au modal. L'en-tête est rendu dans les deux cas, pour que
+        {/* Le message n'apparaît qu'une fois le chargement terminé. Avant
+            cela, on ne sait pas encore si l'objectif existe : annoncer un
+            objectif introuvable alors qu'il existe, le temps que loadGoals
+            résolve, serait visible sur un lien profond, une notification ou
+            un tap rapide après un démarrage à froid. Même garde que celle de
+            l'écran d'édition, sans le remount : aucun useState de cet écran
+            n'est initialisé depuis `goal`, les quatre servent au modal.
+            L'en-tête est rendu dans les deux cas, pour que
             le bouton retour existe aussi pendant l'attente. */}
         {loaded && <Text style={styles.notFound}>{t('goalDetail.notFound')}</Text>}
       </SafeAreaView>
@@ -101,7 +101,7 @@ export default function GoalDetailScreen() {
 
   function handleSave() {
     // parsePositiveNumber plutôt que `!value || value <= 0` : ce test
-    // laissait passer Infinity (saisie "1e400"), voir src/goalValidation.ts.
+    // laisse passer Infinity (saisie "1e400"), voir src/goalValidation.ts.
     // La porte est ici et non dans ProgressEntryModal : son bouton n'est
     // que grisé par un style, il reste pressable et appelle ce handler.
     const value = parsePositiveNumber(modalValue);
@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.appBg,
   },
   // Utilisé par le seul retour "introuvable" ci-dessus (le header complet
-  // vit désormais dans GoalDetailHeader, avec sa propre copie de ce style).
+  // vit dans GoalDetailHeader, avec sa propre copie de ce style).
   header: {
     paddingHorizontal: spacing.screenPadding,
     paddingTop: 12,

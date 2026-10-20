@@ -1,11 +1,11 @@
-// L1-08 — aucun recalcul du jour au passage de minuit.
+// Recalcul du jour au passage de minuit.
 //
-// getGoalStats est pure et reçoit `today` en paramètre, recalculé à chaque
-// rendu via todayStr(). Mais rien ne provoque de nouveau rendu si l'app
-// reste ouverte ou revient de l'arrière-plan à cheval sur minuit : les
-// écrans continuent d'afficher les jours restants, le streak et le statut
-// de la veille. Aucun usage d'AppState n'existait dans le dépôt avant ce
-// hook.
+// getGoalStats est pure et reçoit `today` en paramètre. Lire todayStr() à
+// chaque rendu ne suffit pas : rien ne provoque de nouveau rendu si l'app
+// reste ouverte ou revient de l'arrière-plan à cheval sur minuit, et les
+// écrans continueraient d'afficher les jours restants, le streak et le
+// statut de la veille. useToday écoute AppState pour recalculer le jour au
+// retour au premier plan.
 import { AppState, AppStateStatus } from 'react-native';
 import { act, renderHook } from '@testing-library/react-native';
 import { useToday } from './useToday';

@@ -322,7 +322,8 @@ describe('arrêt de la série', () => {
 
   // Import incohérent : deux occurrences de la même série portent repeat.
   // Supprimer la pointe ne doit pas faire de l'ancienne la nouvelle pointe
-  // avec sa coche : la série s'arrête, comme la spec le dit.
+  // avec sa coche : supprimer l'occurrence en cours arrête la série (voir
+  // removeGoal dans series.ts).
   it('does not restart the series from an older repeating occurrence when the current one is deleted', async () => {
     const older = occurrence({
       id: 'older',

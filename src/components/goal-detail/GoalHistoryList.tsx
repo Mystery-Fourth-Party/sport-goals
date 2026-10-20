@@ -12,9 +12,11 @@ interface Props {
   onEntryPress: (entry: Entry) => void;
 }
 
-// Carte "Historique" — calcul de historyEntries (reverse + slice(0, 12)) et
-// construction de l'accessibilityLabel composite par ligne déplacés ici,
-// c'était leur seul usage.
+// Carte "Historique" — porte le calcul de historyEntries (reverse +
+// slice(0, 12)) et la construction de l'accessibilityLabel composite par
+// ligne, dont elle est la seule à se servir. Suppose `entries` triées par
+// date croissante : l'import les trie (voir parseBackupPayload dans
+// backup.ts).
 export default function GoalHistoryList({ entries, unit, today, onEntryPress }: Props) {
   const { t } = useTranslation();
   const unitLabel = t(`unit.${unit}`);
